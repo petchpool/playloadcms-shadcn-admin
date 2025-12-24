@@ -7,12 +7,33 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   getFilteredRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   type ColumnDef,
   type SortingState,
   type ColumnFiltersState,
   type VisibilityState,
 } from '@tanstack/react-table'
-import { ArrowUpDown, ChevronDown, Search, Filter, X } from 'lucide-react'
+import {
+  ArrowUpDown,
+  Search,
+  X,
+  CircleCheck,
+  CircleDashed,
+  Layers,
+  LayoutGrid,
+  Component,
+  FileText,
+  Image,
+  FormInput,
+  Navigation,
+  LayoutTemplate,
+  MoreHorizontal,
+  Eye,
+  Edit,
+  Trash2,
+  Copy,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -31,7 +52,36 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  DataTableFacetedFilter,
+  type FacetedFilterOption,
+} from '@/components/ui/data-table-faceted-filter'
+import { DataTableDateRangeFilterWithPresets } from '@/components/ui/data-table-date-range-filter'
+import {
+  DataTableStatusTabs,
+  type StatusTab,
+  generateStatusTabs,
+} from '@/components/ui/data-table-status-tabs'
+import { DataTableViewOptions } from '@/components/ui/data-table-view-options'
+import {
+  useTableUrlState,
+  setToArray,
+  arrayToSet,
+  formatDateForUrl,
+  parseDateFromUrl,
+  type TableUrlState,
+} from '@/hooks/use-table-url-state'
 import { cn } from '@/lib/utils'
+import type { DateRange } from 'react-day-picker'
 
 export type Block = {
   id: string
@@ -45,9 +95,49 @@ export type Block = {
   updatedAt: string
 }
 
+/** Row action configuration */
+export type RowAction<T = any> = {
+  /** Action label */
+  label: string
+  /** Icon component */
+  icon?: React.ComponentType<{ className?: string }>
+  /** Click handler */
+  onClick: (row: T) => void
+  /** Variant for styling */
+  variant?: 'default' | 'destructive'
+  /** Show separator before this action */
+  separator?: boolean
+  /** Condition to show action */
+  show?: (row: T) => boolean
+}
+
+/** Custom column configuration */
+export type CustomColumn<T = any> = {
+  /** Column ID */
+  id: string
+  /** Header label or render function */
+  header?: string | ((props: { column: any }) => React.ReactNode)
+  /** Cell render function */
+  cell: (row: T) => React.ReactNode
+  /** Enable sorting */
+  sortable?: boolean
+  /** Enable hiding */
+  hideable?: boolean
+  /** Column size */
+  size?: number
+}
+
 type BlocksTableProps = {
-  data: Block[]
-  columns?: string[] // Array of column keys to display
+  data: any[] // Generic data array
+  columns?: string[] | any // Array of column keys or JSON config
+  collection?: string // Collection name for dynamic columns
+  searchFields?: string[] // Fields to search in
+  filterFields?: Array<{
+    field: string
+    label: string
+    type: 'select' | 'text' | 'date'
+    options?: Array<{ label: string; value: string }>
+  }>
   pagination?: {
     page: number
     limit: number
@@ -58,7 +148,78 @@ type BlocksTableProps = {
   }
   onPageChange?: (page: number) => void
   onLimitChange?: (limit: number) => void
+  onFilterChange?: (filters: Record<string, string>) => void
+  onSearchChange?: (search: string) => void
+  /** Show status tabs header with counts */
+  showStatusTabs?: boolean
+  /** Field to use for status tabs (default: 'status') */
+  statusTabsField?: string
+  /** Custom status tabs configuration */
+  statusTabsConfig?: Array<{
+    value: string
+    label: string
+    variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning'
+    badgeClassName?: string
+  }>
+  /** Label for "All" tab (default: 'All') */
+  allTabLabel?: string
+  /** Show actions column (default: true) */
+  showActions?: boolean
+  /** Custom row actions */
+  rowActions?: RowAction[]
+  /** Default row actions (View, Edit, Delete) - set to false to disable */
+  defaultActions?: boolean | {
+    view?: boolean | ((row: any) => void)
+    edit?: boolean | ((row: any) => void)
+    delete?: boolean | ((row: any) => void)
+    copy?: boolean
+  }
+  /** Custom columns to add */
+  customColumns?: CustomColumn[]
+  /** Callback when View action is clicked */
+  onView?: (row: any) => void
+  /** Callback when Edit action is clicked */
+  onEdit?: (row: any) => void
+  /** Callback when Delete action is clicked */
+  onDelete?: (row: any) => void
+  /** Enable URL sync for table state (default: false) */
+  syncUrl?: boolean
+  /**
+   * Group/namespace for this table's URL params.
+   * Use this when you have multiple tables on the same page.
+   * @example
+   * // Table 1: group="users" -> ?users[page]=1&users[filters][status][]=active
+   * // Table 2: group="orders" -> ?orders[page]=2&orders[limit]=25
+   */
+  urlGroup?: string
+  /** Callback when URL state changes */
+  onUrlStateChange?: (state: TableUrlState) => void
+  /** Initial URL state (from server-side) */
+  initialUrlState?: Partial<TableUrlState>
 }
+
+// Type options with icons
+const typeOptions: FacetedFilterOption[] = [
+  { label: 'Block', value: 'block', icon: Component },
+  { label: 'Section', value: 'section', icon: Layers },
+  { label: 'Widget', value: 'widget', icon: LayoutGrid },
+]
+
+// Category options with icons
+const categoryOptions: FacetedFilterOption[] = [
+  { label: 'Content', value: 'content', icon: FileText },
+  { label: 'Media', value: 'media', icon: Image },
+  { label: 'Form', value: 'form', icon: FormInput },
+  { label: 'Navigation', value: 'navigation', icon: Navigation },
+  { label: 'Layout', value: 'layout', icon: LayoutTemplate },
+  { label: 'Other', value: 'other', icon: MoreHorizontal },
+]
+
+// Status options with icons
+const statusOptions: FacetedFilterOption[] = [
+  { label: 'Draft', value: 'draft', icon: CircleDashed },
+  { label: 'Published', value: 'published', icon: CircleCheck },
+]
 
 const typeLabels: Record<string, string> = {
   block: 'Block',
@@ -75,23 +236,143 @@ const categoryLabels: Record<string, string> = {
   other: 'Other',
 }
 
+// Default status tabs configuration
+const defaultStatusTabsConfig = [
+  { value: 'draft', label: 'Draft', variant: 'warning' as const },
+  { value: 'published', label: 'Published', variant: 'success' as const },
+]
+
 export function BlocksTable({
   data,
   columns: enabledColumns,
   pagination,
   onPageChange,
   onLimitChange,
+  showStatusTabs = false,
+  statusTabsField = 'status',
+  statusTabsConfig = defaultStatusTabsConfig,
+  allTabLabel = 'All',
+  showActions = true,
+  rowActions = [],
+  defaultActions = true,
+  customColumns = [],
+  onView,
+  onEdit,
+  onDelete,
+  syncUrl = false,
+  urlGroup,
+  onUrlStateChange,
+  initialUrlState,
 }: BlocksTableProps) {
+  // URL state sync
+  const { state: urlState, updateState: updateUrlState } = useTableUrlState({
+    syncUrl,
+    group: urlGroup,
+    defaults: {
+      page: 1,
+      limit: pagination?.limit || 10,
+      statusTab: 'all',
+    },
+  })
+
+  // Initialize state from URL or props
+  const getInitialState = React.useCallback(() => {
+    if (syncUrl && urlState) {
+      return urlState
+    }
+    return initialUrlState || {}
+  }, [syncUrl, urlState, initialUrlState])
+
+  const initialState = getInitialState()
+
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [globalFilter, setGlobalFilter] = React.useState('')
-  const [typeFilter, setTypeFilter] = React.useState<string>('')
-  const [categoryFilter, setCategoryFilter] = React.useState<string>('')
-  const [statusFilter, setStatusFilter] = React.useState<string>('')
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(
+    initialState.columnVisibility || {}
+  )
+  const [globalFilter, setGlobalFilter] = React.useState(initialState.search || '')
+  const [rowSelection, setRowSelection] = React.useState({})
+
+  // Status tabs state
+  const [activeStatusTab, setActiveStatusTab] = React.useState(initialState.statusTab || 'all')
+
+  // Multi-select filter states
+  const [typeFilter, setTypeFilter] = React.useState<Set<string>>(
+    arrayToSet(initialState.filters?.type)
+  )
+  const [categoryFilter, setCategoryFilter] = React.useState<Set<string>>(
+    arrayToSet(initialState.filters?.category)
+  )
+  const [statusFilter, setStatusFilter] = React.useState<Set<string>>(
+    arrayToSet(initialState.filters?.status)
+  )
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(() => {
+    if (initialState.dateRange?.from || initialState.dateRange?.to) {
+      return {
+        from: parseDateFromUrl(initialState.dateRange?.from),
+        to: parseDateFromUrl(initialState.dateRange?.to),
+      }
+    }
+    return undefined
+  })
+
+  // Generate status tabs with counts
+  const statusTabs = React.useMemo(() => {
+    return generateStatusTabs(data, statusTabsField as keyof (typeof data)[0], {
+      statuses: statusTabsConfig,
+      defaultStatus: 'draft',
+    })
+  }, [data, statusTabsField, statusTabsConfig])
+
+  // Calculate facet counts
+  const facetCounts = React.useMemo(() => {
+    const typeCounts = new Map<string, number>()
+    const categoryCounts = new Map<string, number>()
+    const statusCounts = new Map<string, number>()
+
+    data.forEach((item) => {
+      // Type counts
+      if (item.type) {
+        typeCounts.set(item.type, (typeCounts.get(item.type) || 0) + 1)
+      }
+      // Category counts
+      if (item.category) {
+        categoryCounts.set(item.category, (categoryCounts.get(item.category) || 0) + 1)
+      }
+      // Status counts
+      const status = item.status || 'draft'
+      statusCounts.set(status, (statusCounts.get(status) || 0) + 1)
+    })
+
+    return { typeCounts, categoryCounts, statusCounts }
+  }, [data])
 
   // All available column definitions
   const allColumns: Record<string, ColumnDef<Block>> = {
+    select: {
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && 'indeterminate')
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+          className="translate-y-[2px]"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+          className="translate-y-[2px]"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     name: {
       accessorKey: 'name',
       header: ({ column }) => {
@@ -131,15 +412,17 @@ export function BlocksTable({
       },
       cell: ({ row }) => {
         const type = row.getValue('type') as string
+        const Icon = typeOptions.find((t) => t.value === type)?.icon || Component
         return (
-          <Badge variant="outline" className="capitalize">
-            {typeLabels[type] || type}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Icon className="h-4 w-4 text-muted-foreground" />
+            <span>{typeLabels[type] || type}</span>
+          </div>
         )
       },
-      filterFn: (row, id, value) => {
-        if (!value) return true
-        return row.getValue(id) === value
+      filterFn: (row, id, value: string[]) => {
+        if (!value || value.length === 0) return true
+        return value.includes(row.getValue(id))
       },
     },
     category: {
@@ -159,17 +442,19 @@ export function BlocksTable({
       cell: ({ row }) => {
         const category = row.getValue('category') as string | null
         if (!category) return <span className="text-muted-foreground">-</span>
+        const Icon = categoryOptions.find((c) => c.value === category)?.icon || MoreHorizontal
         return (
-          <Badge variant="secondary" className="capitalize">
-            {categoryLabels[category] || category}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Icon className="h-4 w-4 text-muted-foreground" />
+            <span>{categoryLabels[category] || category}</span>
+          </div>
         )
       },
-      filterFn: (row, id, value) => {
-        if (!value) return true
+      filterFn: (row, id, value: string[]) => {
+        if (!value || value.length === 0) return true
         const category = row.getValue(id) as string | null
-        if (!category) return value === 'none'
-        return category === value
+        if (!category) return value.includes('none')
+        return value.includes(category)
       },
     },
     status: {
@@ -188,15 +473,18 @@ export function BlocksTable({
       },
       cell: ({ row }) => {
         const status = (row.getValue('status') as string) || 'draft'
+        const Icon = statusOptions.find((s) => s.value === status)?.icon || CircleDashed
         return (
-          <Badge variant={status === 'published' ? 'default' : 'secondary'} className="capitalize">
-            {status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Icon className="h-4 w-4 text-muted-foreground" />
+            <span className="capitalize">{status}</span>
+          </div>
         )
       },
-      filterFn: (row, id, value) => {
-        if (!value) return true
-        return row.getValue(id) === value
+      filterFn: (row, id, value: string[]) => {
+        if (!value || value.length === 0) return true
+        const status = (row.getValue(id) as string) || 'draft'
+        return value.includes(status)
       },
     },
     description: {
@@ -206,9 +494,7 @@ export function BlocksTable({
         const description = row.getValue('description') as string | null
         if (!description) return <span className="text-muted-foreground">-</span>
         return (
-          <span className="max-w-[300px] truncate text-sm text-muted-foreground">
-            {description}
-          </span>
+          <span className="max-w-[300px] truncate text-sm text-muted-foreground">{description}</span>
         )
       },
     },
@@ -230,27 +516,156 @@ export function BlocksTable({
         const date = new Date(row.getValue('createdAt'))
         return <span className="text-sm">{date.toLocaleDateString()}</span>
       },
+      filterFn: (row, id, value: DateRange) => {
+        if (!value || (!value.from && !value.to)) return true
+        const cellDate = new Date(row.getValue(id))
+        if (value.from && value.to) {
+          return cellDate >= value.from && cellDate <= value.to
+        }
+        if (value.from) {
+          return cellDate >= value.from
+        }
+        if (value.to) {
+          return cellDate <= value.to
+        }
+        return true
+      },
+    },
+  }
+
+  // Actions column
+  const actionsColumn: ColumnDef<Block> = {
+    id: 'actions',
+    enableHiding: false,
+    cell: ({ row }) => {
+      const item = row.original
+
+      // Build actions list
+      const actions: RowAction[] = []
+
+      // Default actions
+      if (defaultActions !== false) {
+        const defaults = typeof defaultActions === 'object' ? defaultActions : {}
+
+        // Copy ID action
+        if (defaults.copy !== false) {
+          actions.push({
+            label: 'Copy ID',
+            icon: Copy,
+            onClick: () => navigator.clipboard.writeText(item.id),
+          })
+        }
+
+        // View action
+        if (defaults.view !== false) {
+          actions.push({
+            label: 'View',
+            icon: Eye,
+            separator: true,
+            onClick: typeof defaults.view === 'function' ? defaults.view : (onView || (() => {})),
+          })
+        }
+
+        // Edit action
+        if (defaults.edit !== false) {
+          actions.push({
+            label: 'Edit',
+            icon: Edit,
+            onClick: typeof defaults.edit === 'function' ? defaults.edit : (onEdit || (() => {})),
+          })
+        }
+
+        // Delete action
+        if (defaults.delete !== false) {
+          actions.push({
+            label: 'Delete',
+            icon: Trash2,
+            variant: 'destructive',
+            separator: true,
+            onClick: typeof defaults.delete === 'function' ? defaults.delete : (onDelete || (() => {})),
+          })
+        }
+      }
+
+      // Add custom row actions
+      actions.push(...rowActions)
+
+      // Filter actions based on show condition
+      const visibleActions = actions.filter((action) => {
+        if (action.show) return action.show(item)
+        return true
+      })
+
+      if (visibleActions.length === 0) return null
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            {visibleActions.map((action, index) => (
+              <React.Fragment key={index}>
+                {action.separator && index > 0 && <DropdownMenuSeparator />}
+                <DropdownMenuItem
+                  onClick={() => action.onClick(item)}
+                  className={action.variant === 'destructive' ? 'text-destructive' : ''}
+                >
+                  {action.icon && <action.icon className="mr-2 h-4 w-4" />}
+                  {action.label}
+                </DropdownMenuItem>
+              </React.Fragment>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
     },
   }
 
   // Filter columns based on enabledColumns prop
   const columns: ColumnDef<Block>[] = React.useMemo(() => {
-    if (!enabledColumns || enabledColumns.length === 0) {
-      // Default: show all columns
-      return Object.values(allColumns)
-    }
-    // Return only enabled columns in the specified order
-    return enabledColumns
-      .map((key) => allColumns[key])
-      .filter((col) => col !== undefined) as ColumnDef<Block>[]
-  }, [enabledColumns])
+    // Always include select column first
+    const baseColumns: ColumnDef<Block>[] = [allColumns.select]
 
-  // Debug logging
-  React.useEffect(() => {
-    console.log('BlocksTable - Data:', data)
-    console.log('BlocksTable - Data length:', data.length)
-    console.log('BlocksTable - Columns:', columns.length)
-  }, [data, columns])
+    let dataCols: ColumnDef<Block>[]
+
+    if (!enabledColumns || enabledColumns.length === 0) {
+      // Default: show all columns except select (already added)
+      dataCols = Object.entries(allColumns)
+        .filter(([key]) => key !== 'select')
+        .map(([, col]) => col)
+    } else {
+      // Return only enabled columns in the specified order
+      dataCols = enabledColumns
+        .filter((key: string) => key !== 'select')
+        .map((key: string) => allColumns[key])
+        .filter((col: ColumnDef<Block> | undefined) => col !== undefined) as ColumnDef<Block>[]
+    }
+
+    // Add custom columns
+    const customCols: ColumnDef<Block>[] = customColumns.map((custom) => ({
+      id: custom.id,
+      header: typeof custom.header === 'function' ? custom.header : custom.header || custom.id,
+      cell: ({ row }) => custom.cell(row.original),
+      enableSorting: custom.sortable ?? false,
+      enableHiding: custom.hideable ?? true,
+      size: custom.size,
+    }))
+
+    // Combine all columns
+    const result = [...baseColumns, ...dataCols, ...customCols]
+
+    // Add actions column at the end if enabled
+    if (showActions) {
+      result.push(actionsColumn)
+    }
+
+    return result
+  }, [enabledColumns, customColumns, showActions, actionsColumn])
 
   const table = useReactTable({
     data,
@@ -259,137 +674,201 @@ export function BlocksTable({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange: setGlobalFilter,
+    onRowSelectionChange: setRowSelection,
     globalFilterFn: 'includesString',
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       globalFilter,
+      rowSelection,
     },
   })
 
-  // Debug table rows
-  React.useEffect(() => {
-    console.log('BlocksTable - Table rows:', table.getRowModel().rows.length)
-    console.log('BlocksTable - Filtered rows:', table.getFilteredRowModel().rows.length)
-  }, [table, data])
-
-  // Apply filters
+  // Apply multi-select filters
   React.useEffect(() => {
     const filters: ColumnFiltersState = []
-    if (typeFilter) {
-      filters.push({ id: 'type', value: typeFilter })
+    if (typeFilter.size > 0) {
+      filters.push({ id: 'type', value: Array.from(typeFilter) })
     }
-    if (categoryFilter) {
-      filters.push({ id: 'category', value: categoryFilter })
+    if (categoryFilter.size > 0) {
+      filters.push({ id: 'category', value: Array.from(categoryFilter) })
     }
-    if (statusFilter) {
-      filters.push({ id: 'status', value: statusFilter })
+    // Apply status filter from tabs or faceted filter
+    if (activeStatusTab !== 'all') {
+      filters.push({ id: 'status', value: [activeStatusTab] })
+    } else if (statusFilter.size > 0) {
+      filters.push({ id: 'status', value: Array.from(statusFilter) })
+    }
+    if (dateRange?.from || dateRange?.to) {
+      filters.push({ id: 'createdAt', value: dateRange })
     }
     setColumnFilters(filters)
-  }, [typeFilter, categoryFilter, statusFilter])
+  }, [typeFilter, categoryFilter, statusFilter, dateRange, activeStatusTab])
 
-  const activeFiltersCount =
-    (typeFilter ? 1 : 0) +
-    (categoryFilter ? 1 : 0) +
-    (statusFilter ? 1 : 0) +
-    (globalFilter ? 1 : 0)
+  // Handle status tab change
+  const handleStatusTabChange = (value: string) => {
+    setActiveStatusTab(value)
+    // Clear faceted status filter when using tabs
+    if (value !== 'all') {
+      setStatusFilter(new Set())
+    }
+  }
+
+  // Sync state to URL
+  React.useEffect(() => {
+    if (!syncUrl) return
+
+    const newUrlState: TableUrlState = {
+      page: pagination?.page !== 1 ? pagination?.page : undefined,
+      limit: pagination?.limit !== 10 ? pagination?.limit : undefined,
+      search: globalFilter || undefined,
+      statusTab: activeStatusTab !== 'all' ? activeStatusTab : undefined,
+      filters: {
+        ...(typeFilter.size > 0 && { type: setToArray(typeFilter) }),
+        ...(categoryFilter.size > 0 && { category: setToArray(categoryFilter) }),
+        ...(statusFilter.size > 0 && { status: setToArray(statusFilter) }),
+      },
+      dateRange: dateRange?.from || dateRange?.to
+        ? {
+            from: formatDateForUrl(dateRange?.from),
+            to: formatDateForUrl(dateRange?.to),
+          }
+        : undefined,
+      columnVisibility: Object.keys(columnVisibility).length > 0 ? columnVisibility : undefined,
+    }
+
+    updateUrlState(newUrlState)
+    onUrlStateChange?.(newUrlState)
+  }, [
+    syncUrl,
+    globalFilter,
+    activeStatusTab,
+    typeFilter,
+    categoryFilter,
+    statusFilter,
+    dateRange,
+    columnVisibility,
+    pagination?.page,
+    pagination?.limit,
+    updateUrlState,
+    onUrlStateChange,
+  ])
+
+  const isFiltered =
+    typeFilter.size > 0 ||
+    categoryFilter.size > 0 ||
+    statusFilter.size > 0 ||
+    globalFilter !== '' ||
+    dateRange?.from !== undefined ||
+    dateRange?.to !== undefined ||
+    activeStatusTab !== 'all'
 
   const clearFilters = () => {
-    setTypeFilter('')
-    setCategoryFilter('')
-    setStatusFilter('')
+    setTypeFilter(new Set())
+    setCategoryFilter(new Set())
+    setStatusFilter(new Set())
     setGlobalFilter('')
+    setDateRange(undefined)
+    setActiveStatusTab('all')
+    setColumnVisibility({})
+    
+    // Also clear URL state and reset to page 1
+    if (syncUrl) {
+      updateUrlState({ page: 1 })
+      onPageChange?.(1)
+    }
+  }
+
+  // Handle page change with URL sync
+  const handlePageChange = (page: number) => {
+    onPageChange?.(page)
+  }
+
+  // Handle limit change with URL sync
+  const handleLimitChange = (limit: number) => {
+    onLimitChange?.(limit)
+    // Reset to page 1 when changing limit
+    onPageChange?.(1)
   }
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-col gap-4 rounded-lg border p-4">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4" />
-          <span className="font-medium">Filters</span>
-          {activeFiltersCount > 0 && (
-            <Badge variant="secondary" className="ml-auto">
-              {activeFiltersCount} active
-            </Badge>
-          )}
+      {/* Status Tabs Header */}
+      {showStatusTabs && (
+        <DataTableStatusTabs
+          tabs={statusTabs}
+          activeTab={activeStatusTab}
+          onTabChange={handleStatusTabChange}
+          showAllTab={true}
+          allTabLabel={allTabLabel}
+          totalCount={data.length}
+        />
+      )}
+
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Global Search */}
+        <div className="relative w-full sm:w-[250px] lg:w-[300px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Filter blocks..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="h-8 pl-9"
+          />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {/* Global Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search blocks..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+        {/* Faceted Filters */}
+        <DataTableFacetedFilter
+          title="Status"
+          options={statusOptions}
+          selectedValues={statusFilter}
+          onSelectionChange={setStatusFilter}
+          facetCounts={facetCounts.statusCounts}
+        />
 
-          {/* Type Filter */}
-          <Select
-            value={typeFilter || 'all'}
-            onValueChange={(value) => setTypeFilter(value === 'all' ? '' : value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="block">Block</SelectItem>
-              <SelectItem value="section">Section</SelectItem>
-              <SelectItem value="widget">Widget</SelectItem>
-            </SelectContent>
-          </Select>
+        <DataTableFacetedFilter
+          title="Type"
+          options={typeOptions}
+          selectedValues={typeFilter}
+          onSelectionChange={setTypeFilter}
+          facetCounts={facetCounts.typeCounts}
+        />
 
-          {/* Category Filter */}
-          <Select
-            value={categoryFilter || 'all'}
-            onValueChange={(value) => setCategoryFilter(value === 'all' ? '' : value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="content">Content</SelectItem>
-              <SelectItem value="media">Media</SelectItem>
-              <SelectItem value="form">Form</SelectItem>
-              <SelectItem value="navigation">Navigation</SelectItem>
-              <SelectItem value="layout">Layout</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-              <SelectItem value="none">No Category</SelectItem>
-            </SelectContent>
-          </Select>
+        <DataTableFacetedFilter
+          title="Category"
+          options={categoryOptions}
+          selectedValues={categoryFilter}
+          onSelectionChange={setCategoryFilter}
+          facetCounts={facetCounts.categoryCounts}
+        />
 
-          {/* Status Filter */}
-          <Select
-            value={statusFilter || 'all'}
-            onValueChange={(value) => setStatusFilter(value === 'all' ? '' : value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <DataTableDateRangeFilterWithPresets
+          title="Created"
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          showTime={false}
+        />
 
-        {activeFiltersCount > 0 && (
-          <Button variant="outline" size="sm" onClick={clearFilters} className="w-fit">
-            <X className="mr-2 h-4 w-4" />
-            Clear Filters
+        {isFiltered && (
+          <Button variant="ghost" onClick={clearFilters} className="h-8 px-2 lg:px-3">
+            Reset
+            <X className="ml-2 h-4 w-4" />
           </Button>
         )}
+
+        {/* Spacer to push View to right */}
+        <div className="flex-1" />
+
+        {/* View Options */}
+        <DataTableViewOptions table={table} />
       </div>
 
       {/* Table */}
@@ -417,11 +896,9 @@ export function BlocksTable({
           <TableBody>
             {(() => {
               const rows = table.getRowModel().rows
-              console.log('Rendering table body - rows:', rows?.length, 'data:', data.length)
 
               if (rows && rows.length > 0) {
                 return rows.map((row) => {
-                  console.log('Rendering row:', row.id, row.original)
                   return (
                     <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
                       {row.getVisibleCells().map((cell) => {
@@ -467,19 +944,19 @@ export function BlocksTable({
         </Table>
       </div>
 
-      {/* Pagination */}
-      {pagination && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {((pagination.page - 1) * pagination.limit + 1).toLocaleString()} to{' '}
-            {Math.min(pagination.page * pagination.limit, pagination.totalDocs).toLocaleString()} of{' '}
-            {pagination.totalDocs.toLocaleString()} blocks
-          </div>
+      {/* Footer with selection info and pagination */}
+      <div className="flex items-center justify-between">
+        <div className="flex-1 text-sm text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} of{' '}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
+        </div>
+
+        {pagination && (
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onPageChange?.(pagination.page - 1)}
+              onClick={() => handlePageChange(pagination.page - 1)}
               disabled={!pagination.hasPrevPage}
             >
               Previous
@@ -490,16 +967,16 @@ export function BlocksTable({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onPageChange?.(pagination.page + 1)}
+              onClick={() => handlePageChange(pagination.page + 1)}
               disabled={!pagination.hasNextPage}
             >
               Next
             </Button>
             <Select
               value={pagination.limit.toString()}
-              onValueChange={(value) => onLimitChange?.(parseInt(value))}
+              onValueChange={(value) => handleLimitChange(parseInt(value))}
             >
-              <SelectTrigger className="w-[100px]">
+              <SelectTrigger className="h-8 w-[80px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -510,8 +987,8 @@ export function BlocksTable({
               </SelectContent>
             </Select>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

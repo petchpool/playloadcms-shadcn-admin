@@ -1,6 +1,20 @@
 import React from 'react'
 import { ThemeProvider } from '@/components/theme-provider'
+import { Inter, IBM_Plex_Sans_Thai } from 'next/font/google'
 import './globals.css'
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const ibmPlexSansThai = IBM_Plex_Sans_Thai({
+  weight: ['300', '400', '500', '600', '700'],
+  subsets: ['thai'],
+  variable: '--font-ibm-plex-thai',
+  display: 'swap',
+})
 
 export const metadata = {
   description: 'A blank template using Payload in a Next.js app.',
@@ -11,7 +25,11 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props
 
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html
+      lang="th"
+      className={`dark ${inter.variable} ${ibmPlexSansThai.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{

@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { hasAnyRoleSync, hasAdminRoleSync } from '@/utils/check-role'
+import { filterBlocksRecursively } from '@/utils/filter-blocks-by-permissions'
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
@@ -175,6 +176,16 @@ export const Pages: CollectionConfig = {
               type: 'richText',
               required: true,
             },
+            {
+              name: 'requiredPermissions',
+              type: 'relationship',
+              relationTo: 'permissions',
+              hasMany: true,
+              admin: {
+                description:
+                  'Permissions required to view/edit this block (leave empty for public)',
+              },
+            },
           ],
         },
         {
@@ -197,6 +208,16 @@ export const Pages: CollectionConfig = {
             {
               name: 'alt',
               type: 'text',
+            },
+            {
+              name: 'requiredPermissions',
+              type: 'relationship',
+              relationTo: 'permissions',
+              hasMany: true,
+              admin: {
+                description:
+                  'Permissions required to view/edit this block (leave empty for public)',
+              },
             },
           ],
         },
@@ -223,6 +244,16 @@ export const Pages: CollectionConfig = {
                 },
               ],
             },
+            {
+              name: 'requiredPermissions',
+              type: 'relationship',
+              relationTo: 'permissions',
+              hasMany: true,
+              admin: {
+                description:
+                  'Permissions required to view/edit this block (leave empty for public)',
+              },
+            },
           ],
         },
         {
@@ -248,6 +279,16 @@ export const Pages: CollectionConfig = {
               name: 'caption',
               type: 'text',
             },
+            {
+              name: 'requiredPermissions',
+              type: 'relationship',
+              relationTo: 'permissions',
+              hasMany: true,
+              admin: {
+                description:
+                  'Permissions required to view/edit this block (leave empty for public)',
+              },
+            },
           ],
         },
         {
@@ -268,6 +309,16 @@ export const Pages: CollectionConfig = {
               type: 'json',
               admin: {
                 description: 'Component props',
+              },
+            },
+            {
+              name: 'requiredPermissions',
+              type: 'relationship',
+              relationTo: 'permissions',
+              hasMany: true,
+              admin: {
+                description:
+                  'Permissions required to view/edit this block (leave empty for public)',
               },
             },
           ],
@@ -305,6 +356,16 @@ export const Pages: CollectionConfig = {
               name: 'caption',
               type: 'text',
             },
+            {
+              name: 'requiredPermissions',
+              type: 'relationship',
+              relationTo: 'permissions',
+              hasMany: true,
+              admin: {
+                description:
+                  'Permissions required to view/edit this block (leave empty for public)',
+              },
+            },
           ],
         },
         {
@@ -340,6 +401,16 @@ export const Pages: CollectionConfig = {
               type: 'text',
               admin: {
                 description: 'Link button text',
+              },
+            },
+            {
+              name: 'requiredPermissions',
+              type: 'relationship',
+              relationTo: 'permissions',
+              hasMany: true,
+              admin: {
+                description:
+                  'Permissions required to view/edit this block (leave empty for public)',
               },
             },
           ],
@@ -481,6 +552,16 @@ export const Pages: CollectionConfig = {
                 },
               ],
             },
+            {
+              name: 'requiredPermissions',
+              type: 'relationship',
+              relationTo: 'permissions',
+              hasMany: true,
+              admin: {
+                description:
+                  'Permissions required to view/edit this block (leave empty for public)',
+              },
+            },
           ],
         },
         {
@@ -513,38 +594,227 @@ export const Pages: CollectionConfig = {
               },
             },
             {
-              name: 'columns',
+              name: 'collection',
               type: 'select',
-              hasMany: true,
+              required: true,
+              defaultValue: 'components',
               options: [
                 {
-                  label: 'Name',
-                  value: 'name',
+                  label: 'Components',
+                  value: 'components',
                 },
                 {
-                  label: 'Type',
-                  value: 'type',
+                  label: 'Pages',
+                  value: 'pages',
                 },
                 {
-                  label: 'Category',
-                  value: 'category',
+                  label: 'Layouts',
+                  value: 'layouts',
                 },
                 {
-                  label: 'Status',
-                  value: 'status',
+                  label: 'Sites',
+                  value: 'sites',
                 },
                 {
-                  label: 'Description',
-                  value: 'description',
+                  label: 'Users',
+                  value: 'users',
                 },
                 {
-                  label: 'Created Date',
-                  value: 'createdAt',
+                  label: 'Media',
+                  value: 'media',
+                },
+                {
+                  label: 'Languages',
+                  value: 'languages',
+                },
+                {
+                  label: 'Permissions',
+                  value: 'permissions',
+                },
+                {
+                  label: 'Roles',
+                  value: 'roles',
                 },
               ],
-              defaultValue: ['name', 'type', 'category', 'status', 'createdAt'],
               admin: {
-                description: 'Select columns to display in the table',
+                description: 'Collection to fetch data from',
+              },
+            },
+            {
+              name: 'columns',
+              type: 'json',
+              admin: {
+                description: 'Column configuration (array of column keys or JSON config)',
+              },
+            },
+            {
+              name: 'searchFields',
+              type: 'array',
+              admin: {
+                description: 'Fields to search in (leave empty to use default search fields)',
+              },
+              fields: [
+                {
+                  name: 'field',
+                  type: 'text',
+                  required: true,
+                  admin: {
+                    description: 'Field name to search',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'filterFields',
+              type: 'array',
+              admin: {
+                description: 'Filter fields configuration',
+              },
+              fields: [
+                {
+                  name: 'field',
+                  type: 'text',
+                  required: true,
+                  admin: {
+                    description: 'Field name to filter',
+                  },
+                },
+                {
+                  name: 'label',
+                  type: 'text',
+                  required: true,
+                  admin: {
+                    description: 'Display label for filter',
+                  },
+                },
+                {
+                  name: 'type',
+                  type: 'select',
+                  required: true,
+                  options: [
+                    {
+                      label: 'Select',
+                      value: 'select',
+                    },
+                    {
+                      label: 'Text',
+                      value: 'text',
+                    },
+                    {
+                      label: 'Date',
+                      value: 'date',
+                    },
+                  ],
+                  // Don't set defaultValue for enum fields in PostgreSQL
+                  // defaultValue: 'select',
+                },
+                {
+                  name: 'options',
+                  type: 'json',
+                  admin: {
+                    description: 'Options for select type (array of {label, value})',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'populate',
+              type: 'group',
+              admin: {
+                description: 'Populate relationships',
+              },
+              fields: [
+                {
+                  name: 'depth',
+                  type: 'number',
+                  defaultValue: 0,
+                  admin: {
+                    description: 'Depth level for populating relationships (0-3)',
+                  },
+                },
+                {
+                  name: 'fields',
+                  type: 'array',
+                  admin: {
+                    description:
+                      'Specific fields to populate (leave empty to populate all relationships)',
+                  },
+                  fields: [
+                    {
+                      name: 'field',
+                      type: 'text',
+                      required: true,
+                      admin: {
+                        description: 'Field name to populate',
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: 'defaultSort',
+              type: 'group',
+              fields: [
+                {
+                  name: 'field',
+                  type: 'text',
+                  defaultValue: 'createdAt',
+                  admin: {
+                    description: 'Default sort field',
+                  },
+                },
+                {
+                  name: 'order',
+                  type: 'select',
+                  options: [
+                    {
+                      label: 'Ascending',
+                      value: 'asc',
+                    },
+                    {
+                      label: 'Descending',
+                      value: 'desc',
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: 'urlSettings',
+              type: 'group',
+              admin: {
+                description: 'URL synchronization settings',
+              },
+              fields: [
+                {
+                  name: 'syncUrl',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  admin: {
+                    description:
+                      'Sync table state (filters, pagination, sorting, column visibility) with browser URL. Allows users to share/bookmark table views.',
+                  },
+                },
+                {
+                  name: 'urlGroup',
+                  type: 'text',
+                  admin: {
+                    description:
+                      'Unique identifier for this table in URL. Required when multiple tables exist on the same page. Example: "users", "orders"',
+                    condition: (data, siblingData) => siblingData?.syncUrl === true,
+                  },
+                },
+              ],
+            },
+            {
+              name: 'requiredPermissions',
+              type: 'relationship',
+              relationTo: 'permissions',
+              hasMany: true,
+              admin: {
+                description:
+                  'Permissions required to view/edit this block (leave empty for public)',
               },
             },
           ],
@@ -676,6 +946,32 @@ export const Pages: CollectionConfig = {
         }
 
         return data
+      },
+    ],
+    afterRead: [
+      async ({ doc, req }) => {
+        // Filter blocks based on user permissions
+        if (doc.content && Array.isArray(doc.content)) {
+          // Ensure user has permissions populated
+          let user = req.user
+          if (user && !(user as any).rolePermissions) {
+            // Populate user permissions if not already populated
+            const userId = typeof user === 'object' && 'id' in user ? user.id : user
+            if (userId) {
+              const userDoc = await req.payload.findByID({
+                collection: 'users',
+                id: userId as string,
+                depth: 2, // Populate roles and permissions
+              })
+              if (userDoc) {
+                user = userDoc as any
+              }
+            }
+          }
+
+          doc.content = filterBlocksRecursively(doc.content, user)
+        }
+        return doc
       },
     ],
     afterChange: [

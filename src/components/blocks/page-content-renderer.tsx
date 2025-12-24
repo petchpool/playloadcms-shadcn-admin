@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import { ComponentRenderer } from './component-renderer'
 import { BlocksTableBlock } from './blocks-table-block'
+import { RichTextRenderer } from './rich-text-renderer'
 
 export type PageContentRendererProps = {
   content: any[] // Accept any block content array
@@ -27,15 +28,7 @@ export function PageContentRenderer({ content }: PageContentRendererProps) {
         console.log(`Rendering block ${index}:`, block.blockType, block)
         switch (block.blockType) {
           case 'richText':
-            return (
-              <div
-                key={index}
-                className="rich-text prose prose-sm max-w-none dark:prose-invert"
-                dangerouslySetInnerHTML={{
-                  __html: JSON.stringify(block.content),
-                }}
-              />
-            )
+            return <RichTextRenderer key={index} content={block.content} />
 
           case 'image':
             if (typeof block.image === 'object' && block.image?.url) {
@@ -62,7 +55,7 @@ export function PageContentRenderer({ content }: PageContentRendererProps) {
             if (block.images && Array.isArray(block.images)) {
               return (
                 <div key={index} className="gallery grid grid-cols-1 gap-4 md:grid-cols-3">
-                  {block.images.map((item, itemIndex) => {
+                  {block.images.map((item: any, itemIndex: number) => {
                     if (typeof item.image === 'object' && item.image?.url) {
                       return (
                         <figure key={itemIndex} className="gallery-item">
@@ -210,6 +203,12 @@ export function PageContentRenderer({ content }: PageContentRendererProps) {
               description: block.description,
               limit: block.limit,
               columns: block.columns,
+              collection: block.collection,
+              searchFields: block.searchFields,
+              filterFields: block.filterFields,
+              populate: block.populate,
+              defaultSort: block.defaultSort,
+              urlSettings: block.urlSettings,
             })
             return (
               <BlocksTableBlock
@@ -218,6 +217,13 @@ export function PageContentRenderer({ content }: PageContentRendererProps) {
                 description={block.description}
                 limit={block.limit || 10}
                 columns={block.columns}
+                collection={block.collection || 'components'}
+                searchFields={block.searchFields}
+                filterFields={block.filterFields}
+                populate={block.populate}
+                defaultSort={block.defaultSort}
+                syncUrl={block.urlSettings?.syncUrl ?? false}
+                urlGroup={block.urlSettings?.urlGroup}
               />
             )
 

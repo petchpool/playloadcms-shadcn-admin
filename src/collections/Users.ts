@@ -109,6 +109,53 @@ export const Users: CollectionConfig = {
     },
   ],
   hooks: {
+    afterRead: [
+      async ({ doc, req }) => {
+        // Populate permissions from roles for fast access checks
+        if (doc.roles && Array.isArray(doc.roles) && doc.roles.length > 0) {
+          const roleIds = doc.roles.map((r: unknown) =>
+            typeof r === 'object' && r !== null && 'id' in r ? (r as { id: string }).id : r,
+          )
+          const roles = await req.payload.find({
+            collection: 'roles',
+            where: {
+              id: {
+                in: roleIds,
+              },
+            },
+            depth: 2, // Populate permissions and inheritedPermissions
+          })
+
+          // Store role slugs in a virtual field for JWT
+          doc.roleSlugs = roles.docs.map((r: { slug: string }) => r.slug)
+
+          // Collect all permissions from all roles
+          const allPermissions: string[] = []
+          for (const role of roles.docs) {
+            const permissions = role.permissions || []
+            const inheritedPermissions = role.inheritedPermissions || []
+            const combined = [...permissions, ...inheritedPermissions]
+
+            for (const perm of combined) {
+              const permSlug =
+                typeof perm === 'string'
+                  ? perm
+                  : typeof perm === 'object' && perm !== null && 'slug' in perm
+                    ? (perm as { slug: string }).slug
+                    : null
+
+              if (permSlug && !allPermissions.includes(permSlug)) {
+                allPermissions.push(permSlug)
+              }
+            }
+          }
+
+          // Store permissions in a virtual field for JWT
+          doc.rolePermissions = allPermissions
+        }
+        return doc
+      },
+    ],
     afterChange: [
       async ({ doc, req, operation }) => {
         // Save role slugs to JWT for fast access checks
@@ -123,11 +170,35 @@ export const Users: CollectionConfig = {
                 in: roleIds,
               },
             },
-            depth: 0,
+            depth: 2, // Populate permissions
           })
 
           // Store role slugs in a virtual field for JWT
           doc.roleSlugs = roles.docs.map((r: { slug: string }) => r.slug)
+
+          // Collect all permissions from all roles
+          const allPermissions: string[] = []
+          for (const role of roles.docs) {
+            const permissions = role.permissions || []
+            const inheritedPermissions = role.inheritedPermissions || []
+            const combined = [...permissions, ...inheritedPermissions]
+
+            for (const perm of combined) {
+              const permSlug =
+                typeof perm === 'string'
+                  ? perm
+                  : typeof perm === 'object' && perm !== null && 'slug' in perm
+                    ? (perm as { slug: string }).slug
+                    : null
+
+              if (permSlug && !allPermissions.includes(permSlug)) {
+                allPermissions.push(permSlug)
+              }
+            }
+          }
+
+          // Store permissions in a virtual field for JWT
+          doc.rolePermissions = allPermissions
         }
         return doc
       },

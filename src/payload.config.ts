@@ -15,6 +15,8 @@ import { Components } from './collections/Components'
 import { Permissions } from './collections/Permissions'
 import { Roles } from './collections/Roles'
 
+import { Settings } from './globals'
+
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
@@ -26,6 +28,7 @@ export default buildConfig({
     },
   },
   collections: [Users, Media, Languages, Sites, Layouts, Pages, Components, Permissions, Roles],
+  globals: [Settings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

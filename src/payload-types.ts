@@ -101,8 +101,12 @@ export interface Config {
     defaultIDType: string;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    settings: Setting;
+  };
+  globalsSelect: {
+    settings: SettingsSelect<false> | SettingsSelect<true>;
+  };
   locale: null;
   user: User & {
     collection: 'users';
@@ -868,6 +872,10 @@ export interface Page {
               };
               [k: string]: unknown;
             };
+            /**
+             * Permissions required to view/edit this block (leave empty for public)
+             */
+            requiredPermissions?: (string | Permission)[] | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'richText';
@@ -876,6 +884,10 @@ export interface Page {
             image: string | Media;
             caption?: string | null;
             alt?: string | null;
+            /**
+             * Permissions required to view/edit this block (leave empty for public)
+             */
+            requiredPermissions?: (string | Permission)[] | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'image';
@@ -888,6 +900,10 @@ export interface Page {
                   id?: string | null;
                 }[]
               | null;
+            /**
+             * Permissions required to view/edit this block (leave empty for public)
+             */
+            requiredPermissions?: (string | Permission)[] | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'gallery';
@@ -899,6 +915,10 @@ export interface Page {
              */
             videoUrl?: string | null;
             caption?: string | null;
+            /**
+             * Permissions required to view/edit this block (leave empty for public)
+             */
+            requiredPermissions?: (string | Permission)[] | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'video';
@@ -917,6 +937,10 @@ export interface Page {
               | number
               | boolean
               | null;
+            /**
+             * Permissions required to view/edit this block (leave empty for public)
+             */
+            requiredPermissions?: (string | Permission)[] | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'component';
@@ -925,6 +949,10 @@ export interface Page {
             code: string;
             language?: ('typescript' | 'javascript' | 'python' | 'bash' | 'json' | 'css' | 'html') | null;
             caption?: string | null;
+            /**
+             * Permissions required to view/edit this block (leave empty for public)
+             */
+            requiredPermissions?: (string | Permission)[] | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'code';
@@ -941,6 +969,10 @@ export interface Page {
              * Link button text
              */
             linkText?: string | null;
+            /**
+             * Permissions required to view/edit this block (leave empty for public)
+             */
+            requiredPermissions?: (string | Permission)[] | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'card';
@@ -1014,6 +1046,10 @@ export interface Page {
                 | null;
               id?: string | null;
             }[];
+            /**
+             * Permissions required to view/edit this block (leave empty for public)
+             */
+            requiredPermissions?: (string | Permission)[] | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'grid';
@@ -1032,9 +1068,116 @@ export interface Page {
              */
             limit?: number | null;
             /**
-             * Select columns to display in the table
+             * Collection to fetch data from
              */
-            columns?: ('name' | 'type' | 'category' | 'status' | 'description' | 'createdAt')[] | null;
+            collection:
+              | 'components'
+              | 'pages'
+              | 'layouts'
+              | 'sites'
+              | 'users'
+              | 'media'
+              | 'languages'
+              | 'permissions'
+              | 'roles';
+            /**
+             * Column configuration (array of column keys or JSON config)
+             */
+            columns?:
+              | {
+                  [k: string]: unknown;
+                }
+              | unknown[]
+              | string
+              | number
+              | boolean
+              | null;
+            /**
+             * Fields to search in (leave empty to use default search fields)
+             */
+            searchFields?:
+              | {
+                  /**
+                   * Field name to search
+                   */
+                  field: string;
+                  id?: string | null;
+                }[]
+              | null;
+            /**
+             * Filter fields configuration
+             */
+            filterFields?:
+              | {
+                  /**
+                   * Field name to filter
+                   */
+                  field: string;
+                  /**
+                   * Display label for filter
+                   */
+                  label: string;
+                  type: 'select' | 'text' | 'date';
+                  /**
+                   * Options for select type (array of {label, value})
+                   */
+                  options?:
+                    | {
+                        [k: string]: unknown;
+                      }
+                    | unknown[]
+                    | string
+                    | number
+                    | boolean
+                    | null;
+                  id?: string | null;
+                }[]
+              | null;
+            /**
+             * Populate relationships
+             */
+            populate?: {
+              /**
+               * Depth level for populating relationships (0-3)
+               */
+              depth?: number | null;
+              /**
+               * Specific fields to populate (leave empty to populate all relationships)
+               */
+              fields?:
+                | {
+                    /**
+                     * Field name to populate
+                     */
+                    field: string;
+                    id?: string | null;
+                  }[]
+                | null;
+            };
+            defaultSort?: {
+              /**
+               * Default sort field
+               */
+              field?: string | null;
+              order?: ('asc' | 'desc') | null;
+            };
+            /**
+             * URL synchronization settings
+             */
+            urlSettings?: {
+              /**
+               * Sync table state (filters, pagination, sorting, column visibility) with browser URL. Allows users to share/bookmark table views.
+               */
+              syncUrl?: boolean | null;
+              /**
+               * Unique identifier for this table in URL. Required when multiple tables exist on the same page. Example: "users", "orders"
+               */
+              urlGroup?: string | null;
+            };
+            /**
+             * Permissions required to view/edit this block (leave empty for public)
+             */
+            requiredPermissions?: (string | Permission)[] | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'blocksTable';
@@ -1492,6 +1635,7 @@ export interface PagesSelect<T extends boolean = true> {
           | T
           | {
               content?: T;
+              requiredPermissions?: T;
               id?: T;
               blockName?: T;
             };
@@ -1501,6 +1645,7 @@ export interface PagesSelect<T extends boolean = true> {
               image?: T;
               caption?: T;
               alt?: T;
+              requiredPermissions?: T;
               id?: T;
               blockName?: T;
             };
@@ -1514,6 +1659,7 @@ export interface PagesSelect<T extends boolean = true> {
                     caption?: T;
                     id?: T;
                   };
+              requiredPermissions?: T;
               id?: T;
               blockName?: T;
             };
@@ -1523,6 +1669,7 @@ export interface PagesSelect<T extends boolean = true> {
               video?: T;
               videoUrl?: T;
               caption?: T;
+              requiredPermissions?: T;
               id?: T;
               blockName?: T;
             };
@@ -1531,6 +1678,7 @@ export interface PagesSelect<T extends boolean = true> {
           | {
               component?: T;
               props?: T;
+              requiredPermissions?: T;
               id?: T;
               blockName?: T;
             };
@@ -1540,6 +1688,7 @@ export interface PagesSelect<T extends boolean = true> {
               code?: T;
               language?: T;
               caption?: T;
+              requiredPermissions?: T;
               id?: T;
               blockName?: T;
             };
@@ -1551,6 +1700,7 @@ export interface PagesSelect<T extends boolean = true> {
               image?: T;
               link?: T;
               linkText?: T;
+              requiredPermissions?: T;
               id?: T;
               blockName?: T;
             };
@@ -1603,6 +1753,7 @@ export interface PagesSelect<T extends boolean = true> {
                         };
                     id?: T;
                   };
+              requiredPermissions?: T;
               id?: T;
               blockName?: T;
             };
@@ -1612,7 +1763,47 @@ export interface PagesSelect<T extends boolean = true> {
               title?: T;
               description?: T;
               limit?: T;
+              collection?: T;
               columns?: T;
+              searchFields?:
+                | T
+                | {
+                    field?: T;
+                    id?: T;
+                  };
+              filterFields?:
+                | T
+                | {
+                    field?: T;
+                    label?: T;
+                    type?: T;
+                    options?: T;
+                    id?: T;
+                  };
+              populate?:
+                | T
+                | {
+                    depth?: T;
+                    fields?:
+                      | T
+                      | {
+                          field?: T;
+                          id?: T;
+                        };
+                  };
+              defaultSort?:
+                | T
+                | {
+                    field?: T;
+                    order?: T;
+                  };
+              urlSettings?:
+                | T
+                | {
+                    syncUrl?: T;
+                    urlGroup?: T;
+                  };
+              requiredPermissions?: T;
               id?: T;
               blockName?: T;
             };
@@ -1731,6 +1922,166 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings".
+ */
+export interface Setting {
+  id: string;
+  siteName: string;
+  siteDescription?: string | null;
+  logo?: (string | null) | Media;
+  favicon?: (string | null) | Media;
+  contactEmail?: string | null;
+  socialLinks?:
+    | {
+        platform: 'facebook' | 'twitter' | 'instagram' | 'linkedin' | 'youtube' | 'github';
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  tableSettings?: {
+    defaultPageSize?: ('5' | '10' | '20' | '50' | '100') | null;
+    /**
+     * Comma-separated values (e.g., 5,10,20,50,100)
+     */
+    pageSizeOptions?: string | null;
+    /**
+     * Show status tabs above the table by default
+     */
+    showStatusTabs?: boolean | null;
+    /**
+     * Show filter controls in the toolbar
+     */
+    showFilters?: boolean | null;
+    /**
+     * Show global search input
+     */
+    showSearch?: boolean | null;
+    /**
+     * Allow users to toggle column visibility
+     */
+    showColumnVisibility?: boolean | null;
+    /**
+     * Sync table state with browser URL
+     */
+    enableUrlSync?: boolean | null;
+    dateFormat?: ('PP' | 'PPP' | 'PPPP' | 'yyyy-MM-dd' | 'dd/MM/yyyy' | 'MM/dd/yyyy') | null;
+    dateTimeFormat?: ('PPp' | 'PPPp' | "yyyy-MM-dd'T'HH:mm:ss" | 'dd/MM/yyyy HH:mm' | 'MM/dd/yyyy hh:mm a') | null;
+  };
+  themeSettings?: {
+    defaultTheme?: ('light' | 'dark' | 'system') | null;
+    /**
+     * Primary brand color (hex format)
+     */
+    primaryColor?: string | null;
+    /**
+     * Accent color for highlights (hex format)
+     */
+    accentColor?: string | null;
+  };
+  apiSettings?: {
+    /**
+     * Allow public access to API endpoints
+     */
+    enableApi?: boolean | null;
+    rateLimitRequests?: number | null;
+    enableCors?: boolean | null;
+    allowedOrigins?:
+      | {
+          origin: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  emailSettings?: {
+    fromName?: string | null;
+    fromEmail?: string | null;
+    replyToEmail?: string | null;
+    /**
+     * Footer content for all outgoing emails
+     */
+    emailFooter?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings_select".
+ */
+export interface SettingsSelect<T extends boolean = true> {
+  siteName?: T;
+  siteDescription?: T;
+  logo?: T;
+  favicon?: T;
+  contactEmail?: T;
+  socialLinks?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        id?: T;
+      };
+  tableSettings?:
+    | T
+    | {
+        defaultPageSize?: T;
+        pageSizeOptions?: T;
+        showStatusTabs?: T;
+        showFilters?: T;
+        showSearch?: T;
+        showColumnVisibility?: T;
+        enableUrlSync?: T;
+        dateFormat?: T;
+        dateTimeFormat?: T;
+      };
+  themeSettings?:
+    | T
+    | {
+        defaultTheme?: T;
+        primaryColor?: T;
+        accentColor?: T;
+      };
+  apiSettings?:
+    | T
+    | {
+        enableApi?: T;
+        rateLimitRequests?: T;
+        enableCors?: T;
+        allowedOrigins?:
+          | T
+          | {
+              origin?: T;
+              id?: T;
+            };
+      };
+  emailSettings?:
+    | T
+    | {
+        fromName?: T;
+        fromEmail?: T;
+        replyToEmail?: T;
+        emailFooter?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
