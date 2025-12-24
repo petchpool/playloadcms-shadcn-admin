@@ -186,8 +186,8 @@ export async function seedSites() {
     status: 'active',
   }
 
-  // Helper function to delete site and its pages
-  const deleteSiteAndPages = async (domain: string) => {
+  // Helper function to delete site (pages are shared, so we don't delete them)
+  const deleteSite = async (domain: string) => {
     const existing = await payload.find({
       collection: 'sites',
       where: {
@@ -203,32 +203,7 @@ export async function seedSites() {
       const existingSite = existing.docs[0]
       console.log(`  🗑️  Deleting existing site "${existingSite.name}" (${existingSite.domain})...`)
 
-      // Delete all pages associated with this site
-      const pages = await payload.find({
-        collection: 'pages',
-        where: {
-          site: {
-            equals: existingSite.id,
-          },
-        },
-        limit: 1000,
-        overrideAccess: true,
-      })
-
-      for (const page of pages.docs) {
-        try {
-          await payload.delete({
-            collection: 'pages',
-            id: page.id,
-            overrideAccess: true,
-          })
-          console.log(`     - Deleted page: ${page.title}`)
-        } catch (error) {
-          console.error(`     - Error deleting page "${page.title}":`, error)
-        }
-      }
-
-      // Delete the site
+      // Delete the site (pages are shared, so we don't delete them)
       await payload.delete({
         collection: 'sites',
         id: existingSite.id,
@@ -240,7 +215,7 @@ export async function seedSites() {
 
   // Helper function to create site
   const createSite = async (siteData: any) => {
-    await deleteSiteAndPages(siteData.domain)
+    await deleteSite(siteData.domain)
 
     const site = await payload.create({
       collection: 'sites',
@@ -300,10 +275,8 @@ export async function seedSites() {
       },
     })
 
-    // Helper function to create pages for a site
-    const createPagesForSite = async (
-      siteId: string,
-      siteName: string,
+    // Helper function to create pages (shared across all sites)
+    const createPages = async (
       pages: Array<{
         titleEn: string
         titleTh: string
@@ -311,12 +284,44 @@ export async function seedSites() {
         contentEn: string
         contentTh: string
         order: number
+        blocks?: any[] // Optional custom blocks for English
+        blocksTh?: any[] // Optional custom blocks for Thai
       }>,
     ) => {
-      console.log(`\n  📄 Creating pages for ${siteName}...`)
+      console.log(`\n  📄 Creating pages...`)
 
       for (const pageData of pages) {
+        // Check if page already exists
+        const existing = await payload.find({
+          collection: 'pages',
+          where: {
+            slug: {
+              equals: pageData.slug,
+            },
+            language: {
+              equals: enLanguage.id,
+            },
+          },
+          limit: 1,
+          overrideAccess: true,
+        })
+
+        if (existing.docs.length > 0) {
+          console.log(
+            `     ⏭️  Page "${pageData.titleEn}" (${pageData.slug}) already exists, skipping...`,
+          )
+          continue
+        }
+
         const translationGroup = `page-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+        // Use custom blocks if provided, otherwise use default richText
+        const contentBlocks = pageData.blocks || [
+          {
+            blockType: 'richText',
+            content: createLexicalContent(pageData.contentEn),
+          },
+        ]
 
         // English page
         const pageEn = await payload.create({
@@ -324,15 +329,9 @@ export async function seedSites() {
           data: {
             title: pageData.titleEn,
             slug: pageData.slug,
-            site: siteId,
             language: enLanguage.id,
-            status: 'published',
-            content: [
-              {
-                blockType: 'richText',
-                content: createLexicalContent(pageData.contentEn),
-              },
-            ],
+            pageStatus: 'published',
+            content: contentBlocks,
             seo: {
               metaTitle: pageData.titleEn,
               metaDescription: `${pageData.titleEn} page`,
@@ -340,28 +339,30 @@ export async function seedSites() {
             translations: {
               translationGroup,
             },
-            publishedAt: new Date(),
+            publishedAt: new Date().toISOString(),
             order: pageData.order,
           },
           overrideAccess: true,
         })
         console.log(`     ✅ Created page: ${pageData.titleEn} (en)`)
 
-        // Thai page
+        // Thai page - use custom blocksTh if provided, otherwise use blocks, otherwise use default richText
+        const contentBlocksTh = pageData.blocksTh ||
+          pageData.blocks || [
+            {
+              blockType: 'richText',
+              content: createLexicalContent(pageData.contentTh),
+            },
+          ]
+
         const pageTh = await payload.create({
           collection: 'pages',
           data: {
             title: pageData.titleTh,
             slug: pageData.slug,
-            site: siteId,
             language: thLanguage.id,
-            status: 'published',
-            content: [
-              {
-                blockType: 'richText',
-                content: createLexicalContent(pageData.contentTh),
-              },
-            ],
+            pageStatus: 'published',
+            content: contentBlocksTh,
             seo: {
               metaTitle: pageData.titleTh,
               metaDescription: `${pageData.titleTh} page`,
@@ -370,9 +371,10 @@ export async function seedSites() {
               translationGroup,
               relatedPages: [pageEn.id],
             },
-            publishedAt: new Date(),
+            publishedAt: new Date().toISOString(),
             order: pageData.order,
           },
+          draft: false,
           overrideAccess: true,
         })
         console.log(`     ✅ Created page: ${pageData.titleTh} (th)`)
@@ -392,8 +394,141 @@ export async function seedSites() {
       }
     }
 
-    // Create pages for Main Site
-    await createPagesForSite(mainSite.id, 'Main Site', [
+    // Create overview page blocks (using various block types)
+    const overviewBlocksEn = [
+      {
+        blockType: 'richText',
+        content: createLexicalContent(
+          'Welcome to the Overview page! This page demonstrates the flexible Blocks system.',
+        ),
+      },
+      {
+        blockType: 'grid',
+        columns: '3',
+        gap: 'md',
+        items: [
+          {
+            content: [
+              {
+                blockType: 'card',
+                title: 'Rich Content',
+                description: 'Create beautiful content with rich text editor',
+                link: '/pages',
+                linkText: 'Learn More',
+              },
+            ],
+          },
+          {
+            content: [
+              {
+                blockType: 'card',
+                title: 'Media Gallery',
+                description: 'Showcase images and videos in galleries',
+                link: '/gallery',
+                linkText: 'View Gallery',
+              },
+            ],
+          },
+          {
+            content: [
+              {
+                blockType: 'card',
+                title: 'Custom Components',
+                description: 'Use reusable components from the Components collection',
+                link: '/components',
+                linkText: 'Browse Components',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        blockType: 'richText',
+        content: createLexicalContent(
+          '## Features\n\nThis Blocks system allows you to:\n\n- Create flexible page layouts\n- Use reusable components\n- Build responsive grids\n- Add rich media content',
+        ),
+      },
+      {
+        blockType: 'code',
+        code: `// Example code block
+function greet(name: string) {
+  return \`Hello, \${name}!\`
+}
+
+console.log(greet('World'))`,
+        language: 'typescript',
+        caption: 'Example TypeScript code',
+      },
+    ]
+
+    const overviewBlocksTh = [
+      {
+        blockType: 'richText',
+        content: createLexicalContent(
+          'ยินดีต้อนรับสู่หน้าพื้นฐาน! หน้านี้แสดงให้เห็นระบบ Blocks ที่ยืดหยุ่น',
+        ),
+      },
+      {
+        blockType: 'grid',
+        columns: '3',
+        gap: 'md',
+        items: [
+          {
+            content: [
+              {
+                blockType: 'card',
+                title: 'เนื้อหาที่หลากหลาย',
+                description: 'สร้างเนื้อหาสวยงามด้วย rich text editor',
+                link: '/pages',
+                linkText: 'เรียนรู้เพิ่มเติม',
+              },
+            ],
+          },
+          {
+            content: [
+              {
+                blockType: 'card',
+                title: 'แกลเลอรี่สื่อ',
+                description: 'แสดงภาพและวิดีโอในแกลเลอรี่',
+                link: '/gallery',
+                linkText: 'ดูแกลเลอรี่',
+              },
+            ],
+          },
+          {
+            content: [
+              {
+                blockType: 'card',
+                title: 'คอมโพเนนต์ที่กำหนดเอง',
+                description: 'ใช้คอมโพเนนต์ที่นำกลับมาใช้ได้จากคอลเลกชัน Components',
+                link: '/components',
+                linkText: 'เรียกดูคอมโพเนนต์',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        blockType: 'richText',
+        content: createLexicalContent(
+          '## คุณสมบัติ\n\nระบบ Blocks นี้ช่วยให้คุณ:\n\n- สร้างเลย์เอาต์หน้าที่ยืดหยุ่น\n- ใช้คอมโพเนนต์ที่นำกลับมาใช้ได้\n- สร้างกริดที่ตอบสนอง\n- เพิ่มเนื้อหาสื่อที่หลากหลาย',
+        ),
+      },
+      {
+        blockType: 'code',
+        code: `// ตัวอย่าง code block
+function greet(name: string) {
+  return \`สวัสดี, \${name}!\`
+}
+
+console.log(greet('โลก'))`,
+        language: 'typescript',
+        caption: 'ตัวอย่างโค้ด TypeScript',
+      },
+    ]
+
+    // Create pages (shared across all sites)
+    await createPages([
       {
         titleEn: 'Home',
         titleTh: 'หน้าแรก',
@@ -402,29 +537,15 @@ export async function seedSites() {
         contentTh: 'ยินดีต้อนรับสู่เว็บไซต์หลัก\n\nนี่คือหน้าแรกของเว็บไซต์หลัก',
         order: 1,
       },
-    ])
-
-    // Create pages for Dashboard Site
-    await createPagesForSite(dashboardSiteCreated.id, 'Dashboard Site', [
       {
-        titleEn: 'Dashboard',
-        titleTh: 'แดชบอร์ด',
-        slug: 'dashboard',
-        contentEn: 'Welcome to Dashboard\n\nThis is your dashboard page.',
-        contentTh: 'ยินดีต้อนรับสู่แดชบอร์ด\n\nนี่คือหน้าแดชบอร์ดของคุณ',
-        order: 1,
-      },
-    ])
-
-    // Create pages for Lobby Site
-    await createPagesForSite(lobbySiteCreated.id, 'Lobby Site', [
-      {
-        titleEn: 'Lobby',
-        titleTh: 'ล็อบบี้',
-        slug: 'lobby',
-        contentEn: 'Welcome to Lobby\n\nThis is your lobby page.',
-        contentTh: 'ยินดีต้อนรับสู่ล็อบบี้\n\nนี่คือหน้าล็อบบี้ของคุณ',
-        order: 1,
+        titleEn: 'Overview',
+        titleTh: 'ภาพรวม',
+        slug: 'overview',
+        contentEn: 'Overview page',
+        contentTh: 'หน้าภาพรวม',
+        order: 2,
+        blocks: overviewBlocksEn,
+        blocksTh: overviewBlocksTh,
       },
     ])
 

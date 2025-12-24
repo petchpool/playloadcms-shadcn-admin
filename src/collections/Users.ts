@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { hasAdminRoleSync } from '@/utils/check-role'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -17,47 +18,20 @@ export const Users: CollectionConfig = {
       // Only admins can create users
       if (!req.user) return false
       // Check if user has admin role
-      const userRoles = await req.payload.find({
-        collection: 'users',
-        where: { id: { equals: req.user.id } },
-        depth: 1,
-      })
-      const roles = userRoles.docs[0]?.roles || []
-      return roles.some((r: any) => {
-        const roleSlug = typeof r === 'object' && 'slug' in r ? r.slug : r
-        return roleSlug === 'admin'
-      })
+      return hasAdminRoleSync(req.user)
     },
     update: async ({ req, id }) => {
       // Users can update their own profile, admins can update anyone
       if (!req.user) return false
       if (req.user.id === id) return true
       // Check if user has admin role
-      const userRoles = await req.payload.find({
-        collection: 'users',
-        where: { id: { equals: req.user.id } },
-        depth: 1,
-      })
-      const roles = userRoles.docs[0]?.roles || []
-      return roles.some((r: any) => {
-        const roleSlug = typeof r === 'object' && 'slug' in r ? r.slug : r
-        return roleSlug === 'admin'
-      })
+      return hasAdminRoleSync(req.user)
     },
     delete: async ({ req }) => {
       // Only admins can delete users
       if (!req.user) return false
       // Check if user has admin role
-      const userRoles = await req.payload.find({
-        collection: 'users',
-        where: { id: { equals: req.user.id } },
-        depth: 1,
-      })
-      const roles = userRoles.docs[0]?.roles || []
-      return roles.some((r: any) => {
-        const roleSlug = typeof r === 'object' && 'slug' in r ? r.slug : r
-        return roleSlug === 'admin'
-      })
+      return hasAdminRoleSync(req.user)
     },
   },
   fields: [
@@ -72,20 +46,10 @@ export const Users: CollectionConfig = {
         description: 'Roles assigned to this user',
       },
       access: {
-        update: async ({ req }) => {
+        update: ({ req: { user } }) => {
           // Only admins can update roles
-          if (!req.user) return false
-          // Check if user has admin role
-          const userRoles = await req.payload.find({
-            collection: 'users',
-            where: { id: { equals: req.user.id } },
-            depth: 1,
-          })
-          const roles = userRoles.docs[0]?.roles || []
-          return roles.some((r: any) => {
-            const roleSlug = typeof r === 'object' && 'slug' in r ? r.slug : r
-            return roleSlug === 'admin'
-          })
+          if (!user) return false
+          return hasAdminRoleSync(user)
         },
       },
       hooks: {
@@ -149,7 +113,9 @@ export const Users: CollectionConfig = {
       async ({ doc, req, operation }) => {
         // Save role slugs to JWT for fast access checks
         if (doc.roles && Array.isArray(doc.roles) && doc.roles.length > 0) {
-          const roleIds = doc.roles.map((r) => (typeof r === 'object' && 'id' in r ? r.id : r))
+          const roleIds = doc.roles.map((r: unknown) =>
+            typeof r === 'object' && r !== null && 'id' in r ? (r as { id: string }).id : r,
+          )
           const roles = await req.payload.find({
             collection: 'roles',
             where: {
@@ -161,7 +127,7 @@ export const Users: CollectionConfig = {
           })
 
           // Store role slugs in a virtual field for JWT
-          doc.roleSlugs = roles.docs.map((r) => r.slug)
+          doc.roleSlugs = roles.docs.map((r: { slug: string }) => r.slug)
         }
         return doc
       },

@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { hasAdminRoleSync } from '@/utils/check-role'
 
 export const Components: CollectionConfig = {
   slug: 'components',
@@ -7,15 +8,18 @@ export const Components: CollectionConfig = {
     defaultColumns: ['name', 'slug', 'type', 'category', 'status', 'createdAt'],
   },
   access: {
-    read: () => true,
+    read: ({ req: { user } }) => Boolean(user),
     create: ({ req: { user } }) => {
-      return Boolean(user?.roles?.includes('admin') || user?.roles?.includes('developer'))
+      if (!user) return false
+      return hasAdminRoleSync(user)
     },
     update: ({ req: { user } }) => {
-      return Boolean(user?.roles?.includes('admin') || user?.roles?.includes('developer'))
+      if (!user) return false
+      return hasAdminRoleSync(user)
     },
     delete: ({ req: { user } }) => {
-      return Boolean(user?.roles?.includes('admin') || user?.roles?.includes('developer'))
+      if (!user) return false
+      return hasAdminRoleSync(user)
     },
   },
   fields: [

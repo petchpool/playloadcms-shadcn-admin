@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { hasAdminRoleSync } from '@/utils/check-role'
 
 export const Languages: CollectionConfig = {
   slug: 'languages',
@@ -7,10 +8,19 @@ export const Languages: CollectionConfig = {
     defaultColumns: ['code', 'name', 'nativeName', 'countryCode', 'status', 'order'],
   },
   access: {
-    read: () => true,
-    create: ({ req: { user } }) => Boolean(user?.roles?.includes('admin')),
-    update: ({ req: { user } }) => Boolean(user?.roles?.includes('admin')),
-    delete: ({ req: { user } }) => Boolean(user?.roles?.includes('admin')),
+    read: ({ req: { user } }) => Boolean(user),
+    create: ({ req: { user } }) => {
+      if (!user) return false
+      return hasAdminRoleSync(user)
+    },
+    update: ({ req: { user } }) => {
+      if (!user) return false
+      return hasAdminRoleSync(user)
+    },
+    delete: ({ req: { user } }) => {
+      if (!user) return false
+      return hasAdminRoleSync(user)
+    },
   },
   fields: [
     {

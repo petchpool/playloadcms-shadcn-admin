@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { hasAnyRoleSync } from '@/utils/check-role'
 
 export const Layouts: CollectionConfig = {
   slug: 'layouts',
@@ -7,15 +8,18 @@ export const Layouts: CollectionConfig = {
     defaultColumns: ['name', 'slug', 'type', 'status', 'createdAt'],
   },
   access: {
-    read: () => true,
+    read: ({ req: { user } }) => Boolean(user),
     create: ({ req: { user } }) => {
-      return Boolean(user?.roles?.includes('admin') || user?.roles?.includes('editor'))
+      if (!user) return false
+      return hasAnyRoleSync(user, ['admin', 'editor'])
     },
     update: ({ req: { user } }) => {
-      return Boolean(user?.roles?.includes('admin') || user?.roles?.includes('editor'))
+      if (!user) return false
+      return hasAnyRoleSync(user, ['admin', 'editor'])
     },
     delete: ({ req: { user } }) => {
-      return Boolean(user?.roles?.includes('admin') || user?.roles?.includes('editor'))
+      if (!user) return false
+      return hasAnyRoleSync(user, ['admin', 'editor'])
     },
   },
   fields: [
@@ -122,10 +126,133 @@ export const Layouts: CollectionConfig = {
               defaultValue: false,
             },
             {
+              name: 'menu',
+              type: 'group',
+              fields: [
+                {
+                  name: 'items',
+                  type: 'array',
+                  fields: [
+                    {
+                      name: 'title',
+                      type: 'text',
+                      required: true,
+                    },
+                    {
+                      name: 'path',
+                      type: 'text',
+                      admin: {
+                        description: 'URL path (e.g., /dashboard, /settings)',
+                      },
+                    },
+                    {
+                      name: 'icon',
+                      type: 'text',
+                      admin: {
+                        description: 'Icon name or identifier (e.g., home, settings)',
+                      },
+                    },
+                    {
+                      name: 'caption',
+                      type: 'text',
+                      admin: {
+                        description: 'Optional caption or description',
+                      },
+                    },
+                    {
+                      name: 'disabled',
+                      type: 'checkbox',
+                      defaultValue: false,
+                    },
+                    {
+                      name: 'external',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      admin: {
+                        description: 'External link (opens in new tab)',
+                      },
+                    },
+                    {
+                      name: 'level2Items',
+                      type: 'array',
+                      admin: {
+                        description: 'Sub menu items (Level 2)',
+                      },
+                      fields: [
+                        {
+                          name: 'title',
+                          type: 'text',
+                          required: true,
+                        },
+                        {
+                          name: 'path',
+                          type: 'text',
+                        },
+                        {
+                          name: 'icon',
+                          type: 'text',
+                        },
+                        {
+                          name: 'caption',
+                          type: 'text',
+                        },
+                        {
+                          name: 'disabled',
+                          type: 'checkbox',
+                          defaultValue: false,
+                        },
+                        {
+                          name: 'external',
+                          type: 'checkbox',
+                          defaultValue: false,
+                        },
+                        {
+                          name: 'level3Items',
+                          type: 'array',
+                          admin: {
+                            description: 'Sub menu items (Level 3)',
+                          },
+                          fields: [
+                            {
+                              name: 'title',
+                              type: 'text',
+                              required: true,
+                            },
+                            {
+                              name: 'path',
+                              type: 'text',
+                            },
+                            {
+                              name: 'icon',
+                              type: 'text',
+                            },
+                            {
+                              name: 'caption',
+                              type: 'text',
+                            },
+                            {
+                              name: 'disabled',
+                              type: 'checkbox',
+                              defaultValue: false,
+                            },
+                            {
+                              name: 'external',
+                              type: 'checkbox',
+                              defaultValue: false,
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
               name: 'config',
               type: 'json',
               admin: {
-                description: 'Sidebar configuration JSON',
+                description: 'Sidebar configuration JSON (optional)',
               },
             },
           ],
@@ -143,6 +270,29 @@ export const Layouts: CollectionConfig = {
               defaultValue: true,
             },
             {
+              name: 'items',
+              type: 'array',
+              fields: [
+                {
+                  name: 'label',
+                  type: 'text',
+                  required: true,
+                },
+                {
+                  name: 'path',
+                  type: 'text',
+                  required: true,
+                },
+                {
+                  name: 'icon',
+                  type: 'text',
+                  admin: {
+                    description: 'Icon name or identifier',
+                  },
+                },
+              ],
+            },
+            {
               name: 'config',
               type: 'json',
               admin: {
@@ -151,73 +301,58 @@ export const Layouts: CollectionConfig = {
             },
           ],
         },
-      ],
-    },
-    {
-      name: 'settings',
-      type: 'group',
-      fields: [
         {
-          name: 'header',
-          type: 'group',
-          fields: [
-            {
-              name: 'config',
-              type: 'json',
-              admin: {
-                description: 'Header configuration',
-              },
-            },
-          ],
-        },
-        {
-          name: 'footer',
-          type: 'group',
-          fields: [
-            {
-              name: 'config',
-              type: 'json',
-              admin: {
-                description: 'Footer configuration',
-              },
-            },
-          ],
-        },
-        {
-          name: 'sidebar',
-          type: 'group',
-          fields: [
-            {
-              name: 'config',
-              type: 'json',
-              admin: {
-                description: 'Sidebar configuration',
-              },
-            },
-          ],
-        },
-        {
-          name: 'themeOverrides',
-          type: 'group',
-          admin: {
-            description: 'Layout-specific theme overrides (optional)',
+          slug: 'component',
+          labels: {
+            singular: 'Component',
+            plural: 'Components',
           },
           fields: [
             {
-              name: 'colors',
-              type: 'json',
+              name: 'component',
+              type: 'relationship',
+              relationTo: 'components',
+              required: true,
               admin: {
-                description: 'Override specific colors for this layout',
+                description: 'Select a reusable component from Components collection',
               },
             },
             {
-              name: 'spacing',
+              name: 'props',
               type: 'json',
               admin: {
-                description: 'Override spacing values',
+                description: 'Component props/configuration (overrides component default props)',
               },
             },
+            {
+              name: 'enabled',
+              type: 'checkbox',
+              defaultValue: true,
+            },
           ],
+        },
+      ],
+    },
+    {
+      name: 'themeOverrides',
+      type: 'group',
+      admin: {
+        description: 'Layout-specific theme overrides (optional)',
+      },
+      fields: [
+        {
+          name: 'colors',
+          type: 'json',
+          admin: {
+            description: 'Override specific colors for this layout',
+          },
+        },
+        {
+          name: 'spacing',
+          type: 'json',
+          admin: {
+            description: 'Override spacing values',
+          },
         },
       ],
     },
@@ -261,4 +396,3 @@ export const Layouts: CollectionConfig = {
   },
   timestamps: true,
 }
-

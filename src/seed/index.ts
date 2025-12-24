@@ -4,6 +4,7 @@ import { seedSites } from './sites'
 import { seedPermissions } from './permissions'
 import { seedRoles } from './roles'
 import { seedUsers } from './users'
+import { seedComponents } from './components'
 
 export async function seed() {
   console.log('🚀 Starting database seeding...\n')
@@ -17,6 +18,10 @@ export async function seed() {
   const permissions = await seedPermissions()
   const roles = await seedRoles(permissions)
   await seedUsers(roles)
+
+  // Seed Components
+  console.log('\n🧩 Seeding Components...\n')
+  await seedComponents()
 
   console.log('\n🎉 Database seeding completed!')
 }

@@ -5,10 +5,9 @@ import { headers } from 'next/headers'
 
 export default async function SiteLayout({
   children,
-  params,
 }: {
   children: React.ReactNode
-  params: { site?: string; slug?: string[] }
+  params?: Promise<{ site?: string; slug?: string[] }>
 }) {
   const headersList = await headers()
   const host = headersList.get('host') || 'localhost'

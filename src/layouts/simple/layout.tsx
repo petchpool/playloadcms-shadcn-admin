@@ -17,9 +17,13 @@ export type SimpleLayoutProps = {
   content?: {
     compact?: boolean
   }
+  data?: {
+    header?: any
+    footer?: any
+  }
 }
 
-export function SimpleLayout({ className, children, header, content }: SimpleLayoutProps) {
+export function SimpleLayout({ className, children, header, content, data }: SimpleLayoutProps) {
   return (
     <LayoutSection
       headerSection={

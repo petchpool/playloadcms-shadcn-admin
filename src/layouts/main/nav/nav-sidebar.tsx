@@ -1,15 +1,14 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Logo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { NavSidebarItem, type NavSidebarItemData } from './nav-sidebar-item'
 
 export type NavSidebarProps = {
-  data?: any[]
+  data?: NavSidebarItemData[]
   isCollapsed?: boolean
   onToggleCollapse?: () => void
   className?: string
@@ -21,8 +20,6 @@ export function NavSidebar({
   onToggleCollapse,
   className,
 }: NavSidebarProps) {
-  const pathname = usePathname()
-
   return (
     <aside
       className={cn(
@@ -50,31 +47,14 @@ export function NavSidebar({
       {/* Navigation */}
       <ScrollArea className="flex-1">
         <nav className="space-y-1 p-4">
-          {data.map((item) => {
-            const isActive = pathname === item.path
-
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-[var(--sidebar-accent)] text-[var(--sidebar-accent-foreground)]'
-                    : 'text-[var(--sidebar-foreground)]/70 hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]',
-                  isCollapsed && 'justify-center',
-                )}
-                title={isCollapsed ? item.title : undefined}
-              >
-                {item.icon && (
-                  <span className={cn('flex-shrink-0', isCollapsed && 'mx-auto')}>
-                    {item.icon}
-                  </span>
-                )}
-                {!isCollapsed && <span>{item.title}</span>}
-              </Link>
-            )
-          })}
+          {data.map((item, index) => (
+            <NavSidebarItem
+              key={`${item.title}-${index}`}
+              item={item}
+              depth={0}
+              isCollapsed={isCollapsed}
+            />
+          ))}
         </nav>
       </ScrollArea>
 
@@ -96,9 +76,7 @@ export function NavSidebar({
             ) : (
               <ChevronLeft className="h-4 w-4" />
             )}
-            {!isCollapsed && (
-              <span className="ml-2 text-xs">Collapse</span>
-            )}
+            {!isCollapsed && <span className="ml-2 text-xs">Collapse</span>}
           </Button>
         </div>
       )}

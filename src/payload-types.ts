@@ -625,8 +625,61 @@ export interface Layout {
           }
         | {
             enabled?: boolean | null;
+            menu?: {
+              items?:
+                | {
+                    title: string;
+                    /**
+                     * URL path (e.g., /dashboard, /settings)
+                     */
+                    path?: string | null;
+                    /**
+                     * Icon name or identifier (e.g., home, settings)
+                     */
+                    icon?: string | null;
+                    /**
+                     * Optional caption or description
+                     */
+                    caption?: string | null;
+                    disabled?: boolean | null;
+                    /**
+                     * External link (opens in new tab)
+                     */
+                    external?: boolean | null;
+                    /**
+                     * Sub menu items (Level 2)
+                     */
+                    level2Items?:
+                      | {
+                          title: string;
+                          path?: string | null;
+                          icon?: string | null;
+                          caption?: string | null;
+                          disabled?: boolean | null;
+                          external?: boolean | null;
+                          /**
+                           * Sub menu items (Level 3)
+                           */
+                          level3Items?:
+                            | {
+                                title: string;
+                                path?: string | null;
+                                icon?: string | null;
+                                caption?: string | null;
+                                disabled?: boolean | null;
+                                external?: boolean | null;
+                                id?: string | null;
+                              }[]
+                            | null;
+                          id?: string | null;
+                        }[]
+                      | null;
+                    id?: string | null;
+                  }[]
+                | null;
+            };
             /**
-             * Sidebar configuration JSON
+             * Sidebar configuration JSON (optional)
              */
             config?:
               | {
@@ -643,6 +696,17 @@ export interface Layout {
           }
         | {
             enabled?: boolean | null;
+            items?:
+              | {
+                  label: string;
+                  path: string;
+                  /**
+                   * Icon name or identifier
+                   */
+                  icon?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
             /**
              * Navigation configuration JSON
              */
@@ -659,80 +723,58 @@ export interface Layout {
             blockName?: string | null;
             blockType: 'navigation';
           }
+        | {
+            /**
+             * Select a reusable component from Components collection
+             */
+            component: string | Component;
+            /**
+             * Component props/configuration (overrides component default props)
+             */
+            props?:
+              | {
+                  [k: string]: unknown;
+                }
+              | unknown[]
+              | string
+              | number
+              | boolean
+              | null;
+            enabled?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'component';
+          }
       )[]
     | null;
-  settings?: {
-    header?: {
-      /**
-       * Header configuration
-       */
-      config?:
-        | {
-            [k: string]: unknown;
-          }
-        | unknown[]
-        | string
-        | number
-        | boolean
-        | null;
-    };
-    footer?: {
-      /**
-       * Footer configuration
-       */
-      config?:
-        | {
-            [k: string]: unknown;
-          }
-        | unknown[]
-        | string
-        | number
-        | boolean
-        | null;
-    };
-    sidebar?: {
-      /**
-       * Sidebar configuration
-       */
-      config?:
-        | {
-            [k: string]: unknown;
-          }
-        | unknown[]
-        | string
-        | number
-        | boolean
-        | null;
-    };
+  /**
+   * Layout-specific theme overrides (optional)
+   */
+  themeOverrides?: {
     /**
-     * Layout-specific theme overrides (optional)
+     * Override specific colors for this layout
      */
-    themeOverrides?: {
-      /**
-       * Override specific colors for this layout
-       */
-      colors?:
-        | {
-            [k: string]: unknown;
-          }
-        | unknown[]
-        | string
-        | number
-        | boolean
-        | null;
-      /**
-       * Override spacing values
-       */
-      spacing?:
-        | {
-            [k: string]: unknown;
-          }
-        | unknown[]
-        | string
-        | number
-        | boolean
-        | null;
-    };
+    colors?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    /**
+     * Override spacing values
+     */
+    spacing?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
   };
   /**
    * Preview image for this layout
@@ -740,6 +782,44 @@ export interface Layout {
   preview?: (string | null) | Media;
   status?: ('draft' | 'published') | null;
   createdBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "components".
+ */
+export interface Component {
+  id: string;
+  name: string;
+  /**
+   * URL-friendly identifier
+   */
+  slug: string;
+  type: 'block' | 'section' | 'widget';
+  category?: ('content' | 'media' | 'form' | 'navigation' | 'layout' | 'other') | null;
+  description?: string | null;
+  /**
+   * Component code (React/TSX) or configuration JSON
+   */
+  code?: string | null;
+  /**
+   * Component props schema
+   */
+  props?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Preview image for this component
+   */
+  preview?: (string | null) | Media;
+  status?: ('draft' | 'published') | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -754,7 +834,6 @@ export interface Page {
    * URL path (e.g., about, contact-us)
    */
   slug: string;
-  site: string | Site;
   /**
    * Language of this page (if i18n enabled)
    */
@@ -764,10 +843,13 @@ export interface Page {
    */
   parentPage?: (string | null) | Page;
   /**
-   * Layout to use (if not specified, uses site defaultLayout)
+   * Layout to use (if not specified, uses site defaultLayout from domain)
    */
   layout?: (string | null) | Layout;
-  status?: ('draft' | 'published' | 'archived') | null;
+  /**
+   * Page status (separate from draft _status)
+   */
+  pageStatus?: ('draft' | 'published' | 'archived') | null;
   content?:
     | (
         | {
@@ -839,6 +921,103 @@ export interface Page {
             blockName?: string | null;
             blockType: 'component';
           }
+        | {
+            code: string;
+            language?: ('typescript' | 'javascript' | 'python' | 'bash' | 'json' | 'css' | 'html') | null;
+            caption?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'code';
+          }
+        | {
+            title: string;
+            description?: string | null;
+            image?: (string | null) | Media;
+            /**
+             * Optional link URL
+             */
+            link?: string | null;
+            /**
+             * Link button text
+             */
+            linkText?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'card';
+          }
+        | {
+            /**
+             * Number of columns in the grid
+             */
+            columns?: ('1' | '2' | '3' | '4' | '6') | null;
+            /**
+             * Gap between grid items
+             */
+            gap?: ('none' | 'sm' | 'md' | 'lg') | null;
+            items: {
+              content?:
+                | (
+                    | {
+                        content: {
+                          root: {
+                            type: string;
+                            children: {
+                              type: any;
+                              version: number;
+                              [k: string]: unknown;
+                            }[];
+                            direction: ('ltr' | 'rtl') | null;
+                            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                            indent: number;
+                            version: number;
+                          };
+                          [k: string]: unknown;
+                        };
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'richText';
+                      }
+                    | {
+                        image: string | Media;
+                        alt?: string | null;
+                        caption?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'image';
+                      }
+                    | {
+                        title: string;
+                        description?: string | null;
+                        image?: (string | null) | Media;
+                        link?: string | null;
+                        linkText?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'card';
+                      }
+                    | {
+                        component: string | Component;
+                        props?:
+                          | {
+                              [k: string]: unknown;
+                            }
+                          | unknown[]
+                          | string
+                          | number
+                          | boolean
+                          | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'component';
+                      }
+                  )[]
+                | null;
+              id?: string | null;
+            }[];
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'grid';
+          }
       )[]
     | null;
   seo?: {
@@ -875,44 +1054,6 @@ export interface Page {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "components".
- */
-export interface Component {
-  id: string;
-  name: string;
-  /**
-   * URL-friendly identifier
-   */
-  slug: string;
-  type: 'block' | 'section' | 'widget';
-  category?: ('content' | 'media' | 'form' | 'navigation' | 'layout' | 'other') | null;
-  description?: string | null;
-  /**
-   * Component code (React/TSX) or configuration JSON
-   */
-  code?: string | null;
-  /**
-   * Component props schema
-   */
-  props?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  /**
-   * Preview image for this component
-   */
-  preview?: (string | null) | Media;
-  status?: ('draft' | 'published') | null;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1233,6 +1374,43 @@ export interface LayoutsSelect<T extends boolean = true> {
           | T
           | {
               enabled?: T;
+              menu?:
+                | T
+                | {
+                    items?:
+                      | T
+                      | {
+                          title?: T;
+                          path?: T;
+                          icon?: T;
+                          caption?: T;
+                          disabled?: T;
+                          external?: T;
+                          level2Items?:
+                            | T
+                            | {
+                                title?: T;
+                                path?: T;
+                                icon?: T;
+                                caption?: T;
+                                disabled?: T;
+                                external?: T;
+                                level3Items?:
+                                  | T
+                                  | {
+                                      title?: T;
+                                      path?: T;
+                                      icon?: T;
+                                      caption?: T;
+                                      disabled?: T;
+                                      external?: T;
+                                      id?: T;
+                                    };
+                                id?: T;
+                              };
+                          id?: T;
+                        };
+                  };
               config?: T;
               id?: T;
               blockName?: T;
@@ -1241,35 +1419,33 @@ export interface LayoutsSelect<T extends boolean = true> {
           | T
           | {
               enabled?: T;
+              items?:
+                | T
+                | {
+                    label?: T;
+                    path?: T;
+                    icon?: T;
+                    id?: T;
+                  };
               config?: T;
               id?: T;
               blockName?: T;
             };
+        component?:
+          | T
+          | {
+              component?: T;
+              props?: T;
+              enabled?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
-  settings?:
+  themeOverrides?:
     | T
     | {
-        header?:
-          | T
-          | {
-              config?: T;
-            };
-        footer?:
-          | T
-          | {
-              config?: T;
-            };
-        sidebar?:
-          | T
-          | {
-              config?: T;
-            };
-        themeOverrides?:
-          | T
-          | {
-              colors?: T;
-              spacing?: T;
-            };
+        colors?: T;
+        spacing?: T;
       };
   preview?: T;
   status?: T;
@@ -1284,11 +1460,10 @@ export interface LayoutsSelect<T extends boolean = true> {
 export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
-  site?: T;
   language?: T;
   parentPage?: T;
   layout?: T;
-  status?: T;
+  pageStatus?: T;
   content?:
     | T
     | {
@@ -1335,6 +1510,78 @@ export interface PagesSelect<T extends boolean = true> {
           | {
               component?: T;
               props?: T;
+              id?: T;
+              blockName?: T;
+            };
+        code?:
+          | T
+          | {
+              code?: T;
+              language?: T;
+              caption?: T;
+              id?: T;
+              blockName?: T;
+            };
+        card?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+              image?: T;
+              link?: T;
+              linkText?: T;
+              id?: T;
+              blockName?: T;
+            };
+        grid?:
+          | T
+          | {
+              columns?: T;
+              gap?: T;
+              items?:
+                | T
+                | {
+                    content?:
+                      | T
+                      | {
+                          richText?:
+                            | T
+                            | {
+                                content?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          image?:
+                            | T
+                            | {
+                                image?: T;
+                                alt?: T;
+                                caption?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          card?:
+                            | T
+                            | {
+                                title?: T;
+                                description?: T;
+                                image?: T;
+                                link?: T;
+                                linkText?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          component?:
+                            | T
+                            | {
+                                component?: T;
+                                props?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                    id?: T;
+                  };
               id?: T;
               blockName?: T;
             };

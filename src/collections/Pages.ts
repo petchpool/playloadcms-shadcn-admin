@@ -1,54 +1,98 @@
 import type { CollectionConfig } from 'payload'
+import { hasAnyRoleSync, hasAdminRoleSync } from '@/utils/check-role'
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'slug', 'site', 'language', 'status', 'publishedAt', 'createdAt'],
+    defaultColumns: ['title', 'slug', 'language', 'pageStatus', 'publishedAt', 'createdAt'],
   },
   access: {
-    read: ({ req: { user }, doc }) => {
+    read: async ({ req, id }) => {
+      // If no id, this is a collection-level check (for admin panel visibility)
+      // Allow authenticated users to see the collection
+      if (!id) {
+        return Boolean(req.user)
+      }
+
+      // If id exists, this is a document-level check
+      // Fetch page to check status (with draft support)
+      const page = await req.payload.findByID({
+        collection: 'pages',
+        id: id as string,
+        depth: 0,
+        draft: true, // Include draft versions
+      })
+
+      // Check _status (from drafts system) - this is the actual publish status
+      const pageStatus = (page as any)?._status
+
       // Published pages are public
-      if (doc?.status === 'published') {
+      if (pageStatus === 'published') {
         return true
       }
-      // Drafts only for authors/admins
-      if (user) {
-        if (user.roles?.includes('admin') || user.roles?.includes('editor')) {
-          return true
-        }
-        // Authors can read their own drafts
-        if (doc?.author && typeof doc.author === 'object' && 'id' in doc.author) {
-          return doc.author.id === user.id
-        }
+
+      // Drafts only for authenticated users
+      if (!req.user) return false
+
+      // Admins and editors can read all drafts
+      if (hasAnyRoleSync(req.user, ['admin', 'editor'])) {
+        return true
       }
+
+      // Authors can read their own drafts
+      if (page?.author && typeof page.author === 'object' && 'id' in page.author) {
+        return page.author.id === req.user.id
+      }
+
       return false
     },
     create: ({ req: { user } }) => {
-      return Boolean(
-        user?.roles?.includes('admin') ||
-          user?.roles?.includes('editor') ||
-          user?.roles?.includes('author'),
-      )
+      if (!user) return false
+      return hasAnyRoleSync(user, ['admin', 'editor', 'author'])
     },
-    update: ({ req: { user }, doc }) => {
-      if (user?.roles?.includes('admin') || user?.roles?.includes('editor')) {
+    update: async ({ req, id }) => {
+      if (!req.user || !id) return false
+
+      // Fetch page to check author
+      const page = await req.payload.findByID({
+        collection: 'pages',
+        id: id as string,
+        depth: 0,
+      })
+
+      // Admins and editors can update all pages
+      if (hasAnyRoleSync(req.user, ['admin', 'editor'])) {
         return true
       }
+
       // Authors can update their own pages
-      if (doc?.author && typeof doc.author === 'object' && 'id' in doc.author) {
-        return doc.author.id === user?.id
+      if (page?.author && typeof page.author === 'object' && 'id' in page.author) {
+        return page.author.id === req.user.id
       }
+
       return false
     },
-    delete: ({ req: { user }, doc }) => {
-      if (user?.roles?.includes('admin')) {
+    delete: async ({ req, id }) => {
+      if (!req.user || !id) return false
+
+      // Fetch page to check author
+      const page = await req.payload.findByID({
+        collection: 'pages',
+        id: id as string,
+        depth: 0,
+      })
+
+      // Only admins can delete pages
+      if (hasAdminRoleSync(req.user)) {
         return true
       }
+
       // Authors can delete their own pages
-      if (doc?.author && typeof doc.author === 'object' && 'id' in doc.author) {
-        return doc.author.id === user?.id
+      if (page?.author && typeof page.author === 'object' && 'id' in page.author) {
+        return page.author.id === req.user.id
       }
+
       return false
     },
   },
@@ -67,12 +111,6 @@ export const Pages: CollectionConfig = {
       admin: {
         description: 'URL path (e.g., about, contact-us)',
       },
-    },
-    {
-      name: 'site',
-      type: 'relationship',
-      relationTo: 'sites',
-      required: true,
     },
     {
       name: 'language',
@@ -95,11 +133,11 @@ export const Pages: CollectionConfig = {
       type: 'relationship',
       relationTo: 'layouts',
       admin: {
-        description: 'Layout to use (if not specified, uses site defaultLayout)',
+        description: 'Layout to use (if not specified, uses site defaultLayout from domain)',
       },
     },
     {
-      name: 'status',
+      name: 'pageStatus',
       type: 'select',
       options: [
         {
@@ -116,6 +154,9 @@ export const Pages: CollectionConfig = {
         },
       ],
       defaultValue: 'draft',
+      admin: {
+        description: 'Page status (separate from draft _status)',
+      },
     },
     {
       name: 'content',
@@ -231,6 +272,217 @@ export const Pages: CollectionConfig = {
             },
           ],
         },
+        {
+          slug: 'code',
+          labels: {
+            singular: 'Code Block',
+            plural: 'Code Blocks',
+          },
+          fields: [
+            {
+              name: 'code',
+              type: 'code',
+              required: true,
+              admin: {
+                language: 'typescript',
+              },
+            },
+            {
+              name: 'language',
+              type: 'select',
+              options: [
+                { label: 'TypeScript', value: 'typescript' },
+                { label: 'JavaScript', value: 'javascript' },
+                { label: 'Python', value: 'python' },
+                { label: 'Bash', value: 'bash' },
+                { label: 'JSON', value: 'json' },
+                { label: 'CSS', value: 'css' },
+                { label: 'HTML', value: 'html' },
+              ],
+              defaultValue: 'typescript',
+            },
+            {
+              name: 'caption',
+              type: 'text',
+            },
+          ],
+        },
+        {
+          slug: 'card',
+          labels: {
+            singular: 'Card',
+            plural: 'Cards',
+          },
+          fields: [
+            {
+              name: 'title',
+              type: 'text',
+              required: true,
+            },
+            {
+              name: 'description',
+              type: 'textarea',
+            },
+            {
+              name: 'image',
+              type: 'upload',
+              relationTo: 'media',
+            },
+            {
+              name: 'link',
+              type: 'text',
+              admin: {
+                description: 'Optional link URL',
+              },
+            },
+            {
+              name: 'linkText',
+              type: 'text',
+              admin: {
+                description: 'Link button text',
+              },
+            },
+          ],
+        },
+        {
+          slug: 'grid',
+          labels: {
+            singular: 'Grid',
+            plural: 'Grids',
+          },
+          fields: [
+            {
+              name: 'columns',
+              type: 'select',
+              options: [
+                { label: '1 Column', value: '1' },
+                { label: '2 Columns', value: '2' },
+                { label: '3 Columns', value: '3' },
+                { label: '4 Columns', value: '4' },
+                { label: '6 Columns', value: '6' },
+              ],
+              defaultValue: '3',
+              admin: {
+                description: 'Number of columns in the grid',
+              },
+            },
+            {
+              name: 'gap',
+              type: 'select',
+              options: [
+                { label: 'None', value: 'none' },
+                { label: 'Small', value: 'sm' },
+                { label: 'Medium', value: 'md' },
+                { label: 'Large', value: 'lg' },
+              ],
+              defaultValue: 'md',
+              admin: {
+                description: 'Gap between grid items',
+              },
+            },
+            {
+              name: 'items',
+              type: 'array',
+              required: true,
+              minRows: 1,
+              fields: [
+                {
+                  name: 'content',
+                  type: 'blocks',
+                  blocks: [
+                    {
+                      slug: 'richText',
+                      labels: {
+                        singular: 'Rich Text',
+                        plural: 'Rich Texts',
+                      },
+                      fields: [
+                        {
+                          name: 'content',
+                          type: 'richText',
+                          required: true,
+                        },
+                      ],
+                    },
+                    {
+                      slug: 'image',
+                      labels: {
+                        singular: 'Image',
+                        plural: 'Images',
+                      },
+                      fields: [
+                        {
+                          name: 'image',
+                          type: 'upload',
+                          relationTo: 'media',
+                          required: true,
+                        },
+                        {
+                          name: 'alt',
+                          type: 'text',
+                        },
+                        {
+                          name: 'caption',
+                          type: 'text',
+                        },
+                      ],
+                    },
+                    {
+                      slug: 'card',
+                      labels: {
+                        singular: 'Card',
+                        plural: 'Cards',
+                      },
+                      fields: [
+                        {
+                          name: 'title',
+                          type: 'text',
+                          required: true,
+                        },
+                        {
+                          name: 'description',
+                          type: 'textarea',
+                        },
+                        {
+                          name: 'image',
+                          type: 'upload',
+                          relationTo: 'media',
+                        },
+                        {
+                          name: 'link',
+                          type: 'text',
+                        },
+                        {
+                          name: 'linkText',
+                          type: 'text',
+                        },
+                      ],
+                    },
+                    {
+                      slug: 'component',
+                      labels: {
+                        singular: 'Component',
+                        plural: 'Components',
+                      },
+                      fields: [
+                        {
+                          name: 'component',
+                          type: 'relationship',
+                          relationTo: 'components',
+                          required: true,
+                        },
+                        {
+                          name: 'props',
+                          type: 'json',
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
       ],
     },
     {
@@ -327,6 +579,8 @@ export const Pages: CollectionConfig = {
   hooks: {
     beforeValidate: [
       ({ data, operation }) => {
+        if (!data) return data
+
         // Auto-generate slug from title if not provided
         if (operation === 'create' && !data.slug && data.title) {
           data.slug = data.title
@@ -342,8 +596,10 @@ export const Pages: CollectionConfig = {
     ],
     beforeChange: [
       ({ data, operation, originalDoc }) => {
-        // Set publishedAt when status changes to published
-        if (data.status === 'published' && originalDoc?.status !== 'published') {
+        // Set publishedAt when _status changes to published (from drafts system)
+        const currentStatus = (data as any)?._status
+        const previousStatus = (originalDoc as any)?._status
+        if (currentStatus === 'published' && previousStatus !== 'published') {
           data.publishedAt = new Date()
         }
 
@@ -366,10 +622,11 @@ export const Pages: CollectionConfig = {
   },
   versions: {
     drafts: {
-      autosave: true,
+      autosave: {
+        interval: 100, // Autosave every 100ms when typing
+      },
     },
     maxPerDoc: 100,
   },
   timestamps: true,
 }
-

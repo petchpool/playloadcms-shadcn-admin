@@ -3,15 +3,17 @@ import config from '@/payload.config'
 import { resolveSiteFromDomain } from '@/layouts/utils/site-resolver'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
+import { PageContentRenderer } from '@/components/blocks/page-content-renderer'
 
 export default async function Page({
   params,
 }: {
-  params: { site?: string; slug?: string[] }
+  params: Promise<{ site?: string; slug?: string[] }>
 }) {
+  const resolvedParams = await params
   const headersList = await headers()
   const host = headersList.get('host') || 'localhost'
-  
+
   // Parse host to get subdomain and domain
   const hostParts = host.split('.')
   let subdomain: string | undefined
@@ -44,33 +46,30 @@ export default async function Page({
   }
 
   const payload = await getPayload({ config })
-  const slug = params.slug?.join('/') || ''
+  const slug = resolvedParams.slug?.join('/') || ''
 
-  // Find page by slug and site
+  // Find page by slug (pages are shared across all sites)
   const pages = await payload.find({
     collection: 'pages',
     where: {
       and: [
-        {
-          site: {
-            equals: siteData.site.id,
-          },
-        },
         {
           slug: {
             equals: slug || 'home',
           },
         },
         {
-          status: {
+          _status: {
             equals: 'published',
           },
         },
       ],
     },
     limit: 1,
-    depth: 2,
+    depth: 3, // Increase depth to load component relationships
   })
+
+  console.log('resolvedParams', resolvedParams, 'pages', pages)
 
   if (pages.docs.length === 0) {
     // If no page found, show default content instead of 404
@@ -78,7 +77,8 @@ export default async function Page({
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold">Welcome to {siteData.site.name}</h1>
         <p className="mt-4 text-muted-foreground">
-          No page found for slug: <code className="px-2 py-1 bg-muted rounded">{slug || 'home'}</code>
+          No page found for slug:{' '}
+          <code className="px-2 py-1 bg-muted rounded">{slug || 'home'}</code>
         </p>
         <div className="mt-6 p-4 bg-muted rounded-md">
           <p className="text-sm font-semibold mb-2">Site Information:</p>
@@ -98,10 +98,12 @@ export default async function Page({
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold">{page.title}</h1>
       <div className="mt-6">
-        {/* Render page content blocks here */}
-        <p className="text-muted-foreground">Page content will be rendered here</p>
+        {page.content && page.content.length > 0 ? (
+          <PageContentRenderer content={page.content} />
+        ) : (
+          <p className="text-muted-foreground">No content available</p>
+        )}
       </div>
     </div>
   )
 }
-
