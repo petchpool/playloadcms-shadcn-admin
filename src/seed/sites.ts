@@ -307,9 +307,80 @@ export async function seedSites() {
         })
 
         if (existing.docs.length > 0) {
+          const existingPage = existing.docs[0]
           console.log(
-            `     ⏭️  Page "${pageData.titleEn}" (${pageData.slug}) already exists, skipping...`,
+            `     🔄 Page "${pageData.titleEn}" (${pageData.slug}) already exists, updating...`,
           )
+
+          // Update existing page with new blocks if provided
+          const contentBlocks = pageData.blocks ||
+            existingPage.content || [
+              {
+                blockType: 'richText',
+                content: createLexicalContent(pageData.contentEn),
+              },
+            ]
+
+          await payload.update({
+            collection: 'pages',
+            id: existingPage.id,
+            data: {
+              title: pageData.titleEn,
+              content: contentBlocks,
+              seo: {
+                metaTitle: pageData.titleEn,
+                metaDescription: `${pageData.titleEn} page`,
+              },
+              order: pageData.order,
+            },
+            overrideAccess: true,
+            draft: false,
+          })
+          console.log(`     ✅ Updated page: ${pageData.titleEn} (en)`)
+
+          // Update Thai page if exists
+          const existingTh = await payload.find({
+            collection: 'pages',
+            where: {
+              slug: {
+                equals: pageData.slug,
+              },
+              language: {
+                equals: thLanguage.id,
+              },
+            },
+            limit: 1,
+            overrideAccess: true,
+          })
+
+          if (existingTh.docs.length > 0) {
+            const contentBlocksTh = pageData.blocksTh ||
+              pageData.blocks ||
+              existingTh.docs[0].content || [
+                {
+                  blockType: 'richText',
+                  content: createLexicalContent(pageData.contentTh),
+                },
+              ]
+
+            await payload.update({
+              collection: 'pages',
+              id: existingTh.docs[0].id,
+              data: {
+                title: pageData.titleTh,
+                content: contentBlocksTh,
+                seo: {
+                  metaTitle: pageData.titleTh,
+                  metaDescription: `${pageData.titleTh} page`,
+                },
+                order: pageData.order,
+              },
+              overrideAccess: true,
+              draft: false,
+            })
+            console.log(`     ✅ Updated page: ${pageData.titleTh} (th)`)
+          }
+
           continue
         }
 
@@ -459,6 +530,13 @@ console.log(greet('World'))`,
         language: 'typescript',
         caption: 'Example TypeScript code',
       },
+      {
+        blockType: 'blocksTable',
+        title: 'Blocks Management',
+        description: 'View and manage all available blocks with advanced filtering and sorting',
+        limit: 10,
+        columns: ['name', 'type', 'category', 'status', 'createdAt'],
+      },
     ]
 
     const overviewBlocksTh = [
@@ -524,6 +602,13 @@ function greet(name: string) {
 console.log(greet('โลก'))`,
         language: 'typescript',
         caption: 'ตัวอย่างโค้ด TypeScript',
+      },
+      {
+        blockType: 'blocksTable',
+        title: 'จัดการ Blocks',
+        description: 'ดูและจัดการ blocks ทั้งหมดด้วยระบบกรองและเรียงลำดับขั้นสูง',
+        limit: 10,
+        columns: ['name', 'type', 'category', 'status', 'createdAt'],
       },
     ]
 

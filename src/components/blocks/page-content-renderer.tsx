@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { ComponentRenderer } from './component-renderer'
+import { BlocksTableBlock } from './blocks-table-block'
 
 export type PageContentRendererProps = {
   content: any[] // Accept any block content array
@@ -10,12 +11,20 @@ export type PageContentRendererProps = {
  */
 export function PageContentRenderer({ content }: PageContentRendererProps) {
   if (!content || !Array.isArray(content)) {
+    console.log('PageContentRenderer: No content or not an array', content)
     return null
   }
+
+  console.log('PageContentRenderer: Rendering', content.length, 'blocks')
+  console.log(
+    'PageContentRenderer: Block types:',
+    content.map((b) => b.blockType),
+  )
 
   return (
     <div className="page-content space-y-8">
       {content.map((block, index) => {
+        console.log(`Rendering block ${index}:`, block.blockType, block)
         switch (block.blockType) {
           case 'richText':
             return (
@@ -180,7 +189,8 @@ export function PageContentRenderer({ content }: PageContentRendererProps) {
               4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
               6: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6',
             }
-            const gridColsClass = gridColsMap[columns] || 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+            const gridColsClass =
+              gridColsMap[columns] || 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
 
             return (
               <div key={index} className={`grid-block grid ${gridColsClass} ${gapClass}`}>
@@ -192,6 +202,23 @@ export function PageContentRenderer({ content }: PageContentRendererProps) {
                   </div>
                 ))}
               </div>
+            )
+
+          case 'blocksTable':
+            console.log('Rendering blocksTable block:', {
+              title: block.title,
+              description: block.description,
+              limit: block.limit,
+              columns: block.columns,
+            })
+            return (
+              <BlocksTableBlock
+                key={index}
+                title={block.title}
+                description={block.description}
+                limit={block.limit || 10}
+                columns={block.columns}
+              />
             )
 
           default:

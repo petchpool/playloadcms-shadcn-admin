@@ -483,6 +483,72 @@ export const Pages: CollectionConfig = {
             },
           ],
         },
+        {
+          slug: 'blocksTable',
+          labels: {
+            singular: 'Blocks Table',
+            plural: 'Blocks Tables',
+          },
+          fields: [
+            {
+              name: 'title',
+              type: 'text',
+              admin: {
+                description: 'Optional title for the table',
+              },
+            },
+            {
+              name: 'description',
+              type: 'textarea',
+              admin: {
+                description: 'Optional description for the table',
+              },
+            },
+            {
+              name: 'limit',
+              type: 'number',
+              defaultValue: 10,
+              admin: {
+                description: 'Number of items per page',
+              },
+            },
+            {
+              name: 'columns',
+              type: 'select',
+              hasMany: true,
+              options: [
+                {
+                  label: 'Name',
+                  value: 'name',
+                },
+                {
+                  label: 'Type',
+                  value: 'type',
+                },
+                {
+                  label: 'Category',
+                  value: 'category',
+                },
+                {
+                  label: 'Status',
+                  value: 'status',
+                },
+                {
+                  label: 'Description',
+                  value: 'description',
+                },
+                {
+                  label: 'Created Date',
+                  value: 'createdAt',
+                },
+              ],
+              defaultValue: ['name', 'type', 'category', 'status', 'createdAt'],
+              admin: {
+                description: 'Select columns to display in the table',
+              },
+            },
+          ],
+        },
       ],
     },
     {

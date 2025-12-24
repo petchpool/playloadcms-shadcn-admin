@@ -7,14 +7,25 @@ import { PageContentRenderer } from '@/components/blocks/page-content-renderer'
 
 export default async function Page({ params }: { params: Promise<{ slug?: string[] }> }) {
   const resolvedParams = await params
+
+  // Skip static files
+  const staticFiles = ['favicon.ico', 'robots.txt', 'sitemap.xml', '_next', 'api']
+  if (resolvedParams.slug?.[0] && staticFiles.includes(resolvedParams.slug[0])) {
+    return null // Let Next.js handle static files
+  }
+
   const headersList = await headers()
   const host = headersList.get('host') || 'localhost'
 
   // Parse host to get subdomain and domain (supports port numbers)
   const { domain, subdomain } = parseHost(host)
 
-  // Resolve site
+  console.log('domain', domain, 'subdomain', subdomain)
+
+  // Resolve site from domain (not from route parameter)
   const siteData = await resolveSiteFromDomain(domain, subdomain)
+
+  console.log('siteData', siteData)
 
   if (!siteData) {
     return (
@@ -29,6 +40,7 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
 
   const payload = await getPayload({ config })
   const slug = resolvedParams.slug?.join('/') || ''
+  console.log('slug', slug)
 
   // Find page by slug (pages are shared across all sites)
   const pages = await payload.find({
@@ -50,6 +62,8 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
     limit: 1,
     depth: 3, // Increase depth to load component relationships
   })
+
+  console.log('pages', pages)
 
   if (pages.docs.length === 0) {
     // If no page found, show default content
@@ -73,6 +87,13 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
   }
 
   const page = pages.docs[0]
+
+  console.log('Page content:', JSON.stringify(page.content, null, 2))
+  console.log('Page content length:', page.content?.length || 0)
+  console.log(
+    'Page content blocks:',
+    page.content?.map((b: any) => b.blockType),
+  )
 
   return (
     <div className="container mx-auto px-4 py-8">

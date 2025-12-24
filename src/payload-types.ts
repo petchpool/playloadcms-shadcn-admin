@@ -1018,6 +1018,27 @@ export interface Page {
             blockName?: string | null;
             blockType: 'grid';
           }
+        | {
+            /**
+             * Optional title for the table
+             */
+            title?: string | null;
+            /**
+             * Optional description for the table
+             */
+            description?: string | null;
+            /**
+             * Number of items per page
+             */
+            limit?: number | null;
+            /**
+             * Select columns to display in the table
+             */
+            columns?: ('name' | 'type' | 'category' | 'status' | 'description' | 'createdAt')[] | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'blocksTable';
+          }
       )[]
     | null;
   seo?: {
@@ -1582,6 +1603,16 @@ export interface PagesSelect<T extends boolean = true> {
                         };
                     id?: T;
                   };
+              id?: T;
+              blockName?: T;
+            };
+        blocksTable?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+              limit?: T;
+              columns?: T;
               id?: T;
               blockName?: T;
             };
