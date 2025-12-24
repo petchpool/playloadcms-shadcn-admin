@@ -7,7 +7,6 @@
   html {
     font-size: 18px;
     line-height: 32px;
-    background: rgb(0, 0, 0);
     -webkit-font-smoothing: antialiased;
   }
 
@@ -22,7 +21,6 @@
     font-size: 18px;
     line-height: 32px;
     margin: 0;
-    color: rgb(255, 255, 255);
   }
 
   @media (max-width: 1024px) {

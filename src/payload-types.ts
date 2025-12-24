@@ -69,6 +69,13 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    languages: Language;
+    sites: Site;
+    layouts: Layout;
+    pages: Page;
+    components: Component;
+    permissions: Permission;
+    roles: Role;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,6 +85,13 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    languages: LanguagesSelect<false> | LanguagesSelect<true>;
+    sites: SitesSelect<false> | SitesSelect<true>;
+    layouts: LayoutsSelect<false> | LayoutsSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
+    components: ComponentsSelect<false> | ComponentsSelect<true>;
+    permissions: PermissionsSelect<false> | PermissionsSelect<true>;
+    roles: RolesSelect<false> | RolesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -122,6 +136,14 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: string;
+  /**
+   * Roles assigned to this user
+   */
+  roles: (string | Role)[];
+  status?: ('active' | 'inactive' | 'suspended') | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  avatar?: (string | null) | Media;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -142,6 +164,88 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles".
+ */
+export interface Role {
+  id: string;
+  /**
+   * Role display name (e.g., Administrator, Editor, Author)
+   */
+  name: string;
+  /**
+   * Role identifier (e.g., admin, editor, author)
+   */
+  slug: string;
+  /**
+   * Description of this role
+   */
+  description?: string | null;
+  /**
+   * Role level (1-10, higher number = more permissions)
+   */
+  level: number;
+  /**
+   * Parent role for role inheritance (optional)
+   */
+  parentRole?: (string | null) | Role;
+  /**
+   * Permissions assigned to this role
+   */
+  permissions?: (string | Permission)[] | null;
+  /**
+   * Permissions inherited from parent role (auto-calculated)
+   */
+  inheritedPermissions?: (string | Permission)[] | null;
+  status?: ('active' | 'inactive') | null;
+  /**
+   * System roles cannot be deleted
+   */
+  isSystemRole?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "permissions".
+ */
+export interface Permission {
+  id: string;
+  /**
+   * Permission display name (e.g., Create Pages, Update Sites)
+   */
+  name: string;
+  /**
+   * Permission identifier (e.g., pages.create, sites.update)
+   */
+  slug: string;
+  /**
+   * Resource this permission applies to
+   */
+  resource:
+    | 'pages'
+    | 'sites'
+    | 'layouts'
+    | 'components'
+    | 'languages'
+    | 'users'
+    | 'roles'
+    | 'permissions'
+    | 'media'
+    | 'all';
+  /**
+   * Action this permission allows
+   */
+  action: 'create' | 'read' | 'update' | 'delete' | 'admin' | 'all';
+  /**
+   * Description of what this permission allows
+   */
+  description?: string | null;
+  status?: ('active' | 'inactive') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
@@ -158,6 +262,657 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "languages".
+ */
+export interface Language {
+  id: string;
+  /**
+   * ISO 639-1 language code (e.g., en, th, zh)
+   */
+  code: string;
+  /**
+   * Language name in English (e.g., English, Thai)
+   */
+  name: string;
+  /**
+   * Native language name (e.g., English, ไทย)
+   */
+  nativeName?: string | null;
+  /**
+   * ISO 3166-1 alpha-2 country code (e.g., US, TH)
+   */
+  countryCode?: string | null;
+  /**
+   * Flag emoji or icon identifier
+   */
+  flag?: string | null;
+  /**
+   * Right-to-left language (e.g., Arabic, Hebrew)
+   */
+  rtl?: boolean | null;
+  /**
+   * Date format (e.g., MM/DD/YYYY, DD/MM/YYYY)
+   */
+  dateFormat?: string | null;
+  numberFormat?: {
+    /**
+     * Locale code for number formatting (e.g., en-US, th-TH)
+     */
+    code?: string | null;
+    /**
+     * Currency code (e.g., USD, THB)
+     */
+    currency?: string | null;
+  };
+  status?: ('active' | 'inactive') | null;
+  /**
+   * Display order for language selector
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sites".
+ */
+export interface Site {
+  id: string;
+  name: string;
+  /**
+   * Main domain (e.g., example.com)
+   */
+  domain: string;
+  /**
+   * Supported subdomains (e.g., blog.example.com)
+   */
+  subdomains?:
+    | {
+        subdomain?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Default layout for this site
+   */
+  defaultLayout?: (string | null) | Layout;
+  logo?: (string | null) | Media;
+  favicon?: (string | null) | Media;
+  seo?: {
+    /**
+     * Default SEO title
+     */
+    defaultTitle?: string | null;
+    /**
+     * Default SEO description
+     */
+    defaultDescription?: string | null;
+    defaultImage?: (string | null) | Media;
+  };
+  i18n?: {
+    /**
+     * Enable i18n for this site
+     */
+    enabled?: boolean | null;
+    /**
+     * Default language for this site
+     */
+    defaultLanguage?: (string | null) | Language;
+    /**
+     * Supported languages for this site
+     */
+    supportedLanguages?: (string | Language)[] | null;
+    /**
+     * Language detection method
+     */
+    languageDetection?: ('path' | 'header' | 'cookie') | null;
+    /**
+     * Use language prefix in URL (e.g., /en/, /th/)
+     */
+    pathPrefix?: boolean | null;
+    /**
+     * Fallback language if translation missing
+     */
+    fallbackLanguage?: (string | null) | Language;
+  };
+  theme?: {
+    /**
+     * Border radius base value (rem)
+     */
+    radius?: number | null;
+    colors?: {
+      /**
+       * Background color (oklch format)
+       */
+      background?: string | null;
+      /**
+       * Text color (oklch format)
+       */
+      foreground?: string | null;
+      /**
+       * Card background (oklch format)
+       */
+      card?: string | null;
+      /**
+       * Card text (oklch format)
+       */
+      cardForeground?: string | null;
+      /**
+       * Popover background (oklch format)
+       */
+      popover?: string | null;
+      /**
+       * Popover text (oklch format)
+       */
+      popoverForeground?: string | null;
+      /**
+       * Primary color (oklch format)
+       */
+      primary?: string | null;
+      /**
+       * Primary text (oklch format)
+       */
+      primaryForeground?: string | null;
+      /**
+       * Secondary color (oklch format)
+       */
+      secondary?: string | null;
+      /**
+       * Secondary text (oklch format)
+       */
+      secondaryForeground?: string | null;
+      /**
+       * Muted background (oklch format)
+       */
+      muted?: string | null;
+      /**
+       * Muted text (oklch format)
+       */
+      mutedForeground?: string | null;
+      /**
+       * Accent color (oklch format)
+       */
+      accent?: string | null;
+      /**
+       * Accent text (oklch format)
+       */
+      accentForeground?: string | null;
+      /**
+       * Destructive color (oklch format)
+       */
+      destructive?: string | null;
+      /**
+       * Border color (oklch format)
+       */
+      border?: string | null;
+      /**
+       * Input border color (oklch format)
+       */
+      input?: string | null;
+      /**
+       * Focus ring color (oklch format)
+       */
+      ring?: string | null;
+      /**
+       * Chart color 1 (oklch format)
+       */
+      chart1?: string | null;
+      /**
+       * Chart color 2 (oklch format)
+       */
+      chart2?: string | null;
+      /**
+       * Chart color 3 (oklch format)
+       */
+      chart3?: string | null;
+      /**
+       * Chart color 4 (oklch format)
+       */
+      chart4?: string | null;
+      /**
+       * Chart color 5 (oklch format)
+       */
+      chart5?: string | null;
+      /**
+       * Sidebar background (oklch format)
+       */
+      sidebar?: string | null;
+      /**
+       * Sidebar text (oklch format)
+       */
+      sidebarForeground?: string | null;
+      /**
+       * Sidebar primary (oklch format)
+       */
+      sidebarPrimary?: string | null;
+      /**
+       * Sidebar primary text (oklch format)
+       */
+      sidebarPrimaryForeground?: string | null;
+      /**
+       * Sidebar accent (oklch format)
+       */
+      sidebarAccent?: string | null;
+      /**
+       * Sidebar accent text (oklch format)
+       */
+      sidebarAccentForeground?: string | null;
+      /**
+       * Sidebar border (oklch format)
+       */
+      sidebarBorder?: string | null;
+      /**
+       * Sidebar ring (oklch format)
+       */
+      sidebarRing?: string | null;
+    };
+    darkMode?: {
+      background?: string | null;
+      foreground?: string | null;
+      card?: string | null;
+      cardForeground?: string | null;
+      popover?: string | null;
+      popoverForeground?: string | null;
+      primary?: string | null;
+      primaryForeground?: string | null;
+      secondary?: string | null;
+      secondaryForeground?: string | null;
+      muted?: string | null;
+      mutedForeground?: string | null;
+      accent?: string | null;
+      accentForeground?: string | null;
+      destructive?: string | null;
+      border?: string | null;
+      input?: string | null;
+      ring?: string | null;
+      chart1?: string | null;
+      chart2?: string | null;
+      chart3?: string | null;
+      chart4?: string | null;
+      chart5?: string | null;
+      sidebar?: string | null;
+      sidebarForeground?: string | null;
+      sidebarPrimary?: string | null;
+      sidebarPrimaryForeground?: string | null;
+      sidebarAccent?: string | null;
+      sidebarAccentForeground?: string | null;
+      sidebarBorder?: string | null;
+      sidebarRing?: string | null;
+    };
+    /**
+     * Custom Tailwind config overrides
+     */
+    tailwindConfig?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    /**
+     * Generated CSS variables (auto-generated)
+     */
+    cssVariables?: string | null;
+    /**
+     * Theme preview screenshot
+     */
+    themePreview?: (string | null) | Media;
+  };
+  status?: ('active' | 'inactive') | null;
+  createdBy?: (string | null) | User;
+  updatedBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "layouts".
+ */
+export interface Layout {
+  id: string;
+  name: string;
+  /**
+   * URL-friendly identifier (e.g., main-layout, simple-layout)
+   */
+  slug: string;
+  description?: string | null;
+  /**
+   * Layout type based on next-ts patterns
+   */
+  type: 'main' | 'simple' | 'auth' | 'blank';
+  components?:
+    | (
+        | {
+            enabled?: boolean | null;
+            /**
+             * Header configuration JSON
+             */
+            config?:
+              | {
+                  [k: string]: unknown;
+                }
+              | unknown[]
+              | string
+              | number
+              | boolean
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'header';
+          }
+        | {
+            enabled?: boolean | null;
+            /**
+             * Footer configuration JSON
+             */
+            config?:
+              | {
+                  [k: string]: unknown;
+                }
+              | unknown[]
+              | string
+              | number
+              | boolean
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'footer';
+          }
+        | {
+            enabled?: boolean | null;
+            /**
+             * Sidebar configuration JSON
+             */
+            config?:
+              | {
+                  [k: string]: unknown;
+                }
+              | unknown[]
+              | string
+              | number
+              | boolean
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'sidebar';
+          }
+        | {
+            enabled?: boolean | null;
+            /**
+             * Navigation configuration JSON
+             */
+            config?:
+              | {
+                  [k: string]: unknown;
+                }
+              | unknown[]
+              | string
+              | number
+              | boolean
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'navigation';
+          }
+      )[]
+    | null;
+  settings?: {
+    header?: {
+      /**
+       * Header configuration
+       */
+      config?:
+        | {
+            [k: string]: unknown;
+          }
+        | unknown[]
+        | string
+        | number
+        | boolean
+        | null;
+    };
+    footer?: {
+      /**
+       * Footer configuration
+       */
+      config?:
+        | {
+            [k: string]: unknown;
+          }
+        | unknown[]
+        | string
+        | number
+        | boolean
+        | null;
+    };
+    sidebar?: {
+      /**
+       * Sidebar configuration
+       */
+      config?:
+        | {
+            [k: string]: unknown;
+          }
+        | unknown[]
+        | string
+        | number
+        | boolean
+        | null;
+    };
+    /**
+     * Layout-specific theme overrides (optional)
+     */
+    themeOverrides?: {
+      /**
+       * Override specific colors for this layout
+       */
+      colors?:
+        | {
+            [k: string]: unknown;
+          }
+        | unknown[]
+        | string
+        | number
+        | boolean
+        | null;
+      /**
+       * Override spacing values
+       */
+      spacing?:
+        | {
+            [k: string]: unknown;
+          }
+        | unknown[]
+        | string
+        | number
+        | boolean
+        | null;
+    };
+  };
+  /**
+   * Preview image for this layout
+   */
+  preview?: (string | null) | Media;
+  status?: ('draft' | 'published') | null;
+  createdBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: string;
+  title: string;
+  /**
+   * URL path (e.g., about, contact-us)
+   */
+  slug: string;
+  site: string | Site;
+  /**
+   * Language of this page (if i18n enabled)
+   */
+  language?: (string | null) | Language;
+  /**
+   * Parent page for hierarchical structure (same language)
+   */
+  parentPage?: (string | null) | Page;
+  /**
+   * Layout to use (if not specified, uses site defaultLayout)
+   */
+  layout?: (string | null) | Layout;
+  status?: ('draft' | 'published' | 'archived') | null;
+  content?:
+    | (
+        | {
+            content: {
+              root: {
+                type: string;
+                children: {
+                  type: any;
+                  version: number;
+                  [k: string]: unknown;
+                }[];
+                direction: ('ltr' | 'rtl') | null;
+                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                indent: number;
+                version: number;
+              };
+              [k: string]: unknown;
+            };
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'richText';
+          }
+        | {
+            image: string | Media;
+            caption?: string | null;
+            alt?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'image';
+          }
+        | {
+            images?:
+              | {
+                  image: string | Media;
+                  caption?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'gallery';
+          }
+        | {
+            video?: (string | null) | Media;
+            /**
+             * YouTube, Vimeo, or other video URL
+             */
+            videoUrl?: string | null;
+            caption?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'video';
+          }
+        | {
+            component: string | Component;
+            /**
+             * Component props
+             */
+            props?:
+              | {
+                  [k: string]: unknown;
+                }
+              | unknown[]
+              | string
+              | number
+              | boolean
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'component';
+          }
+      )[]
+    | null;
+  seo?: {
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    metaImage?: (string | null) | Media;
+    keywords?:
+      | {
+          keyword?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  translations?: {
+    /**
+     * Group ID for linking translations (auto-generated)
+     */
+    translationGroup?: string | null;
+    /**
+     * Related pages in other languages
+     */
+    relatedPages?: (string | Page)[] | null;
+  };
+  featuredImage?: (string | null) | Media;
+  /**
+   * Auto-set when status changes to published
+   */
+  publishedAt?: string | null;
+  author?: (string | null) | User;
+  /**
+   * Order for sorting
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "components".
+ */
+export interface Component {
+  id: string;
+  name: string;
+  /**
+   * URL-friendly identifier
+   */
+  slug: string;
+  type: 'block' | 'section' | 'widget';
+  category?: ('content' | 'media' | 'form' | 'navigation' | 'layout' | 'other') | null;
+  description?: string | null;
+  /**
+   * Component code (React/TSX) or configuration JSON
+   */
+  code?: string | null;
+  /**
+   * Component props schema
+   */
+  props?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Preview image for this component
+   */
+  preview?: (string | null) | Media;
+  status?: ('draft' | 'published') | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -190,6 +945,34 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'languages';
+        value: string | Language;
+      } | null)
+    | ({
+        relationTo: 'sites';
+        value: string | Site;
+      } | null)
+    | ({
+        relationTo: 'layouts';
+        value: string | Layout;
+      } | null)
+    | ({
+        relationTo: 'pages';
+        value: string | Page;
+      } | null)
+    | ({
+        relationTo: 'components';
+        value: string | Component;
+      } | null)
+    | ({
+        relationTo: 'permissions';
+        value: string | Permission;
+      } | null)
+    | ({
+        relationTo: 'roles';
+        value: string | Role;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -238,6 +1021,11 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  roles?: T;
+  status?: T;
+  firstName?: T;
+  lastName?: T;
+  avatar?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -272,6 +1060,359 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "languages_select".
+ */
+export interface LanguagesSelect<T extends boolean = true> {
+  code?: T;
+  name?: T;
+  nativeName?: T;
+  countryCode?: T;
+  flag?: T;
+  rtl?: T;
+  dateFormat?: T;
+  numberFormat?:
+    | T
+    | {
+        code?: T;
+        currency?: T;
+      };
+  status?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sites_select".
+ */
+export interface SitesSelect<T extends boolean = true> {
+  name?: T;
+  domain?: T;
+  subdomains?:
+    | T
+    | {
+        subdomain?: T;
+        id?: T;
+      };
+  defaultLayout?: T;
+  logo?: T;
+  favicon?: T;
+  seo?:
+    | T
+    | {
+        defaultTitle?: T;
+        defaultDescription?: T;
+        defaultImage?: T;
+      };
+  i18n?:
+    | T
+    | {
+        enabled?: T;
+        defaultLanguage?: T;
+        supportedLanguages?: T;
+        languageDetection?: T;
+        pathPrefix?: T;
+        fallbackLanguage?: T;
+      };
+  theme?:
+    | T
+    | {
+        radius?: T;
+        colors?:
+          | T
+          | {
+              background?: T;
+              foreground?: T;
+              card?: T;
+              cardForeground?: T;
+              popover?: T;
+              popoverForeground?: T;
+              primary?: T;
+              primaryForeground?: T;
+              secondary?: T;
+              secondaryForeground?: T;
+              muted?: T;
+              mutedForeground?: T;
+              accent?: T;
+              accentForeground?: T;
+              destructive?: T;
+              border?: T;
+              input?: T;
+              ring?: T;
+              chart1?: T;
+              chart2?: T;
+              chart3?: T;
+              chart4?: T;
+              chart5?: T;
+              sidebar?: T;
+              sidebarForeground?: T;
+              sidebarPrimary?: T;
+              sidebarPrimaryForeground?: T;
+              sidebarAccent?: T;
+              sidebarAccentForeground?: T;
+              sidebarBorder?: T;
+              sidebarRing?: T;
+            };
+        darkMode?:
+          | T
+          | {
+              background?: T;
+              foreground?: T;
+              card?: T;
+              cardForeground?: T;
+              popover?: T;
+              popoverForeground?: T;
+              primary?: T;
+              primaryForeground?: T;
+              secondary?: T;
+              secondaryForeground?: T;
+              muted?: T;
+              mutedForeground?: T;
+              accent?: T;
+              accentForeground?: T;
+              destructive?: T;
+              border?: T;
+              input?: T;
+              ring?: T;
+              chart1?: T;
+              chart2?: T;
+              chart3?: T;
+              chart4?: T;
+              chart5?: T;
+              sidebar?: T;
+              sidebarForeground?: T;
+              sidebarPrimary?: T;
+              sidebarPrimaryForeground?: T;
+              sidebarAccent?: T;
+              sidebarAccentForeground?: T;
+              sidebarBorder?: T;
+              sidebarRing?: T;
+            };
+        tailwindConfig?: T;
+        cssVariables?: T;
+        themePreview?: T;
+      };
+  status?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "layouts_select".
+ */
+export interface LayoutsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  type?: T;
+  components?:
+    | T
+    | {
+        header?:
+          | T
+          | {
+              enabled?: T;
+              config?: T;
+              id?: T;
+              blockName?: T;
+            };
+        footer?:
+          | T
+          | {
+              enabled?: T;
+              config?: T;
+              id?: T;
+              blockName?: T;
+            };
+        sidebar?:
+          | T
+          | {
+              enabled?: T;
+              config?: T;
+              id?: T;
+              blockName?: T;
+            };
+        navigation?:
+          | T
+          | {
+              enabled?: T;
+              config?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
+  settings?:
+    | T
+    | {
+        header?:
+          | T
+          | {
+              config?: T;
+            };
+        footer?:
+          | T
+          | {
+              config?: T;
+            };
+        sidebar?:
+          | T
+          | {
+              config?: T;
+            };
+        themeOverrides?:
+          | T
+          | {
+              colors?: T;
+              spacing?: T;
+            };
+      };
+  preview?: T;
+  status?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  site?: T;
+  language?: T;
+  parentPage?: T;
+  layout?: T;
+  status?: T;
+  content?:
+    | T
+    | {
+        richText?:
+          | T
+          | {
+              content?: T;
+              id?: T;
+              blockName?: T;
+            };
+        image?:
+          | T
+          | {
+              image?: T;
+              caption?: T;
+              alt?: T;
+              id?: T;
+              blockName?: T;
+            };
+        gallery?:
+          | T
+          | {
+              images?:
+                | T
+                | {
+                    image?: T;
+                    caption?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        video?:
+          | T
+          | {
+              video?: T;
+              videoUrl?: T;
+              caption?: T;
+              id?: T;
+              blockName?: T;
+            };
+        component?:
+          | T
+          | {
+              component?: T;
+              props?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
+  seo?:
+    | T
+    | {
+        metaTitle?: T;
+        metaDescription?: T;
+        metaImage?: T;
+        keywords?:
+          | T
+          | {
+              keyword?: T;
+              id?: T;
+            };
+      };
+  translations?:
+    | T
+    | {
+        translationGroup?: T;
+        relatedPages?: T;
+      };
+  featuredImage?: T;
+  publishedAt?: T;
+  author?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "components_select".
+ */
+export interface ComponentsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  type?: T;
+  category?: T;
+  description?: T;
+  code?: T;
+  props?: T;
+  preview?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "permissions_select".
+ */
+export interface PermissionsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  resource?: T;
+  action?: T;
+  description?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles_select".
+ */
+export interface RolesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  level?: T;
+  parentRole?: T;
+  permissions?: T;
+  inheritedPermissions?: T;
+  status?: T;
+  isSystemRole?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
