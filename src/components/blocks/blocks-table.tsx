@@ -787,15 +787,45 @@ export function BlocksTable({
   }
 
   // Handle page change with URL sync
-  const handlePageChange = (page: number) => {
-    onPageChange?.(page)
+  const handlePageChange = (newPage: number) => {
+    onPageChange?.(newPage)
+    // Sync URL immediately (don't wait for pagination prop to change)
+    if (syncUrl) {
+      updateUrlState({
+        page: newPage !== 1 ? newPage : undefined,
+        limit: pagination?.limit !== 10 ? pagination?.limit : undefined,
+        search: globalFilter || undefined,
+        statusTab: activeStatusTab !== 'all' ? activeStatusTab : undefined,
+        filters: {
+          ...(typeFilter.size > 0 && { type: setToArray(typeFilter) }),
+          ...(categoryFilter.size > 0 && { category: setToArray(categoryFilter) }),
+          ...(statusFilter.size > 0 && { status: setToArray(statusFilter) }),
+        },
+        columnVisibility: Object.keys(columnVisibility).length > 0 ? columnVisibility : undefined,
+      })
+    }
   }
 
   // Handle limit change with URL sync
-  const handleLimitChange = (limit: number) => {
-    onLimitChange?.(limit)
+  const handleLimitChange = (newLimit: number) => {
+    onLimitChange?.(newLimit)
     // Reset to page 1 when changing limit
     onPageChange?.(1)
+    // Sync URL immediately (don't wait for pagination prop to change)
+    if (syncUrl) {
+      updateUrlState({
+        page: undefined, // Reset to page 1
+        limit: newLimit !== 10 ? newLimit : undefined,
+        search: globalFilter || undefined,
+        statusTab: activeStatusTab !== 'all' ? activeStatusTab : undefined,
+        filters: {
+          ...(typeFilter.size > 0 && { type: setToArray(typeFilter) }),
+          ...(categoryFilter.size > 0 && { category: setToArray(categoryFilter) }),
+          ...(statusFilter.size > 0 && { status: setToArray(statusFilter) }),
+        },
+        columnVisibility: Object.keys(columnVisibility).length > 0 ? columnVisibility : undefined,
+      })
+    }
   }
 
   return (
