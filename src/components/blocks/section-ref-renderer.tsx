@@ -91,7 +91,7 @@ export async function SectionRefRenderer({
  * Supports simple template syntax: ${propName} or {{propName}}
  */
 function processBlockWithProps(block: any, props: Record<string, any>): any {
-  if (!block || !props || typeof props !== 'object' || Object.keys(props).length === 0) return block
+  if (!block || Object.keys(props).length === 0) return block
 
   // Clone block to avoid mutation
   const processed = JSON.parse(JSON.stringify(block))

@@ -11,8 +11,6 @@ export {
 // Data Table exports
 export { BlocksTable, type RowAction, type CustomColumn } from './blocks-table'
 export { BlocksTableBlock } from './blocks-table-block'
-export { BlocksTableSelection } from './blocks-table-selection'
-export { BlocksTableSelectionBlock } from './blocks-table-selection-block'
 export {
   generateColumns,
   getCollectionColumns,

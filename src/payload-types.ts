@@ -836,6 +836,63 @@ export interface Section {
         blockName?: string | null;
         blockType: 'grid';
       }
+    | {
+        /**
+         * Table title (optional)
+         */
+        title?: string | null;
+        /**
+         * Table description (optional)
+         */
+        description?: string | null;
+        /**
+         * Payload collection to fetch data from
+         */
+        collection: 'components' | 'sections' | 'layouts' | 'pages' | 'users';
+        /**
+         * Column keys to display (e.g., name, type, status)
+         */
+        columns?:
+          | {
+              /**
+               * Field name (e.g., name, type, category)
+               */
+              key: string;
+              id?: string | null;
+            }[]
+          | null;
+        /**
+         * Items per page
+         */
+        limit?: number | null;
+        /**
+         * Show status tabs header
+         */
+        showStatusTabs?: boolean | null;
+        /**
+         * Allow single or multiple item selection
+         */
+        selectionMode: 'single' | 'multiple';
+        /**
+         * Maximum number of items that can be selected (for multiple mode)
+         */
+        maxSelection?: number | null;
+        /**
+         * Show selection summary at the top
+         */
+        showSelectionSummary?: boolean | null;
+        /**
+         * Enable URL sync for table state
+         */
+        syncUrl?: boolean | null;
+        /**
+         * URL params namespace (required when multiple tables on same page)
+         */
+        urlGroup?: string | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'blocksTableSelection';
+      }
   )[];
   /**
    * Define injection points where pages can insert custom content
@@ -1637,6 +1694,28 @@ export interface SectionsSelect<T extends boolean = true> {
                         };
                     id?: T;
                   };
+              id?: T;
+              blockName?: T;
+            };
+        blocksTableSelection?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+              collection?: T;
+              columns?:
+                | T
+                | {
+                    key?: T;
+                    id?: T;
+                  };
+              limit?: T;
+              showStatusTabs?: T;
+              selectionMode?: T;
+              maxSelection?: T;
+              showSelectionSummary?: T;
+              syncUrl?: T;
+              urlGroup?: T;
               id?: T;
               blockName?: T;
             };
