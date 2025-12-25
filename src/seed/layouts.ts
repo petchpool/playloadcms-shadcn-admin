@@ -24,11 +24,11 @@ export async function seedLayouts() {
     {
       slug: 'main-header',
       name: 'Main Header',
-      type: 'global',
-      category: 'header',
+      type: 'global' as const,
+      category: 'header' as const,
       blocks: [
         {
-          blockType: 'richText',
+          blockType: 'richText' as const,
           content: {
             root: {
               type: 'root',
@@ -39,25 +39,31 @@ export async function seedLayouts() {
                     {
                       type: 'text',
                       text: 'Main Header Component - Configure in Admin Panel',
+                      version: 1,
                     },
                   ],
+                  version: 1,
                 },
               ],
+              direction: 'ltr' as const,
+              format: '' as const,
+              indent: 0,
+              version: 1,
             },
           },
         },
       ],
-      status: 'published',
+      status: 'published' as const,
       tags: [{ tag: 'layout' }, { tag: 'header' }],
     },
     {
       slug: 'main-footer',
       name: 'Main Footer',
-      type: 'global',
-      category: 'footer',
+      type: 'global' as const,
+      category: 'footer' as const,
       blocks: [
         {
-          blockType: 'richText',
+          blockType: 'richText' as const,
           content: {
             root: {
               type: 'root',
@@ -68,25 +74,31 @@ export async function seedLayouts() {
                     {
                       type: 'text',
                       text: 'Main Footer Component - Configure in Admin Panel',
+                      version: 1,
                     },
                   ],
+                  version: 1,
                 },
               ],
+              direction: 'ltr' as const,
+              format: '' as const,
+              indent: 0,
+              version: 1,
             },
           },
         },
       ],
-      status: 'published',
+      status: 'published' as const,
       tags: [{ tag: 'layout' }, { tag: 'footer' }],
     },
     {
       slug: 'main-sidebar',
       name: 'Main Sidebar',
-      type: 'global',
-      category: 'other',
+      type: 'global' as const,
+      category: 'other' as const,
       blocks: [
         {
-          blockType: 'richText',
+          blockType: 'richText' as const,
           content: {
             root: {
               type: 'root',
@@ -97,25 +109,31 @@ export async function seedLayouts() {
                     {
                       type: 'text',
                       text: 'Main Sidebar Component - Configure in Admin Panel',
+                      version: 1,
                     },
                   ],
+                  version: 1,
                 },
               ],
+              direction: 'ltr' as const,
+              format: '' as const,
+              indent: 0,
+              version: 1,
             },
           },
         },
       ],
-      status: 'published',
+      status: 'published' as const,
       tags: [{ tag: 'layout' }, { tag: 'sidebar' }],
     },
     {
       slug: 'simple-header',
       name: 'Simple Header',
-      type: 'global',
-      category: 'header',
+      type: 'global' as const,
+      category: 'header' as const,
       blocks: [
         {
-          blockType: 'richText',
+          blockType: 'richText' as const,
           content: {
             root: {
               type: 'root',
@@ -126,15 +144,21 @@ export async function seedLayouts() {
                     {
                       type: 'text',
                       text: 'Simple Header Component - Configure in Admin Panel',
+                      version: 1,
                     },
                   ],
+                  version: 1,
                 },
               ],
+              direction: 'ltr' as const,
+              format: '' as const,
+              indent: 0,
+              version: 1,
             },
           },
         },
       ],
-      status: 'published',
+      status: 'published' as const,
       tags: [{ tag: 'layout' }, { tag: 'header' }, { tag: 'simple' }],
     },
   ]
@@ -179,34 +203,34 @@ export async function seedLayouts() {
       name: 'Main Layout',
       slug: 'main-layout',
       description: 'Main layout with header, footer, and sidebar (references sections)',
-      type: 'main',
-      status: 'published',
+      type: 'main' as const,
+      status: 'published' as const,
       components: [
         {
-          blockType: 'sectionRef',
+          blockType: 'sectionRef' as const,
           section: createdSections['main-header'],
           enabled: true,
-          position: 'header',
+          position: 'header' as const,
           props: {
             sticky: true,
             transparent: false,
           },
         },
         {
-          blockType: 'sectionRef',
+          blockType: 'sectionRef' as const,
           section: createdSections['main-sidebar'],
           enabled: true,
-          position: 'sidebar',
+          position: 'sidebar' as const,
           props: {
             width: 300,
             collapsedWidth: 88,
           },
         },
         {
-          blockType: 'sectionRef',
+          blockType: 'sectionRef' as const,
           section: createdSections['main-footer'],
           enabled: true,
-          position: 'footer',
+          position: 'footer' as const,
           props: {
             showCopyright: true,
             showLinks: true,
@@ -218,24 +242,24 @@ export async function seedLayouts() {
       name: 'Simple Layout',
       slug: 'simple-layout',
       description: 'Simple layout with minimal header and footer',
-      type: 'simple',
-      status: 'published',
+      type: 'simple' as const,
+      status: 'published' as const,
       components: [
         {
-          blockType: 'sectionRef',
+          blockType: 'sectionRef' as const,
           section: createdSections['simple-header'],
           enabled: true,
-          position: 'header',
+          position: 'header' as const,
           props: {
             sticky: false,
             transparent: false,
           },
         },
         {
-          blockType: 'sectionRef',
+          blockType: 'sectionRef' as const,
           section: createdSections['main-footer'],
           enabled: true,
-          position: 'footer',
+          position: 'footer' as const,
           props: {
             showCopyright: true,
             showLinks: false,
@@ -247,8 +271,8 @@ export async function seedLayouts() {
       name: 'Blank Layout',
       slug: 'blank-layout',
       description: 'Blank layout without header and footer',
-      type: 'blank',
-      status: 'published',
+      type: 'blank' as const,
+      status: 'published' as const,
       components: [],
     },
   ]

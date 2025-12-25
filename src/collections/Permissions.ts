@@ -149,6 +149,8 @@ export const Permissions: CollectionConfig = {
   hooks: {
     beforeValidate: [
       ({ data, operation }) => {
+        if (!data) return data
+
         // Auto-generate slug from resource and action if not provided
         if (operation === 'create' && !data.slug && data.resource && data.action) {
           data.slug = `${data.resource}.${data.action}`
@@ -159,4 +161,3 @@ export const Permissions: CollectionConfig = {
   },
   timestamps: true,
 }
-

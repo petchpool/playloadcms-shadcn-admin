@@ -106,8 +106,8 @@ export const Layouts: CollectionConfig = {
               name: 'props',
               type: 'json',
               admin: {
-                description: 'Props to pass to the section (JSON object)',
-                placeholder: '{ "variant": "dark", "sticky": true }',
+                description:
+                  'Props to pass to the section (JSON object). Example: { "variant": "dark", "sticky": true }',
               },
             },
             {

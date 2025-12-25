@@ -56,8 +56,8 @@ export const Roles: CollectionConfig = {
       admin: {
         description: 'Role level (1-10, higher number = more permissions)',
       },
-      validate: (value) => {
-        if (value < 1 || value > 10) {
+      validate: (value: number | number[] | null | undefined) => {
+        if (typeof value === 'number' && (value < 1 || value > 10)) {
           return 'Role level must be between 1 and 10'
         }
         return true
@@ -118,6 +118,8 @@ export const Roles: CollectionConfig = {
   hooks: {
     beforeValidate: [
       ({ data, operation }) => {
+        if (!data) return data
+
         // Auto-generate slug from name if not provided
         if (operation === 'create' && !data.slug && data.name) {
           data.slug = data.name
@@ -146,9 +148,7 @@ export const Roles: CollectionConfig = {
 
             // Get unique permission IDs
             const uniquePermIds = Array.from(
-              new Set(
-                allParentPerms.map((p) => (typeof p === 'object' && 'id' in p ? p.id : p)),
-              ),
+              new Set(allParentPerms.map((p) => (typeof p === 'object' && 'id' in p ? p.id : p))),
             )
 
             data.inheritedPermissions = uniquePermIds
@@ -179,4 +179,3 @@ export const Roles: CollectionConfig = {
   },
   timestamps: true,
 }
-

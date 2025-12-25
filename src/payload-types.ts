@@ -612,7 +612,7 @@ export interface Layout {
              */
             section: string | Section;
             /**
-             * Props to pass to the section (JSON object)
+             * Props to pass to the section (JSON object). Example: { "variant": "dark", "sticky": true }
              */
             props?:
               | {
@@ -835,6 +835,83 @@ export interface Section {
         id?: string | null;
         blockName?: string | null;
         blockType: 'grid';
+      }
+    | {
+        /**
+         * Unique key to store fetched data in context
+         */
+        dataKey: string;
+        source: {
+          type: 'collection' | 'global' | 'endpoint';
+          collection?:
+            | ('components' | 'sections' | 'pages' | 'layouts' | 'users' | 'media' | 'roles' | 'permissions')
+            | null;
+          endpoint?: string | null;
+        };
+        query?: {
+          limit?: number | null;
+          /**
+           * Sort field (e.g., "-createdAt")
+           */
+          sort?: string | null;
+        };
+        transform?: {
+          type?: ('none' | 'count' | 'sum' | 'average') | null;
+        };
+        children?:
+          | (
+              | {
+                  /**
+                   * Use data from parent DataFetch
+                   */
+                  useExternalData?: boolean | null;
+                  /**
+                   * Data key from parent DataFetch
+                   */
+                  dataKey?: string | null;
+                  title?: string | null;
+                  collection:
+                    | 'components'
+                    | 'sections'
+                    | 'pages'
+                    | 'layouts'
+                    | 'users'
+                    | 'media'
+                    | 'roles'
+                    | 'permissions';
+                  columns?:
+                    | {
+                        [k: string]: unknown;
+                      }
+                    | unknown[]
+                    | string
+                    | number
+                    | boolean
+                    | null;
+                  searchFields?:
+                    | {
+                        field: string;
+                        id?: string | null;
+                      }[]
+                    | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'blocksTable';
+                }
+              | {
+                  title: string;
+                  dataKey?: string | null;
+                  icon?: string | null;
+                  format?: ('number' | 'currency' | 'percentage') | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'statCard';
+                }
+            )[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'dataFetch';
       }
     | {
         /**
@@ -1118,7 +1195,7 @@ export interface Page {
              */
             section: string | Section;
             /**
-             * Props to pass to the section (JSON object)
+             * Props to pass to the section (JSON object). Example: { "title": "Welcome", "theme": "dark" }
              */
             props?:
               | {
@@ -1771,6 +1848,62 @@ export interface SectionsSelect<T extends boolean = true> {
                               };
                         };
                     id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        dataFetch?:
+          | T
+          | {
+              dataKey?: T;
+              source?:
+                | T
+                | {
+                    type?: T;
+                    collection?: T;
+                    endpoint?: T;
+                  };
+              query?:
+                | T
+                | {
+                    limit?: T;
+                    sort?: T;
+                  };
+              transform?:
+                | T
+                | {
+                    type?: T;
+                  };
+              children?:
+                | T
+                | {
+                    blocksTable?:
+                      | T
+                      | {
+                          useExternalData?: T;
+                          dataKey?: T;
+                          title?: T;
+                          collection?: T;
+                          columns?: T;
+                          searchFields?:
+                            | T
+                            | {
+                                field?: T;
+                                id?: T;
+                              };
+                          id?: T;
+                          blockName?: T;
+                        };
+                    statCard?:
+                      | T
+                      | {
+                          title?: T;
+                          dataKey?: T;
+                          icon?: T;
+                          format?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
                   };
               id?: T;
               blockName?: T;

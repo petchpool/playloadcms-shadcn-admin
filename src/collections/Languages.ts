@@ -122,6 +122,8 @@ export const Languages: CollectionConfig = {
   hooks: {
     beforeValidate: [
       ({ data }) => {
+        if (!data) return data
+
         // Validate language code format (ISO 639-1: 2 letters)
         if (data.code && !/^[a-z]{2}$/i.test(data.code)) {
           throw new Error('Language code must be a valid ISO 639-1 code (2 letters)')
@@ -132,4 +134,3 @@ export const Languages: CollectionConfig = {
   },
   timestamps: true,
 }
-

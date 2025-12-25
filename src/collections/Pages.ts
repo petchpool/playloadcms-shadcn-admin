@@ -150,8 +150,8 @@ export const Pages: CollectionConfig = {
               name: 'props',
               type: 'json',
               admin: {
-                description: 'Props to pass to the section (JSON object)',
-                placeholder: '{ "title": "Welcome", "theme": "dark" }',
+                description:
+                  'Props to pass to the section (JSON object). Example: { "title": "Welcome", "theme": "dark" }',
               },
             },
             {

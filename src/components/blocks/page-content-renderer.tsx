@@ -17,22 +17,14 @@ export type PageContentRendererProps = {
 export function PageContentRenderer({ content, blocks }: PageContentRendererProps) {
   // Support both 'content' and 'blocks' prop names
   const items = content || blocks
-  
+
   if (!items || !Array.isArray(items)) {
-    console.log('PageContentRenderer: No content or not an array', items)
     return null
   }
-
-  console.log('PageContentRenderer: Rendering', items.length, 'blocks')
-  console.log(
-    'PageContentRenderer: Block types:',
-    items.map((b) => b.blockType),
-  )
 
   return (
     <div className="page-content space-y-8">
       {items.map((block, index) => {
-        console.log(`Rendering block ${index}:`, block.blockType, block)
         switch (block.blockType) {
           case 'richText':
             return <RichTextRenderer key={index} content={block.content} />
@@ -206,26 +198,6 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
 
           case 'table':
           case 'blocksTable': // Backward compatibility
-            console.log('Rendering blocksTable block:', {
-              title: block.title,
-              description: block.description,
-              limit: block.limit,
-              columns: block.columns,
-              collection: block.collection,
-              searchFields: block.searchFields,
-              filterFields: block.filterFields,
-              populate: block.populate,
-              defaultSort: block.defaultSort,
-              showStatusTabs: block.showStatusTabs,
-              statusTabsField: block.statusTabsField,
-              statusTabsConfig: block.statusTabsConfig,
-              showActions: block.showActions,
-              defaultActions: block.defaultActions,
-              syncUrl: block.syncUrl,
-              urlGroup: block.urlGroup,
-              useExternalData: block.useExternalData,
-              dataKey: block.dataKey,
-            })
             return (
               <BlocksTableBlock
                 key={index}
@@ -372,7 +344,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
                 : block.align === 'right'
                   ? 'text-right'
                   : 'text-left'
-            
+
             // Render heading based on level
             if (level === 'h1') {
               return (

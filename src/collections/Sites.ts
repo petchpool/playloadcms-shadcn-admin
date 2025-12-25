@@ -586,6 +586,8 @@ export const Sites: CollectionConfig = {
   hooks: {
     beforeValidate: [
       ({ data }) => {
+        if (!data) return data
+
         // Validate domain format
         if (
           data.domain &&

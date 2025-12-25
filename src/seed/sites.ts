@@ -398,15 +398,11 @@ export async function seedSites() {
           data: {
             title: pageData.titleEn,
             slug: pageData.slug,
-            language: enLanguage.id,
             pageStatus: 'published',
             content: contentBlocks,
             seo: {
               metaTitle: pageData.titleEn,
               metaDescription: `${pageData.titleEn} page`,
-            },
-            translations: {
-              translationGroup,
             },
             publishedAt: new Date().toISOString(),
             order: pageData.order,
@@ -429,16 +425,11 @@ export async function seedSites() {
           data: {
             title: pageData.titleTh,
             slug: pageData.slug,
-            language: thLanguage.id,
             pageStatus: 'published',
             content: contentBlocksTh,
             seo: {
               metaTitle: pageData.titleTh,
               metaDescription: `${pageData.titleTh} page`,
-            },
-            translations: {
-              translationGroup,
-              relatedPages: [pageEn.id],
             },
             publishedAt: new Date().toISOString(),
             order: pageData.order,
@@ -448,18 +439,8 @@ export async function seedSites() {
         })
         console.log(`     ✅ Created page: ${pageData.titleTh} (th)`)
 
-        // Update EN page with related page
-        await payload.update({
-          collection: 'pages',
-          id: pageEn.id,
-          data: {
-            translations: {
-              translationGroup,
-              relatedPages: [pageTh.id],
-            },
-          },
-          overrideAccess: true,
-        })
+        // EN and TH pages created
+        // Note: Translations relationship removed as it's not in the schema
       }
     }
 

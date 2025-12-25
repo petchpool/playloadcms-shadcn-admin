@@ -253,6 +253,197 @@ export const Sections: CollectionConfig = {
                   ],
                 },
                 {
+                  slug: 'dataFetch',
+                  labels: {
+                    singular: 'Data Fetch',
+                    plural: 'Data Fetches',
+                  },
+                  fields: [
+                    {
+                      name: 'dataKey',
+                      type: 'text',
+                      required: true,
+                      admin: {
+                        description: 'Unique key to store fetched data in context',
+                      },
+                    },
+                    {
+                      name: 'source',
+                      type: 'group',
+                      fields: [
+                        {
+                          name: 'type',
+                          type: 'select',
+                          required: true,
+                          defaultValue: 'collection',
+                          options: [
+                            { label: 'Collection', value: 'collection' },
+                            { label: 'Global', value: 'global' },
+                            { label: 'API Endpoint', value: 'endpoint' },
+                          ],
+                        },
+                        {
+                          name: 'collection',
+                          type: 'select',
+                          options: [
+                            { label: 'Components', value: 'components' },
+                            { label: 'Sections', value: 'sections' },
+                            { label: 'Pages', value: 'pages' },
+                            { label: 'Layouts', value: 'layouts' },
+                            { label: 'Users', value: 'users' },
+                            { label: 'Media', value: 'media' },
+                            { label: 'Roles', value: 'roles' },
+                            { label: 'Permissions', value: 'permissions' },
+                          ],
+                          admin: {
+                            condition: (data, siblingData) => siblingData?.type === 'collection',
+                          },
+                        },
+                        {
+                          name: 'endpoint',
+                          type: 'text',
+                          admin: {
+                            condition: (data, siblingData) => siblingData?.type === 'endpoint',
+                          },
+                        },
+                      ],
+                    },
+                    {
+                      name: 'query',
+                      type: 'group',
+                      fields: [
+                        {
+                          name: 'limit',
+                          type: 'number',
+                          defaultValue: 10,
+                        },
+                        {
+                          name: 'sort',
+                          type: 'text',
+                          admin: {
+                            description: 'Sort field (e.g., "-createdAt")',
+                          },
+                        },
+                      ],
+                    },
+                    {
+                      name: 'transform',
+                      type: 'group',
+                      fields: [
+                        {
+                          name: 'type',
+                          type: 'select',
+                          defaultValue: 'none',
+                          options: [
+                            { label: 'None', value: 'none' },
+                            { label: 'Count', value: 'count' },
+                            { label: 'Sum', value: 'sum' },
+                            { label: 'Average', value: 'average' },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      name: 'children',
+                      type: 'blocks',
+                      blocks: [
+                        {
+                          slug: 'blocksTable',
+                          labels: {
+                            singular: 'Blocks Table',
+                            plural: 'Blocks Tables',
+                          },
+                          fields: [
+                            {
+                              name: 'useExternalData',
+                              type: 'checkbox',
+                              defaultValue: false,
+                              admin: {
+                                description: 'Use data from parent DataFetch',
+                              },
+                            },
+                            {
+                              name: 'dataKey',
+                              type: 'text',
+                              admin: {
+                                description: 'Data key from parent DataFetch',
+                                condition: (data, siblingData) =>
+                                  siblingData?.useExternalData === true,
+                              },
+                            },
+                            {
+                              name: 'title',
+                              type: 'text',
+                            },
+                            {
+                              name: 'collection',
+                              type: 'select',
+                              required: true,
+                              defaultValue: 'components',
+                              options: [
+                                { label: 'Components', value: 'components' },
+                                { label: 'Sections', value: 'sections' },
+                                { label: 'Pages', value: 'pages' },
+                                { label: 'Layouts', value: 'layouts' },
+                                { label: 'Users', value: 'users' },
+                                { label: 'Media', value: 'media' },
+                                { label: 'Roles', value: 'roles' },
+                                { label: 'Permissions', value: 'permissions' },
+                              ],
+                            },
+                            {
+                              name: 'columns',
+                              type: 'json',
+                            },
+                            {
+                              name: 'searchFields',
+                              type: 'array',
+                              fields: [
+                                {
+                                  name: 'field',
+                                  type: 'text',
+                                  required: true,
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                        {
+                          slug: 'statCard',
+                          labels: {
+                            singular: 'Stat Card',
+                            plural: 'Stat Cards',
+                          },
+                          fields: [
+                            {
+                              name: 'title',
+                              type: 'text',
+                              required: true,
+                            },
+                            {
+                              name: 'dataKey',
+                              type: 'text',
+                            },
+                            {
+                              name: 'icon',
+                              type: 'text',
+                            },
+                            {
+                              name: 'format',
+                              type: 'select',
+                              options: [
+                                { label: 'Number', value: 'number' },
+                                { label: 'Currency', value: 'currency' },
+                                { label: 'Percentage', value: 'percentage' },
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
                   slug: 'table',
                   labels: {
                     singular: 'Data Table',

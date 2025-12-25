@@ -4,18 +4,18 @@ import { filterBlocksRecursively } from '@/utils/filter-blocks-by-permissions'
 
 /**
  * Pages Collection (Simplified - Section-first Architecture)
- * 
+ *
  * Philosophy:
  * - Pages = Composition of Sections + Minimal local content
  * - Complex blocks live in Sections, not Pages
  * - Pages.content should be short and readable
- * 
+ *
  * Content blocks (minimal):
  * - sectionRef: Reference to reusable sections
  * - richText: Local rich text content
  * - heading: Simple headings
  * - grid: Basic layout
- * 
+ *
  * For complex content (dataFetch, statCard, gallery, etc.):
  * → Create a Section and reference it
  */
@@ -149,8 +149,8 @@ export const Pages: CollectionConfig = {
               name: 'props',
               type: 'json',
               admin: {
-                description: 'Props to pass to the section (JSON object)',
-                placeholder: '{ "title": "Welcome", "theme": "dark" }',
+                description:
+                  'Props to pass to the section (JSON object). Example: { "title": "Welcome", "theme": "dark" }',
               },
             },
             {
@@ -566,4 +566,3 @@ export const Pages: CollectionConfig = {
     maxPerDoc: 50,
   },
 }
-

@@ -1,72 +1,310 @@
 import { getPayload } from 'payload'
 import config from '../payload.config'
 
+// Helper function to generate slug from name
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 const basePermissions = [
   // Pages permissions
-  { name: 'Create Pages', resource: 'pages', action: 'create', description: 'Create new pages' },
-  { name: 'Read Pages', resource: 'pages', action: 'read', description: 'View pages' },
-  { name: 'Update Pages', resource: 'pages', action: 'update', description: 'Edit pages' },
-  { name: 'Delete Pages', resource: 'pages', action: 'delete', description: 'Delete pages' },
-  { name: 'Admin Pages', resource: 'pages', action: 'admin', description: 'Full access to pages' },
+  {
+    name: 'Create Pages',
+    resource: 'pages' as const,
+    action: 'create' as const,
+    description: 'Create new pages',
+  },
+  {
+    name: 'Read Pages',
+    resource: 'pages' as const,
+    action: 'read' as const,
+    description: 'View pages',
+  },
+  {
+    name: 'Update Pages',
+    resource: 'pages' as const,
+    action: 'update' as const,
+    description: 'Edit pages',
+  },
+  {
+    name: 'Delete Pages',
+    resource: 'pages' as const,
+    action: 'delete' as const,
+    description: 'Delete pages',
+  },
+  {
+    name: 'Admin Pages',
+    resource: 'pages' as const,
+    action: 'admin' as const,
+    description: 'Full access to pages',
+  },
 
   // Sites permissions
-  { name: 'Create Sites', resource: 'sites', action: 'create', description: 'Create new sites' },
-  { name: 'Read Sites', resource: 'sites', action: 'read', description: 'View sites' },
-  { name: 'Update Sites', resource: 'sites', action: 'update', description: 'Edit sites' },
-  { name: 'Delete Sites', resource: 'sites', action: 'delete', description: 'Delete sites' },
-  { name: 'Admin Sites', resource: 'sites', action: 'admin', description: 'Full access to sites' },
+  {
+    name: 'Create Sites',
+    resource: 'sites' as const,
+    action: 'create' as const,
+    description: 'Create new sites',
+  },
+  {
+    name: 'Read Sites',
+    resource: 'sites' as const,
+    action: 'read' as const,
+    description: 'View sites',
+  },
+  {
+    name: 'Update Sites',
+    resource: 'sites' as const,
+    action: 'update' as const,
+    description: 'Edit sites',
+  },
+  {
+    name: 'Delete Sites',
+    resource: 'sites' as const,
+    action: 'delete' as const,
+    description: 'Delete sites',
+  },
+  {
+    name: 'Admin Sites',
+    resource: 'sites' as const,
+    action: 'admin' as const,
+    description: 'Full access to sites',
+  },
 
   // Layouts permissions
-  { name: 'Create Layouts', resource: 'layouts', action: 'create', description: 'Create new layouts' },
-  { name: 'Read Layouts', resource: 'layouts', action: 'read', description: 'View layouts' },
-  { name: 'Update Layouts', resource: 'layouts', action: 'update', description: 'Edit layouts' },
-  { name: 'Delete Layouts', resource: 'layouts', action: 'delete', description: 'Delete layouts' },
-  { name: 'Admin Layouts', resource: 'layouts', action: 'admin', description: 'Full access to layouts' },
+  {
+    name: 'Create Layouts',
+    resource: 'layouts' as const,
+    action: 'create' as const,
+    description: 'Create new layouts',
+  },
+  {
+    name: 'Read Layouts',
+    resource: 'layouts' as const,
+    action: 'read' as const,
+    description: 'View layouts',
+  },
+  {
+    name: 'Update Layouts',
+    resource: 'layouts' as const,
+    action: 'update' as const,
+    description: 'Edit layouts',
+  },
+  {
+    name: 'Delete Layouts',
+    resource: 'layouts' as const,
+    action: 'delete' as const,
+    description: 'Delete layouts',
+  },
+  {
+    name: 'Admin Layouts',
+    resource: 'layouts' as const,
+    action: 'admin' as const,
+    description: 'Full access to layouts',
+  },
 
   // Components permissions
-  { name: 'Create Components', resource: 'components', action: 'create', description: 'Create new components' },
-  { name: 'Read Components', resource: 'components', action: 'read', description: 'View components' },
-  { name: 'Update Components', resource: 'components', action: 'update', description: 'Edit components' },
-  { name: 'Delete Components', resource: 'components', action: 'delete', description: 'Delete components' },
-  { name: 'Admin Components', resource: 'components', action: 'admin', description: 'Full access to components' },
+  {
+    name: 'Create Components',
+    resource: 'components' as const,
+    action: 'create' as const,
+    description: 'Create new components',
+  },
+  {
+    name: 'Read Components',
+    resource: 'components' as const,
+    action: 'read' as const,
+    description: 'View components',
+  },
+  {
+    name: 'Update Components',
+    resource: 'components' as const,
+    action: 'update' as const,
+    description: 'Edit components',
+  },
+  {
+    name: 'Delete Components',
+    resource: 'components' as const,
+    action: 'delete' as const,
+    description: 'Delete components',
+  },
+  {
+    name: 'Admin Components',
+    resource: 'components' as const,
+    action: 'admin' as const,
+    description: 'Full access to components',
+  },
 
   // Languages permissions
-  { name: 'Create Languages', resource: 'languages', action: 'create', description: 'Create new languages' },
-  { name: 'Read Languages', resource: 'languages', action: 'read', description: 'View languages' },
-  { name: 'Update Languages', resource: 'languages', action: 'update', description: 'Edit languages' },
-  { name: 'Delete Languages', resource: 'languages', action: 'delete', description: 'Delete languages' },
-  { name: 'Admin Languages', resource: 'languages', action: 'admin', description: 'Full access to languages' },
+  {
+    name: 'Create Languages',
+    resource: 'languages' as const,
+    action: 'create' as const,
+    description: 'Create new languages',
+  },
+  {
+    name: 'Read Languages',
+    resource: 'languages' as const,
+    action: 'read' as const,
+    description: 'View languages',
+  },
+  {
+    name: 'Update Languages',
+    resource: 'languages' as const,
+    action: 'update' as const,
+    description: 'Edit languages',
+  },
+  {
+    name: 'Delete Languages',
+    resource: 'languages' as const,
+    action: 'delete' as const,
+    description: 'Delete languages',
+  },
+  {
+    name: 'Admin Languages',
+    resource: 'languages' as const,
+    action: 'admin' as const,
+    description: 'Full access to languages',
+  },
 
   // Users permissions
-  { name: 'Create Users', resource: 'users', action: 'create', description: 'Create new users' },
-  { name: 'Read Users', resource: 'users', action: 'read', description: 'View users' },
-  { name: 'Update Users', resource: 'users', action: 'update', description: 'Edit users' },
-  { name: 'Delete Users', resource: 'users', action: 'delete', description: 'Delete users' },
-  { name: 'Admin Users', resource: 'users', action: 'admin', description: 'Full access to users' },
+  {
+    name: 'Create Users',
+    resource: 'users' as const,
+    action: 'create' as const,
+    description: 'Create new users',
+  },
+  {
+    name: 'Read Users',
+    resource: 'users' as const,
+    action: 'read' as const,
+    description: 'View users',
+  },
+  {
+    name: 'Update Users',
+    resource: 'users' as const,
+    action: 'update' as const,
+    description: 'Edit users',
+  },
+  {
+    name: 'Delete Users',
+    resource: 'users' as const,
+    action: 'delete' as const,
+    description: 'Delete users',
+  },
+  {
+    name: 'Admin Users',
+    resource: 'users' as const,
+    action: 'admin' as const,
+    description: 'Full access to users',
+  },
 
   // Roles permissions
-  { name: 'Create Roles', resource: 'roles', action: 'create', description: 'Create new roles' },
-  { name: 'Read Roles', resource: 'roles', action: 'read', description: 'View roles' },
-  { name: 'Update Roles', resource: 'roles', action: 'update', description: 'Edit roles' },
-  { name: 'Delete Roles', resource: 'roles', action: 'delete', description: 'Delete roles' },
-  { name: 'Admin Roles', resource: 'roles', action: 'admin', description: 'Full access to roles' },
+  {
+    name: 'Create Roles',
+    resource: 'roles' as const,
+    action: 'create' as const,
+    description: 'Create new roles',
+  },
+  {
+    name: 'Read Roles',
+    resource: 'roles' as const,
+    action: 'read' as const,
+    description: 'View roles',
+  },
+  {
+    name: 'Update Roles',
+    resource: 'roles' as const,
+    action: 'update' as const,
+    description: 'Edit roles',
+  },
+  {
+    name: 'Delete Roles',
+    resource: 'roles' as const,
+    action: 'delete' as const,
+    description: 'Delete roles',
+  },
+  {
+    name: 'Admin Roles',
+    resource: 'roles' as const,
+    action: 'admin' as const,
+    description: 'Full access to roles',
+  },
 
   // Permissions permissions
-  { name: 'Create Permissions', resource: 'permissions', action: 'create', description: 'Create new permissions' },
-  { name: 'Read Permissions', resource: 'permissions', action: 'read', description: 'View permissions' },
-  { name: 'Update Permissions', resource: 'permissions', action: 'update', description: 'Edit permissions' },
-  { name: 'Delete Permissions', resource: 'permissions', action: 'delete', description: 'Delete permissions' },
-  { name: 'Admin Permissions', resource: 'permissions', action: 'admin', description: 'Full access to permissions' },
+  {
+    name: 'Create Permissions',
+    resource: 'permissions' as const,
+    action: 'create' as const,
+    description: 'Create new permissions',
+  },
+  {
+    name: 'Read Permissions',
+    resource: 'permissions' as const,
+    action: 'read' as const,
+    description: 'View permissions',
+  },
+  {
+    name: 'Update Permissions',
+    resource: 'permissions' as const,
+    action: 'update' as const,
+    description: 'Edit permissions',
+  },
+  {
+    name: 'Delete Permissions',
+    resource: 'permissions' as const,
+    action: 'delete' as const,
+    description: 'Delete permissions',
+  },
+  {
+    name: 'Admin Permissions',
+    resource: 'permissions' as const,
+    action: 'admin' as const,
+    description: 'Full access to permissions',
+  },
 
   // Media permissions
-  { name: 'Create Media', resource: 'media', action: 'create', description: 'Upload media files' },
-  { name: 'Read Media', resource: 'media', action: 'read', description: 'View media files' },
-  { name: 'Update Media', resource: 'media', action: 'update', description: 'Edit media files' },
-  { name: 'Delete Media', resource: 'media', action: 'delete', description: 'Delete media files' },
-  { name: 'Admin Media', resource: 'media', action: 'admin', description: 'Full access to media' },
+  {
+    name: 'Create Media',
+    resource: 'media' as const,
+    action: 'create' as const,
+    description: 'Upload media files',
+  },
+  {
+    name: 'Read Media',
+    resource: 'media' as const,
+    action: 'read' as const,
+    description: 'View media files',
+  },
+  {
+    name: 'Update Media',
+    resource: 'media' as const,
+    action: 'update' as const,
+    description: 'Edit media files',
+  },
+  {
+    name: 'Delete Media',
+    resource: 'media' as const,
+    action: 'delete' as const,
+    description: 'Delete media files',
+  },
+  {
+    name: 'Admin Media',
+    resource: 'media' as const,
+    action: 'admin' as const,
+    description: 'Full access to media',
+  },
 
   // All permissions
-  { name: 'All Permissions', resource: 'all', action: 'all', description: 'Full access to all resources' },
+  {
+    name: 'All Permissions',
+    resource: 'all' as const,
+    action: 'all' as const,
+    description: 'Full access to all resources',
+  },
 ]
 
 export async function seedPermissions() {
@@ -101,8 +339,10 @@ export async function seedPermissions() {
         collection: 'permissions',
         data: {
           ...permData,
-          status: 'active',
+          slug: generateSlug(permData.name),
+          status: 'active' as const,
         },
+        draft: false,
         overrideAccess: true,
       })
 
@@ -118,4 +358,3 @@ export async function seedPermissions() {
 
   return createdPermissions
 }
-

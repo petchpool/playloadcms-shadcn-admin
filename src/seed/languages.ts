@@ -14,7 +14,7 @@ const languages = [
       code: 'en-US',
       currency: 'USD',
     },
-    status: 'active',
+    status: 'active' as const,
     order: 1,
   },
   {
@@ -29,7 +29,7 @@ const languages = [
       code: 'th-TH',
       currency: 'THB',
     },
-    status: 'active',
+    status: 'active' as const,
     order: 2,
   },
 ]
@@ -54,7 +54,9 @@ export async function seedLanguages() {
       })
 
       if (existing.docs.length > 0) {
-        console.log(`  ⏭️  Language "${languageData.name}" (${languageData.code}) already exists, skipping...`)
+        console.log(
+          `  ⏭️  Language "${languageData.name}" (${languageData.code}) already exists, skipping...`,
+        )
         continue
       }
 
@@ -85,4 +87,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       process.exit(1)
     })
 }
-

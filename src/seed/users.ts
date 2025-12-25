@@ -18,7 +18,7 @@ export async function seedUsers(roles: any[]) {
       firstName: 'Admin',
       lastName: 'User',
       roles: [findRole('admin')],
-      status: 'active',
+      status: 'active' as const,
     },
     {
       email: 'editor@example.com',
@@ -26,7 +26,7 @@ export async function seedUsers(roles: any[]) {
       firstName: 'Editor',
       lastName: 'User',
       roles: [findRole('editor')],
-      status: 'active',
+      status: 'active' as const,
     },
     {
       email: 'author@example.com',
@@ -34,7 +34,7 @@ export async function seedUsers(roles: any[]) {
       firstName: 'Author',
       lastName: 'User',
       roles: [findRole('author')],
-      status: 'active',
+      status: 'active' as const,
     },
     {
       email: 'viewer@example.com',
@@ -42,7 +42,7 @@ export async function seedUsers(roles: any[]) {
       firstName: 'Viewer',
       lastName: 'User',
       roles: [findRole('viewer')],
-      status: 'active',
+      status: 'active' as const,
     },
   ]
 

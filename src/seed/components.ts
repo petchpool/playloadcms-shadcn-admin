@@ -5,8 +5,8 @@ const baseComponents = [
   {
     name: 'Hero Section',
     slug: 'hero-section',
-    type: 'section',
-    category: 'content',
+    type: 'section' as const,
+    category: 'content' as const,
     description: 'Hero section with title, subtitle, and CTA button',
     code: JSON.stringify({
       component: 'HeroSection',
@@ -38,13 +38,13 @@ const baseComponents = [
         description: 'CTA button link',
       },
     },
-    status: 'published',
+    status: 'published' as const,
   },
   {
     name: 'Feature Grid',
     slug: 'feature-grid',
-    type: 'section',
-    category: 'content',
+    type: 'section' as const,
+    category: 'content' as const,
     description: 'Grid of feature items with icons, titles, and descriptions',
     code: JSON.stringify({
       component: 'FeatureGrid',
@@ -63,13 +63,13 @@ const baseComponents = [
         description: 'Array of feature items',
       },
     },
-    status: 'published',
+    status: 'published' as const,
   },
   {
     name: 'CTA Banner',
     slug: 'cta-banner',
-    type: 'section',
-    category: 'content',
+    type: 'section' as const,
+    category: 'content' as const,
     description: 'Call-to-action banner with text and button',
     code: JSON.stringify({
       component: 'CTABanner',
@@ -101,13 +101,13 @@ const baseComponents = [
         description: 'CTA button link',
       },
     },
-    status: 'published',
+    status: 'published' as const,
   },
   {
     name: 'Testimonial Carousel',
     slug: 'testimonial-carousel',
-    type: 'section',
-    category: 'content',
+    type: 'section' as const,
+    category: 'content' as const,
     description: 'Carousel of customer testimonials',
     code: JSON.stringify({
       component: 'TestimonialCarousel',
@@ -127,13 +127,13 @@ const baseComponents = [
         description: 'Array of testimonials',
       },
     },
-    status: 'published',
+    status: 'published' as const,
   },
   {
     name: 'Contact Form',
     slug: 'contact-form',
-    type: 'section',
-    category: 'form',
+    type: 'section' as const,
+    category: 'form' as const,
     description: 'Contact form with name, email, and message fields',
     code: JSON.stringify({
       component: 'ContactForm',
@@ -154,13 +154,13 @@ const baseComponents = [
         description: 'Submit button text',
       },
     },
-    status: 'published',
+    status: 'published' as const,
   },
   {
     name: 'Newsletter Signup',
     slug: 'newsletter-signup',
-    type: 'widget',
-    category: 'form',
+    type: 'widget' as const,
+    category: 'form' as const,
     description: 'Newsletter signup form',
     code: JSON.stringify({
       component: 'NewsletterSignup',
@@ -181,13 +181,13 @@ const baseComponents = [
         description: 'Email input placeholder',
       },
     },
-    status: 'published',
+    status: 'published' as const,
   },
   {
     name: 'Breadcrumb Navigation',
     slug: 'breadcrumb-navigation',
-    type: 'widget',
-    category: 'navigation',
+    type: 'widget' as const,
+    category: 'navigation' as const,
     description: 'Breadcrumb navigation component',
     code: JSON.stringify({
       component: 'Breadcrumb',
@@ -205,13 +205,13 @@ const baseComponents = [
         description: 'Breadcrumb items',
       },
     },
-    status: 'published',
+    status: 'published' as const,
   },
   {
     name: 'Social Media Links',
     slug: 'social-media-links',
-    type: 'widget',
-    category: 'navigation',
+    type: 'widget' as const,
+    category: 'navigation' as const,
     description: 'Social media links component',
     code: JSON.stringify({
       component: 'SocialMediaLinks',
@@ -230,13 +230,13 @@ const baseComponents = [
         description: 'Social media links',
       },
     },
-    status: 'published',
+    status: 'published' as const,
   },
   {
     name: 'Image Gallery',
     slug: 'image-gallery',
-    type: 'block',
-    category: 'media',
+    type: 'block' as const,
+    category: 'media' as const,
     description: 'Image gallery with lightbox',
     code: JSON.stringify({
       component: 'ImageGallery',
@@ -260,13 +260,13 @@ const baseComponents = [
         description: 'Number of columns',
       },
     },
-    status: 'published',
+    status: 'published' as const,
   },
   {
     name: 'Video Player',
     slug: 'video-player',
-    type: 'block',
-    category: 'media',
+    type: 'block' as const,
+    category: 'media' as const,
     description: 'Video player component',
     code: JSON.stringify({
       component: 'VideoPlayer',
@@ -287,13 +287,13 @@ const baseComponents = [
         description: 'Autoplay video',
       },
     },
-    status: 'published',
+    status: 'published' as const,
   },
   {
     name: 'Stats Counter',
     slug: 'stats-counter',
-    type: 'section',
-    category: 'content',
+    type: 'section' as const,
+    category: 'content' as const,
     description: 'Statistics counter section',
     code: JSON.stringify({
       component: 'StatsCounter',
@@ -312,13 +312,13 @@ const baseComponents = [
         description: 'Statistics items',
       },
     },
-    status: 'published',
+    status: 'published' as const,
   },
   {
     name: 'Pricing Table',
     slug: 'pricing-table',
-    type: 'section',
-    category: 'content',
+    type: 'section' as const,
+    category: 'content' as const,
     description: 'Pricing table component',
     code: JSON.stringify({
       component: 'PricingTable',
@@ -339,7 +339,7 @@ const baseComponents = [
         description: 'Pricing plans',
       },
     },
-    status: 'published',
+    status: 'published' as const,
   },
 ]
 
@@ -391,4 +391,3 @@ export async function seedComponents() {
 
   return createdComponents
 }
-
