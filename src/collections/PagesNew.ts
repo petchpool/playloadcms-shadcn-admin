@@ -4,18 +4,18 @@ import { filterBlocksRecursively } from '@/utils/filter-blocks-by-permissions'
 
 /**
  * Pages Collection (Simplified - Section-first Architecture)
- *
+ * 
  * Philosophy:
  * - Pages = Composition of Sections + Minimal local content
  * - Complex blocks live in Sections, not Pages
  * - Pages.content should be short and readable
- *
+ * 
  * Content blocks (minimal):
  * - sectionRef: Reference to reusable sections
  * - richText: Local rich text content
  * - heading: Simple headings
  * - grid: Basic layout
- *
+ * 
  * For complex content (dataFetch, statCard, gallery, etc.):
  * → Create a Section and reference it
  */
@@ -123,8 +123,7 @@ export const Pages: CollectionConfig = {
       type: 'blocks',
       localized: true,
       admin: {
-        description:
-          'Page content - Primarily use Section References. Create sections in Sections collection for complex content.',
+        description: 'Page content - Use Section References for complex content',
       },
       blocks: [
         // ============================================
@@ -143,7 +142,7 @@ export const Pages: CollectionConfig = {
               relationTo: 'sections',
               required: true,
               admin: {
-                description: 'Reference a reusable section from Sections collection',
+                description: 'Reference a reusable section',
               },
             },
             {
@@ -155,10 +154,67 @@ export const Pages: CollectionConfig = {
               },
             },
             {
+              name: 'slots',
+              type: 'array',
+              admin: {
+                description: 'Fill section slots with custom content',
+              },
+              fields: [
+                {
+                  name: 'slotName',
+                  type: 'text',
+                  required: true,
+                  admin: {
+                    description: 'Name of the slot to fill',
+                  },
+                },
+                {
+                  name: 'content',
+                  type: 'blocks',
+                  admin: {
+                    description: 'Content to inject into the slot',
+                  },
+                  blocks: [
+                    {
+                      slug: 'richText',
+                      fields: [
+                        {
+                          name: 'content',
+                          type: 'richText',
+                          required: true,
+                        },
+                      ],
+                    },
+                    {
+                      slug: 'heading',
+                      fields: [
+                        {
+                          name: 'text',
+                          type: 'text',
+                          required: true,
+                        },
+                        {
+                          name: 'level',
+                          type: 'select',
+                          defaultValue: 'h2',
+                          options: [
+                            { label: 'H1', value: 'h1' },
+                            { label: 'H2', value: 'h2' },
+                            { label: 'H3', value: 'h3' },
+                            { label: 'H4', value: 'h4' },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
               name: 'overrides',
               type: 'group',
               admin: {
-                description: 'Override section settings (optional)',
+                description: 'Override section settings',
               },
               fields: [
                 {
@@ -178,14 +234,156 @@ export const Pages: CollectionConfig = {
                     { label: 'Muted', value: 'muted' },
                   ],
                 },
+              ],
+            },
+          ],
+        },
+
+        // ============================================
+        // 2. RICH TEXT (Local Content)
+        // ============================================
+        {
+          slug: 'richText',
+          labels: {
+            singular: 'Rich Text',
+            plural: 'Rich Texts',
+          },
+          fields: [
+            {
+              name: 'content',
+              type: 'richText',
+              required: true,
+              admin: {
+                description: 'Rich text content',
+              },
+            },
+            {
+              name: 'maxWidth',
+              type: 'select',
+              defaultValue: 'prose',
+              options: [
+                { label: 'Prose (65ch)', value: 'prose' },
+                { label: 'Wide (80ch)', value: 'wide' },
+                { label: 'Full', value: 'full' },
+              ],
+            },
+          ],
+        },
+
+        // ============================================
+        // 3. HEADING (Simple Headers)
+        // ============================================
+        {
+          slug: 'heading',
+          labels: {
+            singular: 'Heading',
+            plural: 'Headings',
+          },
+          fields: [
+            {
+              name: 'text',
+              type: 'text',
+              required: true,
+            },
+            {
+              name: 'level',
+              type: 'select',
+              required: true,
+              defaultValue: 'h2',
+              options: [
+                { label: 'H1', value: 'h1' },
+                { label: 'H2', value: 'h2' },
+                { label: 'H3', value: 'h3' },
+                { label: 'H4', value: 'h4' },
+                { label: 'H5', value: 'h5' },
+                { label: 'H6', value: 'h6' },
+              ],
+            },
+            {
+              name: 'align',
+              type: 'select',
+              defaultValue: 'left',
+              options: [
+                { label: 'Left', value: 'left' },
+                { label: 'Center', value: 'center' },
+                { label: 'Right', value: 'right' },
+              ],
+            },
+          ],
+        },
+
+        // ============================================
+        // 4. GRID (Simple Layout)
+        // ============================================
+        {
+          slug: 'grid',
+          labels: {
+            singular: 'Grid',
+            plural: 'Grids',
+          },
+          fields: [
+            {
+              name: 'columns',
+              type: 'select',
+              required: true,
+              defaultValue: '2',
+              options: [
+                { label: '1 Column', value: '1' },
+                { label: '2 Columns', value: '2' },
+                { label: '3 Columns', value: '3' },
+                { label: '4 Columns', value: '4' },
+              ],
+            },
+            {
+              name: 'gap',
+              type: 'select',
+              defaultValue: 'md',
+              options: [
+                { label: 'Small', value: 'sm' },
+                { label: 'Medium', value: 'md' },
+                { label: 'Large', value: 'lg' },
+              ],
+            },
+            {
+              name: 'items',
+              type: 'array',
+              required: true,
+              minRows: 1,
+              fields: [
                 {
-                  name: 'spacing',
-                  type: 'select',
-                  options: [
-                    { label: 'None', value: 'none' },
-                    { label: 'Small', value: 'sm' },
-                    { label: 'Medium', value: 'md' },
-                    { label: 'Large', value: 'lg' },
+                  name: 'content',
+                  type: 'blocks',
+                  blocks: [
+                    {
+                      slug: 'richText',
+                      fields: [
+                        {
+                          name: 'content',
+                          type: 'richText',
+                          required: true,
+                        },
+                      ],
+                    },
+                    {
+                      slug: 'heading',
+                      fields: [
+                        {
+                          name: 'text',
+                          type: 'text',
+                          required: true,
+                        },
+                        {
+                          name: 'level',
+                          type: 'select',
+                          defaultValue: 'h3',
+                          options: [
+                            { label: 'H2', value: 'h2' },
+                            { label: 'H3', value: 'h3' },
+                            { label: 'H4', value: 'h4' },
+                          ],
+                        },
+                      ],
+                    },
                   ],
                 },
               ],
@@ -194,7 +392,48 @@ export const Pages: CollectionConfig = {
         },
 
         // ============================================
-        // 2. SPACER (Visual Spacing Utility)
+        // 5. IMAGE (Simple Image Block)
+        // ============================================
+        {
+          slug: 'image',
+          labels: {
+            singular: 'Image',
+            plural: 'Images',
+          },
+          fields: [
+            {
+              name: 'image',
+              type: 'upload',
+              relationTo: 'media',
+              required: true,
+            },
+            {
+              name: 'alt',
+              type: 'text',
+              admin: {
+                description: 'Alternative text for accessibility',
+              },
+            },
+            {
+              name: 'caption',
+              type: 'text',
+            },
+            {
+              name: 'size',
+              type: 'select',
+              defaultValue: 'medium',
+              options: [
+                { label: 'Small', value: 'small' },
+                { label: 'Medium', value: 'medium' },
+                { label: 'Large', value: 'large' },
+                { label: 'Full Width', value: 'full' },
+              ],
+            },
+          ],
+        },
+
+        // ============================================
+        // 6. SPACER (Visual Spacing)
         // ============================================
         {
           slug: 'spacer',
@@ -219,7 +458,7 @@ export const Pages: CollectionConfig = {
         },
 
         // ============================================
-        // 3. DIVIDER (Horizontal Line Utility)
+        // 7. DIVIDER (Horizontal Line)
         // ============================================
         {
           slug: 'divider',
@@ -237,19 +476,6 @@ export const Pages: CollectionConfig = {
                 { label: 'Dashed', value: 'dashed' },
                 { label: 'Dotted', value: 'dotted' },
               ],
-            },
-            {
-              name: 'spacing',
-              type: 'select',
-              defaultValue: 'md',
-              options: [
-                { label: 'Small', value: 'sm' },
-                { label: 'Medium', value: 'md' },
-                { label: 'Large', value: 'lg' },
-              ],
-              admin: {
-                description: 'Margin around divider',
-              },
             },
           ],
         },
@@ -340,3 +566,4 @@ export const Pages: CollectionConfig = {
     maxPerDoc: 50,
   },
 }
+

@@ -11,6 +11,8 @@ export {
 // Data Table exports
 export { BlocksTable, type RowAction, type CustomColumn } from './blocks-table'
 export { BlocksTableBlock } from './blocks-table-block'
+export { BlocksTableSelection } from './blocks-table-selection'
+export { BlocksTableSelectionBlock } from './blocks-table-selection-block'
 export {
   generateColumns,
   getCollectionColumns,
@@ -33,3 +35,12 @@ export {
 } from './data-context'
 export { DataFetchBlock, type DataFetchBlockProps } from './data-fetch-block'
 export { StatCardBlock, type StatCardBlockProps } from './stat-card-block'
+
+// Section Architecture exports
+export {
+  SectionRenderer,
+  SectionRefBlock,
+  validateSectionProps,
+  getDefaultProps,
+} from './section-renderer'
+export { SectionRefRenderer, type SectionRefRendererProps } from './section-ref-renderer'

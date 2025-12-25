@@ -12,6 +12,7 @@ import { Sites } from './collections/Sites'
 import { Layouts } from './collections/Layouts'
 import { Pages } from './collections/Pages'
 import { Components } from './collections/Components'
+import { Sections } from './collections/Sections'
 import { Permissions } from './collections/Permissions'
 import { Roles } from './collections/Roles'
 
@@ -27,7 +28,18 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Languages, Sites, Layouts, Pages, Components, Permissions, Roles],
+  collections: [
+    Users,
+    Media,
+    Languages,
+    Sites,
+    Layouts,
+    Pages,
+    Components,
+    Sections,
+    Permissions,
+    Roles,
+  ],
   globals: [Settings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

@@ -74,9 +74,11 @@ export interface Config {
     layouts: Layout;
     pages: Page;
     components: Component;
+    sections: Section;
     permissions: Permission;
     roles: Role;
     'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -90,9 +92,11 @@ export interface Config {
     layouts: LayoutsSelect<false> | LayoutsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     components: ComponentsSelect<false> | ComponentsSelect<true>;
+    sections: SectionsSelect<false> | SectionsSelect<true>;
     permissions: PermissionsSelect<false> | PermissionsSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -112,7 +116,13 @@ export interface Config {
     collection: 'users';
   };
   jobs: {
-    tasks: unknown;
+    tasks: {
+      schedulePublish: TaskSchedulePublish;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -574,6 +584,8 @@ export interface Site {
   createdAt: string;
 }
 /**
+ * Layout templates composed of section references
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "layouts".
  */
@@ -589,14 +601,20 @@ export interface Layout {
    * Layout type based on next-ts patterns
    */
   type: 'main' | 'simple' | 'auth' | 'blank';
+  /**
+   * Layout components - Use Section References for reusable components
+   */
   components?:
     | (
         | {
-            enabled?: boolean | null;
             /**
-             * Header configuration JSON
+             * Reference a reusable section (e.g., Header, Footer, Sidebar)
              */
-            config?:
+            section: string | Section;
+            /**
+             * Props to pass to the section (JSON object)
+             */
+            props?:
               | {
                   [k: string]: unknown;
                 }
@@ -605,127 +623,17 @@ export interface Layout {
               | number
               | boolean
               | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'header';
-          }
-        | {
+            /**
+             * Enable/disable this component
+             */
             enabled?: boolean | null;
             /**
-             * Footer configuration JSON
+             * Where this component should be rendered in the layout
              */
-            config?:
-              | {
-                  [k: string]: unknown;
-                }
-              | unknown[]
-              | string
-              | number
-              | boolean
-              | null;
+            position: 'before' | 'content' | 'after' | 'header' | 'footer' | 'sidebar';
             id?: string | null;
             blockName?: string | null;
-            blockType: 'footer';
-          }
-        | {
-            enabled?: boolean | null;
-            menu?: {
-              items?:
-                | {
-                    title: string;
-                    /**
-                     * URL path (e.g., /dashboard, /settings)
-                     */
-                    path?: string | null;
-                    /**
-                     * Icon name or identifier (e.g., home, settings)
-                     */
-                    icon?: string | null;
-                    /**
-                     * Optional caption or description
-                     */
-                    caption?: string | null;
-                    disabled?: boolean | null;
-                    /**
-                     * External link (opens in new tab)
-                     */
-                    external?: boolean | null;
-                    /**
-                     * Sub menu items (Level 2)
-                     */
-                    level2Items?:
-                      | {
-                          title: string;
-                          path?: string | null;
-                          icon?: string | null;
-                          caption?: string | null;
-                          disabled?: boolean | null;
-                          external?: boolean | null;
-                          /**
-                           * Sub menu items (Level 3)
-                           */
-                          level3Items?:
-                            | {
-                                title: string;
-                                path?: string | null;
-                                icon?: string | null;
-                                caption?: string | null;
-                                disabled?: boolean | null;
-                                external?: boolean | null;
-                                id?: string | null;
-                              }[]
-                            | null;
-                          id?: string | null;
-                        }[]
-                      | null;
-                    id?: string | null;
-                  }[]
-                | null;
-            };
-            /**
-             * Sidebar configuration JSON (optional)
-             */
-            config?:
-              | {
-                  [k: string]: unknown;
-                }
-              | unknown[]
-              | string
-              | number
-              | boolean
-              | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'sidebar';
-          }
-        | {
-            enabled?: boolean | null;
-            items?:
-              | {
-                  label: string;
-                  path: string;
-                  /**
-                   * Icon name or identifier
-                   */
-                  icon?: string | null;
-                  id?: string | null;
-                }[]
-              | null;
-            /**
-             * Navigation configuration JSON
-             */
-            config?:
-              | {
-                  [k: string]: unknown;
-                }
-              | unknown[]
-              | string
-              | number
-              | boolean
-              | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'navigation';
+            blockType: 'sectionRef';
           }
         | {
             /**
@@ -745,9 +653,10 @@ export interface Layout {
               | boolean
               | null;
             enabled?: boolean | null;
+            position: 'before' | 'content' | 'after' | 'header' | 'footer' | 'sidebar';
             id?: string | null;
             blockName?: string | null;
-            blockType: 'component';
+            blockType: 'componentRef';
           }
       )[]
     | null;
@@ -790,6 +699,214 @@ export interface Layout {
   createdAt: string;
 }
 /**
+ * Reusable section compositions that can be referenced by pages
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sections".
+ */
+export interface Section {
+  id: string;
+  /**
+   * Section name (e.g., "Hero - Landing", "Pricing Table")
+   */
+  name: string;
+  /**
+   * Unique identifier for referencing (e.g., "hero-landing")
+   */
+  slug: string;
+  /**
+   * What this section is for and when to use it
+   */
+  description?: string | null;
+  /**
+   * Global = site-wide, Shared = reusable, Template = parameterized
+   */
+  type: 'global' | 'shared' | 'template';
+  /**
+   * Category for organization
+   */
+  category?:
+    | ('header' | 'hero' | 'content' | 'features' | 'pricing' | 'testimonials' | 'cta' | 'footer' | 'other')
+    | null;
+  /**
+   * Blocks that compose this section
+   */
+  blocks: (
+    | {
+        content: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        };
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'richText';
+      }
+    | {
+        text: string;
+        level?: ('h1' | 'h2' | 'h3' | 'h4') | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'heading';
+      }
+    | {
+        /**
+         * Slot identifier (e.g., "actions", "content")
+         */
+        name: string;
+        /**
+         * Human-readable label
+         */
+        label?: string | null;
+        /**
+         * What should be placed in this slot
+         */
+        description?: string | null;
+        required?: boolean | null;
+        /**
+         * Default content if slot is not filled
+         */
+        defaultBlocks?:
+          | {
+              content?: {
+                root: {
+                  type: string;
+                  children: {
+                    type: any;
+                    version: number;
+                    [k: string]: unknown;
+                  }[];
+                  direction: ('ltr' | 'rtl') | null;
+                  format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                  indent: number;
+                  version: number;
+                };
+                [k: string]: unknown;
+              } | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'richText';
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'slot';
+      }
+    | {
+        columns?: ('1' | '2' | '3' | '4') | null;
+        gap?: ('sm' | 'md' | 'lg') | null;
+        items?:
+          | {
+              content?:
+                | {
+                    content?: {
+                      root: {
+                        type: string;
+                        children: {
+                          type: any;
+                          version: number;
+                          [k: string]: unknown;
+                        }[];
+                        direction: ('ltr' | 'rtl') | null;
+                        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                        indent: number;
+                        version: number;
+                      };
+                      [k: string]: unknown;
+                    } | null;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: 'richText';
+                  }[]
+                | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'grid';
+      }
+  )[];
+  /**
+   * Define injection points where pages can insert custom content
+   */
+  slots?:
+    | {
+        /**
+         * Slot name (must match slot block above)
+         */
+        name: string;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Define props that can be passed when using this section
+   */
+  propsSchema?:
+    | {
+        /**
+         * Prop key (e.g., "title", "theme")
+         */
+        key: string;
+        type: 'text' | 'number' | 'boolean' | 'select' | 'json';
+        /**
+         * Human-readable label
+         */
+        label?: string | null;
+        description?: string | null;
+        required?: boolean | null;
+        /**
+         * Default value if not provided
+         */
+        defaultValue?: string | null;
+        /**
+         * Options for select type (array of {label, value})
+         */
+        options?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  status?: ('draft' | 'published' | 'archived') | null;
+  /**
+   * Tags for organization and search
+   */
+  tags?:
+    | {
+        tag?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Version number (e.g., "1.0.0")
+   */
+  version?: string | null;
+  /**
+   * Preview screenshot for visual selection
+   */
+  preview?: (string | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "components".
  */
@@ -828,101 +945,45 @@ export interface Component {
   createdAt: string;
 }
 /**
+ * Pages composed of sections and minimal local content
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages".
  */
 export interface Page {
   id: string;
+  /**
+   * Page title
+   */
   title: string;
   /**
    * URL path (e.g., about, contact-us)
    */
   slug: string;
   /**
-   * Parent page for hierarchical structure (same language)
+   * Parent page for hierarchical structure
    */
   parentPage?: (string | null) | Page;
   /**
-   * Layout to use (if not specified, uses site defaultLayout from domain)
+   * Page author
    */
-  layout?: (string | null) | Layout;
+  author?: (string | null) | User;
   /**
    * Page status (separate from draft _status)
    */
   pageStatus?: ('draft' | 'published' | 'archived') | null;
+  /**
+   * Page content - Primarily use Section References. Create sections in Sections collection for complex content.
+   */
   content?:
     | (
         | {
-            content: {
-              root: {
-                type: string;
-                children: {
-                  type: any;
-                  version: number;
-                  [k: string]: unknown;
-                }[];
-                direction: ('ltr' | 'rtl') | null;
-                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-                indent: number;
-                version: number;
-              };
-              [k: string]: unknown;
-            };
             /**
-             * Permissions required to view/edit this block (leave empty for public)
+             * Reference a reusable section from Sections collection
              */
-            requiredPermissions?: (string | Permission)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'richText';
-          }
-        | {
-            image: string | Media;
-            caption?: string | null;
-            alt?: string | null;
+            section: string | Section;
             /**
-             * Permissions required to view/edit this block (leave empty for public)
-             */
-            requiredPermissions?: (string | Permission)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'image';
-          }
-        | {
-            images?:
-              | {
-                  image: string | Media;
-                  caption?: string | null;
-                  id?: string | null;
-                }[]
-              | null;
-            /**
-             * Permissions required to view/edit this block (leave empty for public)
-             */
-            requiredPermissions?: (string | Permission)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'gallery';
-          }
-        | {
-            video?: (string | null) | Media;
-            /**
-             * YouTube, Vimeo, or other video URL
-             */
-            videoUrl?: string | null;
-            caption?: string | null;
-            /**
-             * Permissions required to view/edit this block (leave empty for public)
-             */
-            requiredPermissions?: (string | Permission)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'video';
-          }
-        | {
-            component: string | Component;
-            /**
-             * Component props
+             * Props to pass to the section (JSON object)
              */
             props?:
               | {
@@ -934,619 +995,64 @@ export interface Page {
               | boolean
               | null;
             /**
-             * Permissions required to view/edit this block (leave empty for public)
+             * Override section settings (optional)
              */
-            requiredPermissions?: (string | Permission)[] | null;
+            overrides?: {
+              /**
+               * Additional CSS classes
+               */
+              cssClass?: string | null;
+              backgroundColor?: ('default' | 'primary' | 'secondary' | 'muted') | null;
+              spacing?: ('none' | 'sm' | 'md' | 'lg') | null;
+            };
             id?: string | null;
             blockName?: string | null;
-            blockType: 'component';
+            blockType: 'sectionRef';
           }
         | {
-            code: string;
-            language?: ('typescript' | 'javascript' | 'python' | 'bash' | 'json' | 'css' | 'html') | null;
-            caption?: string | null;
-            /**
-             * Permissions required to view/edit this block (leave empty for public)
-             */
-            requiredPermissions?: (string | Permission)[] | null;
+            height: 'sm' | 'md' | 'lg' | 'xl';
             id?: string | null;
             blockName?: string | null;
-            blockType: 'code';
+            blockType: 'spacer';
           }
         | {
-            title: string;
-            description?: string | null;
-            image?: (string | null) | Media;
+            style?: ('solid' | 'dashed' | 'dotted') | null;
             /**
-             * Optional link URL
+             * Margin around divider
              */
-            link?: string | null;
-            /**
-             * Link button text
-             */
-            linkText?: string | null;
-            /**
-             * Permissions required to view/edit this block (leave empty for public)
-             */
-            requiredPermissions?: (string | Permission)[] | null;
+            spacing?: ('sm' | 'md' | 'lg') | null;
             id?: string | null;
             blockName?: string | null;
-            blockType: 'card';
-          }
-        | {
-            /**
-             * Number of columns in the grid
-             */
-            columns?: ('1' | '2' | '3' | '4' | '6') | null;
-            /**
-             * Gap between grid items
-             */
-            gap?: ('none' | 'sm' | 'md' | 'lg') | null;
-            items: {
-              content?:
-                | (
-                    | {
-                        content: {
-                          root: {
-                            type: string;
-                            children: {
-                              type: any;
-                              version: number;
-                              [k: string]: unknown;
-                            }[];
-                            direction: ('ltr' | 'rtl') | null;
-                            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-                            indent: number;
-                            version: number;
-                          };
-                          [k: string]: unknown;
-                        };
-                        id?: string | null;
-                        blockName?: string | null;
-                        blockType: 'richText';
-                      }
-                    | {
-                        image: string | Media;
-                        alt?: string | null;
-                        caption?: string | null;
-                        id?: string | null;
-                        blockName?: string | null;
-                        blockType: 'image';
-                      }
-                    | {
-                        title: string;
-                        description?: string | null;
-                        image?: (string | null) | Media;
-                        link?: string | null;
-                        linkText?: string | null;
-                        id?: string | null;
-                        blockName?: string | null;
-                        blockType: 'card';
-                      }
-                    | {
-                        component: string | Component;
-                        props?:
-                          | {
-                              [k: string]: unknown;
-                            }
-                          | unknown[]
-                          | string
-                          | number
-                          | boolean
-                          | null;
-                        id?: string | null;
-                        blockName?: string | null;
-                        blockType: 'component';
-                      }
-                  )[]
-                | null;
-              id?: string | null;
-            }[];
-            /**
-             * Permissions required to view/edit this block (leave empty for public)
-             */
-            requiredPermissions?: (string | Permission)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'grid';
-          }
-        | {
-            /**
-             * Optional title for the table
-             */
-            title?: string | null;
-            /**
-             * Optional description for the table
-             */
-            description?: string | null;
-            /**
-             * Number of items per page
-             */
-            limit?: number | null;
-            /**
-             * Collection to fetch data from
-             */
-            collection:
-              | 'components'
-              | 'pages'
-              | 'layouts'
-              | 'sites'
-              | 'users'
-              | 'media'
-              | 'languages'
-              | 'permissions'
-              | 'roles';
-            /**
-             * Column configuration (array of column keys or JSON config)
-             */
-            columns?:
-              | {
-                  [k: string]: unknown;
-                }
-              | unknown[]
-              | string
-              | number
-              | boolean
-              | null;
-            /**
-             * Fields to search in (leave empty to use default search fields)
-             */
-            searchFields?:
-              | {
-                  /**
-                   * Field name to search
-                   */
-                  field: string;
-                  id?: string | null;
-                }[]
-              | null;
-            /**
-             * Filter fields configuration
-             */
-            filterFields?:
-              | {
-                  /**
-                   * Field name to filter
-                   */
-                  field: string;
-                  /**
-                   * Display label for filter
-                   */
-                  label: string;
-                  type: 'select' | 'text' | 'date';
-                  /**
-                   * Options for select type (array of {label, value})
-                   */
-                  options?:
-                    | {
-                        [k: string]: unknown;
-                      }
-                    | unknown[]
-                    | string
-                    | number
-                    | boolean
-                    | null;
-                  id?: string | null;
-                }[]
-              | null;
-            /**
-             * Populate relationships
-             */
-            populate?: {
-              /**
-               * Depth level for populating relationships (0-3)
-               */
-              depth?: number | null;
-              /**
-               * Specific fields to populate (leave empty to populate all relationships)
-               */
-              fields?:
-                | {
-                    /**
-                     * Field name to populate
-                     */
-                    field: string;
-                    id?: string | null;
-                  }[]
-                | null;
-            };
-            defaultSort?: {
-              /**
-               * Default sort field
-               */
-              field?: string | null;
-              order?: ('asc' | 'desc') | null;
-            };
-            /**
-             * URL synchronization settings
-             */
-            urlSettings?: {
-              /**
-               * Sync table state (filters, pagination, sorting, column visibility) with browser URL. Allows users to share/bookmark table views.
-               */
-              syncUrl?: boolean | null;
-              /**
-               * Unique identifier for this table in URL. Required when multiple tables exist on the same page. Example: "users", "orders"
-               */
-              urlGroup?: string | null;
-            };
-            /**
-             * Permissions required to view/edit this block (leave empty for public)
-             */
-            requiredPermissions?: (string | Permission)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'blocksTable';
-          }
-        | {
-            /**
-             * Unique key to identify this data (e.g., "activeUsers", "totalOrders")
-             */
-            dataKey: string;
-            source: {
-              type: 'collection' | 'global' | 'api';
-              /**
-               * Collection to fetch data from
-               */
-              collection?:
-                | (
-                    | 'users'
-                    | 'pages'
-                    | 'components'
-                    | 'media'
-                    | 'sites'
-                    | 'layouts'
-                    | 'languages'
-                    | 'permissions'
-                    | 'roles'
-                  )
-                | null;
-              /**
-               * Global to fetch data from
-               */
-              global?: 'settings' | null;
-              /**
-               * API endpoint URL (for custom data sources)
-               */
-              endpoint?: string | null;
-            };
-            /**
-             * Query configuration for filtering data
-             */
-            query?: {
-              /**
-               * Filter query (e.g., { "status": { "equals": "active" } })
-               */
-              where?:
-                | {
-                    [k: string]: unknown;
-                  }
-                | unknown[]
-                | string
-                | number
-                | boolean
-                | null;
-              /**
-               * Sort field (prefix with - for descending, e.g., "-createdAt")
-               */
-              sort?: string | null;
-              /**
-               * Maximum number of items to fetch (0 = no limit)
-               */
-              limit?: number | null;
-              /**
-               * Depth for populating relationships (0-3)
-               */
-              depth?: number | null;
-            };
-            /**
-             * Transform fetched data (count, sum, average, etc.)
-             */
-            transform?: {
-              type?: ('none' | 'count' | 'sum' | 'average' | 'first' | 'last' | 'groupBy') | null;
-              /**
-               * Field to use for sum/average/groupBy
-               */
-              field?: string | null;
-            };
-            /**
-             * Auto-refresh interval in milliseconds (0 = no refresh)
-             */
-            refreshInterval?: number | null;
-            /**
-             * Child blocks that will receive this data
-             */
-            children?:
-              | (
-                  | {
-                      title: string;
-                      description?: string | null;
-                      icon?:
-                        | (
-                            | 'users'
-                            | 'dollar'
-                            | 'trending-up'
-                            | 'trending-down'
-                            | 'box'
-                            | 'cart'
-                            | 'file'
-                            | 'image'
-                            | 'settings'
-                            | 'activity'
-                            | 'bar-chart'
-                            | 'pie-chart'
-                            | 'layers'
-                            | 'database'
-                            | 'globe'
-                            | 'mail'
-                            | 'bell'
-                            | 'calendar'
-                            | 'clock'
-                            | 'check-circle'
-                            | 'x-circle'
-                            | 'alert-circle'
-                          )
-                        | null;
-                      /**
-                       * Reference to parent DataFetch key (leave empty to use parent)
-                       */
-                      dataKey?: string | null;
-                      /**
-                       * Path to value in data (e.g., "value", "count", "data.total")
-                       */
-                      valueField?: string | null;
-                      format?: {
-                        /**
-                         * Prefix (e.g., "$", "฿")
-                         */
-                        prefix?: string | null;
-                        /**
-                         * Suffix (e.g., "%", " users")
-                         */
-                        suffix?: string | null;
-                        /**
-                         * Number of decimal places
-                         */
-                        decimals?: number | null;
-                      };
-                      /**
-                       * Trend indicator (optional)
-                       */
-                      trend?: {
-                        /**
-                         * Trend percentage (positive or negative)
-                         */
-                        value?: number | null;
-                        /**
-                         * Trend label (e.g., "vs last month")
-                         */
-                        label?: string | null;
-                        /**
-                         * Invert trend colors (positive = bad)
-                         */
-                        invertColors?: boolean | null;
-                      };
-                      variant?: ('default' | 'gradient' | 'outline' | 'filled') | null;
-                      size?: ('sm' | 'md' | 'lg') | null;
-                      id?: string | null;
-                      blockName?: string | null;
-                      blockType: 'statCard';
-                    }
-                  | {
-                      columns?: ('2' | '3' | '4') | null;
-                      gap?: ('sm' | 'md' | 'lg') | null;
-                      items?:
-                        | {
-                            content?:
-                              | {
-                                  title: string;
-                                  description?: string | null;
-                                  icon?: ('users' | 'dollar' | 'box' | 'cart' | 'file' | 'activity') | null;
-                                  dataKey?: string | null;
-                                  valueField?: string | null;
-                                  format?: {
-                                    prefix?: string | null;
-                                    suffix?: string | null;
-                                    decimals?: number | null;
-                                  };
-                                  id?: string | null;
-                                  blockName?: string | null;
-                                  blockType: 'statCard';
-                                }[]
-                              | null;
-                            id?: string | null;
-                          }[]
-                        | null;
-                      id?: string | null;
-                      blockName?: string | null;
-                      blockType: 'grid';
-                    }
-                  | {
-                      content?: {
-                        root: {
-                          type: string;
-                          children: {
-                            type: any;
-                            version: number;
-                            [k: string]: unknown;
-                          }[];
-                          direction: ('ltr' | 'rtl') | null;
-                          format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-                          indent: number;
-                          version: number;
-                        };
-                        [k: string]: unknown;
-                      } | null;
-                      id?: string | null;
-                      blockName?: string | null;
-                      blockType: 'richText';
-                    }
-                  | {
-                      /**
-                       * Optional title for the table
-                       */
-                      title?: string | null;
-                      /**
-                       * Optional description for the table
-                       */
-                      description?: string | null;
-                      /**
-                       * Use data from parent DataFetch block instead of fetching internally
-                       */
-                      useExternalData?: boolean | null;
-                      /**
-                       * Data key to reference from DataFetch context (defaults to parent dataKey)
-                       */
-                      dataKey?: string | null;
-                      /**
-                       * Collection for column inference (when using external data)
-                       */
-                      collection?:
-                        | (
-                            | 'users'
-                            | 'pages'
-                            | 'components'
-                            | 'media'
-                            | 'sites'
-                            | 'layouts'
-                            | 'languages'
-                            | 'permissions'
-                            | 'roles'
-                          )
-                        | null;
-                      /**
-                       * Column configuration (array of column keys or JSON config)
-                       */
-                      columns?:
-                        | {
-                            [k: string]: unknown;
-                          }
-                        | unknown[]
-                        | string
-                        | number
-                        | boolean
-                        | null;
-                      /**
-                       * Items per page
-                       */
-                      limit?: number | null;
-                      id?: string | null;
-                      blockName?: string | null;
-                      blockType: 'blocksTable';
-                    }
-                )[]
-              | null;
-            /**
-             * Permissions required to view/edit this block (leave empty for public)
-             */
-            requiredPermissions?: (string | Permission)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'dataFetch';
-          }
-        | {
-            /**
-             * Card title (e.g., "Total Users")
-             */
-            title: string;
-            /**
-             * Optional description text
-             */
-            description?: string | null;
-            /**
-             * Icon to display on the card
-             */
-            icon?:
-              | (
-                  | 'users'
-                  | 'dollar'
-                  | 'trending-up'
-                  | 'trending-down'
-                  | 'box'
-                  | 'cart'
-                  | 'file'
-                  | 'image'
-                  | 'settings'
-                  | 'activity'
-                  | 'bar-chart'
-                  | 'pie-chart'
-                  | 'layers'
-                  | 'database'
-                  | 'globe'
-                )
-              | null;
-            /**
-             * Static value to display (use if not using DataFetch)
-             */
-            staticValue?: string | null;
-            format?: {
-              /**
-               * Prefix (e.g., "$", "฿")
-               */
-              prefix?: string | null;
-              /**
-               * Suffix (e.g., "%", " users")
-               */
-              suffix?: string | null;
-              /**
-               * Number of decimal places
-               */
-              decimals?: number | null;
-            };
-            /**
-             * Trend indicator (optional)
-             */
-            trend?: {
-              /**
-               * Trend percentage (positive or negative)
-               */
-              value?: number | null;
-              /**
-               * Trend label (e.g., "vs last month")
-               */
-              label?: string | null;
-              /**
-               * Invert trend colors (positive = bad)
-               */
-              invertColors?: boolean | null;
-            };
-            /**
-             * Card visual style
-             */
-            variant?: ('default' | 'gradient' | 'outline' | 'filled') | null;
-            /**
-             * Card size
-             */
-            size?: ('sm' | 'md' | 'lg') | null;
-            /**
-             * Permissions required to view/edit this block (leave empty for public)
-             */
-            requiredPermissions?: (string | Permission)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'statCard';
+            blockType: 'divider';
           }
       )[]
     | null;
+  /**
+   * SEO and meta information
+   */
   seo?: {
+    /**
+     * Meta title (leave empty to use page title)
+     */
     metaTitle?: string | null;
+    /**
+     * Meta description for search engines
+     */
     metaDescription?: string | null;
-    metaImage?: (string | null) | Media;
     keywords?:
       | {
           keyword?: string | null;
           id?: string | null;
         }[]
       | null;
+    /**
+     * Open Graph image for social sharing
+     */
+    ogImage?: (string | null) | Media;
   };
-  featuredImage?: (string | null) | Media;
-  /**
-   * Auto-set when status changes to published
-   */
   publishedAt?: string | null;
-  author?: (string | null) | User;
   /**
-   * Order for sorting
+   * Order for navigation menus
    */
   order?: number | null;
   updatedAt: string;
@@ -1569,6 +1075,98 @@ export interface PayloadKv {
     | number
     | boolean
     | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs".
+ */
+export interface PayloadJob {
+  id: string;
+  /**
+   * Input data provided to the job
+   */
+  input?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  taskStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  completedAt?: string | null;
+  totalTried?: number | null;
+  /**
+   * If hasError is true this job will not be retried
+   */
+  hasError?: boolean | null;
+  /**
+   * If hasError is true, this is the error that caused it
+   */
+  error?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Task execution log
+   */
+  log?:
+    | {
+        executedAt: string;
+        completedAt: string;
+        taskSlug: 'inline' | 'schedulePublish';
+        taskID: string;
+        input?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        output?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        state: 'failed' | 'succeeded';
+        error?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  taskSlug?: ('inline' | 'schedulePublish') | null;
+  queue?: string | null;
+  waitUntil?: string | null;
+  processing?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1604,6 +1202,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'components';
         value: string | Component;
+      } | null)
+    | ({
+        relationTo: 'sections';
+        value: string | Section;
       } | null)
     | ({
         relationTo: 'permissions';
@@ -1852,89 +1454,23 @@ export interface LayoutsSelect<T extends boolean = true> {
   components?:
     | T
     | {
-        header?:
+        sectionRef?:
           | T
           | {
+              section?: T;
+              props?: T;
               enabled?: T;
-              config?: T;
+              position?: T;
               id?: T;
               blockName?: T;
             };
-        footer?:
-          | T
-          | {
-              enabled?: T;
-              config?: T;
-              id?: T;
-              blockName?: T;
-            };
-        sidebar?:
-          | T
-          | {
-              enabled?: T;
-              menu?:
-                | T
-                | {
-                    items?:
-                      | T
-                      | {
-                          title?: T;
-                          path?: T;
-                          icon?: T;
-                          caption?: T;
-                          disabled?: T;
-                          external?: T;
-                          level2Items?:
-                            | T
-                            | {
-                                title?: T;
-                                path?: T;
-                                icon?: T;
-                                caption?: T;
-                                disabled?: T;
-                                external?: T;
-                                level3Items?:
-                                  | T
-                                  | {
-                                      title?: T;
-                                      path?: T;
-                                      icon?: T;
-                                      caption?: T;
-                                      disabled?: T;
-                                      external?: T;
-                                      id?: T;
-                                    };
-                                id?: T;
-                              };
-                          id?: T;
-                        };
-                  };
-              config?: T;
-              id?: T;
-              blockName?: T;
-            };
-        navigation?:
-          | T
-          | {
-              enabled?: T;
-              items?:
-                | T
-                | {
-                    label?: T;
-                    path?: T;
-                    icon?: T;
-                    id?: T;
-                  };
-              config?: T;
-              id?: T;
-              blockName?: T;
-            };
-        component?:
+        componentRef?:
           | T
           | {
               component?: T;
               props?: T;
               enabled?: T;
+              position?: T;
               id?: T;
               blockName?: T;
             };
@@ -1959,81 +1495,124 @@ export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   parentPage?: T;
-  layout?: T;
+  author?: T;
   pageStatus?: T;
   content?:
+    | T
+    | {
+        sectionRef?:
+          | T
+          | {
+              section?: T;
+              props?: T;
+              overrides?:
+                | T
+                | {
+                    cssClass?: T;
+                    backgroundColor?: T;
+                    spacing?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        spacer?:
+          | T
+          | {
+              height?: T;
+              id?: T;
+              blockName?: T;
+            };
+        divider?:
+          | T
+          | {
+              style?: T;
+              spacing?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
+  seo?:
+    | T
+    | {
+        metaTitle?: T;
+        metaDescription?: T;
+        keywords?:
+          | T
+          | {
+              keyword?: T;
+              id?: T;
+            };
+        ogImage?: T;
+      };
+  publishedAt?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "components_select".
+ */
+export interface ComponentsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  type?: T;
+  category?: T;
+  description?: T;
+  code?: T;
+  props?: T;
+  preview?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sections_select".
+ */
+export interface SectionsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  type?: T;
+  category?: T;
+  blocks?:
     | T
     | {
         richText?:
           | T
           | {
               content?: T;
-              requiredPermissions?: T;
               id?: T;
               blockName?: T;
             };
-        image?:
+        heading?:
           | T
           | {
-              image?: T;
-              caption?: T;
-              alt?: T;
-              requiredPermissions?: T;
+              text?: T;
+              level?: T;
               id?: T;
               blockName?: T;
             };
-        gallery?:
+        slot?:
           | T
           | {
-              images?:
+              name?: T;
+              label?: T;
+              description?: T;
+              required?: T;
+              defaultBlocks?:
                 | T
                 | {
-                    image?: T;
-                    caption?: T;
-                    id?: T;
+                    richText?:
+                      | T
+                      | {
+                          content?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
                   };
-              requiredPermissions?: T;
-              id?: T;
-              blockName?: T;
-            };
-        video?:
-          | T
-          | {
-              video?: T;
-              videoUrl?: T;
-              caption?: T;
-              requiredPermissions?: T;
-              id?: T;
-              blockName?: T;
-            };
-        component?:
-          | T
-          | {
-              component?: T;
-              props?: T;
-              requiredPermissions?: T;
-              id?: T;
-              blockName?: T;
-            };
-        code?:
-          | T
-          | {
-              code?: T;
-              language?: T;
-              caption?: T;
-              requiredPermissions?: T;
-              id?: T;
-              blockName?: T;
-            };
-        card?:
-          | T
-          | {
-              title?: T;
-              description?: T;
-              image?: T;
-              link?: T;
-              linkText?: T;
-              requiredPermissions?: T;
               id?: T;
               blockName?: T;
             };
@@ -2055,271 +1634,41 @@ export interface PagesSelect<T extends boolean = true> {
                                 id?: T;
                                 blockName?: T;
                               };
-                          image?:
-                            | T
-                            | {
-                                image?: T;
-                                alt?: T;
-                                caption?: T;
-                                id?: T;
-                                blockName?: T;
-                              };
-                          card?:
-                            | T
-                            | {
-                                title?: T;
-                                description?: T;
-                                image?: T;
-                                link?: T;
-                                linkText?: T;
-                                id?: T;
-                                blockName?: T;
-                              };
-                          component?:
-                            | T
-                            | {
-                                component?: T;
-                                props?: T;
-                                id?: T;
-                                blockName?: T;
-                              };
                         };
                     id?: T;
                   };
-              requiredPermissions?: T;
-              id?: T;
-              blockName?: T;
-            };
-        blocksTable?:
-          | T
-          | {
-              title?: T;
-              description?: T;
-              limit?: T;
-              collection?: T;
-              columns?: T;
-              searchFields?:
-                | T
-                | {
-                    field?: T;
-                    id?: T;
-                  };
-              filterFields?:
-                | T
-                | {
-                    field?: T;
-                    label?: T;
-                    type?: T;
-                    options?: T;
-                    id?: T;
-                  };
-              populate?:
-                | T
-                | {
-                    depth?: T;
-                    fields?:
-                      | T
-                      | {
-                          field?: T;
-                          id?: T;
-                        };
-                  };
-              defaultSort?:
-                | T
-                | {
-                    field?: T;
-                    order?: T;
-                  };
-              urlSettings?:
-                | T
-                | {
-                    syncUrl?: T;
-                    urlGroup?: T;
-                  };
-              requiredPermissions?: T;
-              id?: T;
-              blockName?: T;
-            };
-        dataFetch?:
-          | T
-          | {
-              dataKey?: T;
-              source?:
-                | T
-                | {
-                    type?: T;
-                    collection?: T;
-                    global?: T;
-                    endpoint?: T;
-                  };
-              query?:
-                | T
-                | {
-                    where?: T;
-                    sort?: T;
-                    limit?: T;
-                    depth?: T;
-                  };
-              transform?:
-                | T
-                | {
-                    type?: T;
-                    field?: T;
-                  };
-              refreshInterval?: T;
-              children?:
-                | T
-                | {
-                    statCard?:
-                      | T
-                      | {
-                          title?: T;
-                          description?: T;
-                          icon?: T;
-                          dataKey?: T;
-                          valueField?: T;
-                          format?:
-                            | T
-                            | {
-                                prefix?: T;
-                                suffix?: T;
-                                decimals?: T;
-                              };
-                          trend?:
-                            | T
-                            | {
-                                value?: T;
-                                label?: T;
-                                invertColors?: T;
-                              };
-                          variant?: T;
-                          size?: T;
-                          id?: T;
-                          blockName?: T;
-                        };
-                    grid?:
-                      | T
-                      | {
-                          columns?: T;
-                          gap?: T;
-                          items?:
-                            | T
-                            | {
-                                content?:
-                                  | T
-                                  | {
-                                      statCard?:
-                                        | T
-                                        | {
-                                            title?: T;
-                                            description?: T;
-                                            icon?: T;
-                                            dataKey?: T;
-                                            valueField?: T;
-                                            format?:
-                                              | T
-                                              | {
-                                                  prefix?: T;
-                                                  suffix?: T;
-                                                  decimals?: T;
-                                                };
-                                            id?: T;
-                                            blockName?: T;
-                                          };
-                                    };
-                                id?: T;
-                              };
-                          id?: T;
-                          blockName?: T;
-                        };
-                    richText?:
-                      | T
-                      | {
-                          content?: T;
-                          id?: T;
-                          blockName?: T;
-                        };
-                    blocksTable?:
-                      | T
-                      | {
-                          title?: T;
-                          description?: T;
-                          useExternalData?: T;
-                          dataKey?: T;
-                          collection?: T;
-                          columns?: T;
-                          limit?: T;
-                          id?: T;
-                          blockName?: T;
-                        };
-                  };
-              requiredPermissions?: T;
-              id?: T;
-              blockName?: T;
-            };
-        statCard?:
-          | T
-          | {
-              title?: T;
-              description?: T;
-              icon?: T;
-              staticValue?: T;
-              format?:
-                | T
-                | {
-                    prefix?: T;
-                    suffix?: T;
-                    decimals?: T;
-                  };
-              trend?:
-                | T
-                | {
-                    value?: T;
-                    label?: T;
-                    invertColors?: T;
-                  };
-              variant?: T;
-              size?: T;
-              requiredPermissions?: T;
               id?: T;
               blockName?: T;
             };
       };
-  seo?:
+  slots?:
     | T
     | {
-        metaTitle?: T;
-        metaDescription?: T;
-        metaImage?: T;
-        keywords?:
-          | T
-          | {
-              keyword?: T;
-              id?: T;
-            };
+        name?: T;
+        description?: T;
+        id?: T;
       };
-  featuredImage?: T;
-  publishedAt?: T;
-  author?: T;
-  order?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "components_select".
- */
-export interface ComponentsSelect<T extends boolean = true> {
-  name?: T;
-  slug?: T;
-  type?: T;
-  category?: T;
-  description?: T;
-  code?: T;
-  props?: T;
-  preview?: T;
+  propsSchema?:
+    | T
+    | {
+        key?: T;
+        type?: T;
+        label?: T;
+        description?: T;
+        required?: T;
+        defaultValue?: T;
+        options?: T;
+        id?: T;
+      };
   status?: T;
+  tags?:
+    | T
+    | {
+        tag?: T;
+        id?: T;
+      };
+  version?: T;
+  preview?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2361,6 +1710,37 @@ export interface RolesSelect<T extends boolean = true> {
 export interface PayloadKvSelect<T extends boolean = true> {
   key?: T;
   data?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs_select".
+ */
+export interface PayloadJobsSelect<T extends boolean = true> {
+  input?: T;
+  taskStatus?: T;
+  completedAt?: T;
+  totalTried?: T;
+  hasError?: T;
+  error?: T;
+  log?:
+    | T
+    | {
+        executedAt?: T;
+        completedAt?: T;
+        taskSlug?: T;
+        taskID?: T;
+        input?: T;
+        output?: T;
+        state?: T;
+        error?: T;
+        id?: T;
+      };
+  taskSlug?: T;
+  queue?: T;
+  waitUntil?: T;
+  processing?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2553,6 +1933,23 @@ export interface SettingsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSchedulePublish".
+ */
+export interface TaskSchedulePublish {
+  input: {
+    type?: ('publish' | 'unpublish') | null;
+    locale?: string | null;
+    doc?: {
+      relationTo: 'pages';
+      value: string | Page;
+    } | null;
+    global?: string | null;
+    user?: (string | null) | User;
+  };
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

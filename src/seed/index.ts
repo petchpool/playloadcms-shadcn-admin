@@ -5,7 +5,7 @@ import { seedPermissions } from './permissions'
 import { seedRoles } from './roles'
 import { seedUsers } from './users'
 import { seedComponents } from './components'
-import { seedPagesLocalized } from './seed-pages-localized'
+import { seedPagesWithSections } from './seed-pages-with-sections'
 
 export async function seed() {
   console.log('🚀 Starting database seeding...\n')
@@ -24,9 +24,9 @@ export async function seed() {
   console.log('\n🧩 Seeding Components...\n')
   await seedComponents()
 
-  // Seed Pages with Localized Content
-  console.log('\n📄 Seeding Pages (Localized)...\n')
-  await seedPagesLocalized()
+  // Seed Pages with Section-based Architecture
+  console.log('\n📄 Seeding Pages (Section-based)...\n')
+  await seedPagesWithSections()
 
   console.log('\n🎉 Database seeding completed!')
 }

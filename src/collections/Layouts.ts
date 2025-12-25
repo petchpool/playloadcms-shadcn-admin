@@ -1,11 +1,20 @@
 import type { CollectionConfig } from 'payload'
 import { hasAnyRoleSync } from '@/utils/check-role'
 
+/**
+ * Layouts Collection (Section-based Architecture)
+ *
+ * Philosophy:
+ * - Layouts reference Sections instead of containing blocks directly
+ * - Layout components (header, footer, sidebar, etc.) are managed as Sections
+ * - Layouts become simple composition layers
+ */
 export const Layouts: CollectionConfig = {
   slug: 'layouts',
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'slug', 'type', 'status', 'createdAt'],
+    description: 'Layout templates composed of section references',
   },
   access: {
     read: ({ req: { user } }) => Boolean(user),
@@ -70,242 +79,73 @@ export const Layouts: CollectionConfig = {
     {
       name: 'components',
       type: 'blocks',
+      admin: {
+        description: 'Layout components - Use Section References for reusable components',
+      },
       blocks: [
+        // ============================================
+        // SECTION REFERENCE (Primary Method)
+        // ============================================
         {
-          slug: 'header',
+          slug: 'sectionRef',
           labels: {
-            singular: 'Header',
-            plural: 'Headers',
+            singular: 'Section Reference',
+            plural: 'Section References',
           },
           fields: [
+            {
+              name: 'section',
+              type: 'relationship',
+              relationTo: 'sections',
+              required: true,
+              admin: {
+                description: 'Reference a reusable section (e.g., Header, Footer, Sidebar)',
+              },
+            },
+            {
+              name: 'props',
+              type: 'json',
+              admin: {
+                description: 'Props to pass to the section (JSON object)',
+                placeholder: '{ "variant": "dark", "sticky": true }',
+              },
+            },
             {
               name: 'enabled',
               type: 'checkbox',
               defaultValue: true,
-            },
-            {
-              name: 'config',
-              type: 'json',
               admin: {
-                description: 'Header configuration JSON',
+                description: 'Enable/disable this component',
               },
             },
-          ],
-        },
-        {
-          slug: 'footer',
-          labels: {
-            singular: 'Footer',
-            plural: 'Footers',
-          },
-          fields: [
             {
-              name: 'enabled',
-              type: 'checkbox',
-              defaultValue: true,
-            },
-            {
-              name: 'config',
-              type: 'json',
-              admin: {
-                description: 'Footer configuration JSON',
-              },
-            },
-          ],
-        },
-        {
-          slug: 'sidebar',
-          labels: {
-            singular: 'Sidebar',
-            plural: 'Sidebars',
-          },
-          fields: [
-            {
-              name: 'enabled',
-              type: 'checkbox',
-              defaultValue: false,
-            },
-            {
-              name: 'menu',
-              type: 'group',
-              fields: [
-                {
-                  name: 'items',
-                  type: 'array',
-                  fields: [
-                    {
-                      name: 'title',
-                      type: 'text',
-                      required: true,
-                    },
-                    {
-                      name: 'path',
-                      type: 'text',
-                      admin: {
-                        description: 'URL path (e.g., /dashboard, /settings)',
-                      },
-                    },
-                    {
-                      name: 'icon',
-                      type: 'text',
-                      admin: {
-                        description: 'Icon name or identifier (e.g., home, settings)',
-                      },
-                    },
-                    {
-                      name: 'caption',
-                      type: 'text',
-                      admin: {
-                        description: 'Optional caption or description',
-                      },
-                    },
-                    {
-                      name: 'disabled',
-                      type: 'checkbox',
-                      defaultValue: false,
-                    },
-                    {
-                      name: 'external',
-                      type: 'checkbox',
-                      defaultValue: false,
-                      admin: {
-                        description: 'External link (opens in new tab)',
-                      },
-                    },
-                    {
-                      name: 'level2Items',
-                      type: 'array',
-                      admin: {
-                        description: 'Sub menu items (Level 2)',
-                      },
-                      fields: [
-                        {
-                          name: 'title',
-                          type: 'text',
-                          required: true,
-                        },
-                        {
-                          name: 'path',
-                          type: 'text',
-                        },
-                        {
-                          name: 'icon',
-                          type: 'text',
-                        },
-                        {
-                          name: 'caption',
-                          type: 'text',
-                        },
-                        {
-                          name: 'disabled',
-                          type: 'checkbox',
-                          defaultValue: false,
-                        },
-                        {
-                          name: 'external',
-                          type: 'checkbox',
-                          defaultValue: false,
-                        },
-                        {
-                          name: 'level3Items',
-                          type: 'array',
-                          admin: {
-                            description: 'Sub menu items (Level 3)',
-                          },
-                          fields: [
-                            {
-                              name: 'title',
-                              type: 'text',
-                              required: true,
-                            },
-                            {
-                              name: 'path',
-                              type: 'text',
-                            },
-                            {
-                              name: 'icon',
-                              type: 'text',
-                            },
-                            {
-                              name: 'caption',
-                              type: 'text',
-                            },
-                            {
-                              name: 'disabled',
-                              type: 'checkbox',
-                              defaultValue: false,
-                            },
-                            {
-                              name: 'external',
-                              type: 'checkbox',
-                              defaultValue: false,
-                            },
-                          ],
-                        },
-                      ],
-                    },
-                  ],
-                },
+              name: 'position',
+              type: 'select',
+              required: true,
+              defaultValue: 'content',
+              options: [
+                { label: 'Before Content', value: 'before' },
+                { label: 'Content Area', value: 'content' },
+                { label: 'After Content', value: 'after' },
+                { label: 'Header', value: 'header' },
+                { label: 'Footer', value: 'footer' },
+                { label: 'Sidebar', value: 'sidebar' },
               ],
-            },
-            {
-              name: 'config',
-              type: 'json',
               admin: {
-                description: 'Sidebar configuration JSON (optional)',
+                description: 'Where this component should be rendered in the layout',
               },
             },
           ],
         },
+
+        // ============================================
+        // COMPONENT REFERENCE (For Components Collection)
+        // ============================================
         {
-          slug: 'navigation',
+          slug: 'componentRef',
           labels: {
-            singular: 'Navigation',
-            plural: 'Navigations',
-          },
-          fields: [
-            {
-              name: 'enabled',
-              type: 'checkbox',
-              defaultValue: true,
-            },
-            {
-              name: 'items',
-              type: 'array',
-              fields: [
-                {
-                  name: 'label',
-                  type: 'text',
-                  required: true,
-                },
-                {
-                  name: 'path',
-                  type: 'text',
-                  required: true,
-                },
-                {
-                  name: 'icon',
-                  type: 'text',
-                  admin: {
-                    description: 'Icon name or identifier',
-                  },
-                },
-              ],
-            },
-            {
-              name: 'config',
-              type: 'json',
-              admin: {
-                description: 'Navigation configuration JSON',
-              },
-            },
-          ],
-        },
-        {
-          slug: 'component',
-          labels: {
-            singular: 'Component',
-            plural: 'Components',
+            singular: 'Component Reference',
+            plural: 'Component References',
           },
           fields: [
             {
@@ -328,6 +168,20 @@ export const Layouts: CollectionConfig = {
               name: 'enabled',
               type: 'checkbox',
               defaultValue: true,
+            },
+            {
+              name: 'position',
+              type: 'select',
+              required: true,
+              defaultValue: 'content',
+              options: [
+                { label: 'Before Content', value: 'before' },
+                { label: 'Content Area', value: 'content' },
+                { label: 'After Content', value: 'after' },
+                { label: 'Header', value: 'header' },
+                { label: 'Footer', value: 'footer' },
+                { label: 'Sidebar', value: 'sidebar' },
+              ],
             },
           ],
         },

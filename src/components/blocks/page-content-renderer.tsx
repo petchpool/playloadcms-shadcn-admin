@@ -4,6 +4,7 @@ import { BlocksTableBlock } from './blocks-table-block'
 import { RichTextRenderer } from './rich-text-renderer'
 import { DataFetchBlock } from './data-fetch-block'
 import { StatCardBlock } from './stat-card-block'
+import { SectionRefRenderer } from './section-ref-renderer'
 
 export type PageContentRendererProps = {
   content: any[] // Accept any block content array
@@ -268,6 +269,79 @@ export function PageContentRenderer({ content }: PageContentRendererProps) {
                 variant={block.variant}
                 size={block.size}
               />
+            )
+
+          case 'sectionRef':
+            if (typeof block.section === 'object' && block.section?.id) {
+              return (
+                <SectionRefRenderer
+                  key={index}
+                  sectionId={block.section.id}
+                  props={block.props}
+                  overrides={block.overrides}
+                />
+              )
+            } else if (typeof block.section === 'string') {
+              return (
+                <SectionRefRenderer
+                  key={index}
+                  sectionId={block.section}
+                  props={block.props}
+                  overrides={block.overrides}
+                />
+              )
+            }
+            return (
+              <div
+                key={index}
+                className="rounded-md border border-yellow-500/50 bg-yellow-500/10 p-4 text-sm text-yellow-700 dark:text-yellow-400"
+              >
+                Section reference missing or invalid
+              </div>
+            )
+
+          case 'spacer':
+            const spacerHeightMap: Record<string, string> = {
+              sm: 'h-4',
+              md: 'h-8',
+              lg: 'h-16',
+              xl: 'h-24',
+            }
+            const spacerHeight = spacerHeightMap[block.height || 'md'] || 'h-8'
+            return <div key={index} className={`spacer-block ${spacerHeight}`} />
+
+          case 'divider':
+            const dividerSpacingMap: Record<string, string> = {
+              sm: 'my-2',
+              md: 'my-4',
+              lg: 'my-8',
+            }
+            const dividerSpacing = dividerSpacingMap[block.spacing || 'md'] || 'my-4'
+            const dividerStyleMap: Record<string, string> = {
+              solid: 'border-solid',
+              dashed: 'border-dashed',
+              dotted: 'border-dotted',
+            }
+            const dividerStyle = dividerStyleMap[block.style || 'solid'] || 'border-solid'
+            return (
+              <hr
+                key={index}
+                className={`divider-block border-t ${dividerStyle} ${dividerSpacing}`}
+              />
+            )
+
+          case 'heading':
+            const HeadingTag = (block.level || 'h2') as keyof JSX.IntrinsicElements
+            const alignClass =
+              block.align === 'center'
+                ? 'text-center'
+                : block.align === 'right'
+                  ? 'text-right'
+                  : 'text-left'
+            return (
+              <HeadingTag key={index} className={`heading-block ${alignClass}`}>
+                {block.text}
+              </HeadingTag>
             )
 
           default:

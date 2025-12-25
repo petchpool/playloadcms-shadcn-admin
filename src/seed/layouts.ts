@@ -1,186 +1,245 @@
 import { getPayload } from 'payload'
 import config from '../payload.config'
 
+/**
+ * Seed Layouts (Section-based Architecture)
+ *
+ * This seed:
+ * 1. Creates reusable layout sections (header, footer, sidebar)
+ * 2. Creates layouts that reference these sections
+ *
+ * Note: Sections are created in the 'Global' type for layouts
+ */
 export async function seedLayouts() {
   const payload = await getPayload({ config })
 
-  console.log('🌱 Seeding Layouts...')
+  console.log('🌱 Seeding Layout Sections and Layouts...')
+
+  // ============================================
+  // 1. Create Layout Sections (Global Components)
+  // ============================================
+  console.log('  📦 Creating layout sections...')
+
+  const layoutSections = [
+    {
+      slug: 'main-header',
+      name: 'Main Header',
+      type: 'global',
+      category: 'header',
+      blocks: [
+        {
+          blockType: 'richText',
+          content: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'Main Header Component - Configure in Admin Panel',
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+      status: 'published',
+      tags: [{ tag: 'layout' }, { tag: 'header' }],
+    },
+    {
+      slug: 'main-footer',
+      name: 'Main Footer',
+      type: 'global',
+      category: 'footer',
+      blocks: [
+        {
+          blockType: 'richText',
+          content: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'Main Footer Component - Configure in Admin Panel',
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+      status: 'published',
+      tags: [{ tag: 'layout' }, { tag: 'footer' }],
+    },
+    {
+      slug: 'main-sidebar',
+      name: 'Main Sidebar',
+      type: 'global',
+      category: 'other',
+      blocks: [
+        {
+          blockType: 'richText',
+          content: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'Main Sidebar Component - Configure in Admin Panel',
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+      status: 'published',
+      tags: [{ tag: 'layout' }, { tag: 'sidebar' }],
+    },
+    {
+      slug: 'simple-header',
+      name: 'Simple Header',
+      type: 'global',
+      category: 'header',
+      blocks: [
+        {
+          blockType: 'richText',
+          content: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'Simple Header Component - Configure in Admin Panel',
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+      status: 'published',
+      tags: [{ tag: 'layout' }, { tag: 'header' }, { tag: 'simple' }],
+    },
+  ]
+
+  const createdSections: Record<string, string> = {}
+
+  for (const sectionData of layoutSections) {
+    try {
+      const existing = await payload.find({
+        collection: 'sections',
+        where: { slug: { equals: sectionData.slug } },
+        limit: 1,
+        overrideAccess: true,
+      })
+
+      if (existing.docs.length > 0) {
+        createdSections[sectionData.slug] = existing.docs[0].id
+        console.log(`    ⏭️  Section "${sectionData.name}" already exists`)
+        continue
+      }
+
+      const section = await payload.create({
+        collection: 'sections',
+        data: sectionData,
+        overrideAccess: true,
+      })
+
+      createdSections[sectionData.slug] = section.id
+      console.log(`    ✅ Created section: ${sectionData.name}`)
+    } catch (error) {
+      console.error(`    ❌ Error creating section "${sectionData.name}":`, error)
+    }
+  }
+
+  // ============================================
+  // 2. Create Layouts with Section References
+  // ============================================
+  console.log('  🏗️  Creating layouts...')
 
   const layouts = [
     {
       name: 'Main Layout',
       slug: 'main-layout',
-      description: 'Main layout with header, footer, sidebar, and navigation',
+      description: 'Main layout with header, footer, and sidebar (references sections)',
       type: 'main',
       status: 'published',
       components: [
         {
-          blockType: 'header',
+          blockType: 'sectionRef',
+          section: createdSections['main-header'],
           enabled: true,
-          config: {
+          position: 'header',
+          props: {
             sticky: true,
             transparent: false,
           },
         },
         {
-          blockType: 'sidebar',
+          blockType: 'sectionRef',
+          section: createdSections['main-sidebar'],
           enabled: true,
-          menu: {
-            items: [
-              {
-                title: 'Dashboard',
-                path: '/',
-                icon: 'LayoutDashboard',
-                caption: 'Main dashboard',
-                disabled: false,
-                external: false,
-                level2Items: [
-                  {
-                    title: 'Overview',
-                    path: '/dashboard/overview',
-                    icon: 'BarChart3',
-                    disabled: false,
-                    external: false,
-                  },
-                  {
-                    title: 'Analytics',
-                    path: '/dashboard/analytics',
-                    icon: 'TrendingUp',
-                    disabled: false,
-                    external: false,
-                    level3Items: [
-                      {
-                        title: 'Reports',
-                        path: '/dashboard/analytics/reports',
-                        icon: 'FileText',
-                        disabled: false,
-                        external: false,
-                      },
-                      {
-                        title: 'Charts',
-                        path: '/dashboard/analytics/charts',
-                        icon: 'PieChart',
-                        disabled: false,
-                        external: false,
-                      },
-                    ],
-                  },
-                ],
-              },
-              {
-                title: 'Pages',
-                path: '/pages',
-                icon: 'FileText',
-                caption: 'Manage pages',
-                disabled: false,
-                external: false,
-                level2Items: [
-                  {
-                    title: 'All Pages',
-                    path: '/pages',
-                    icon: 'List',
-                    disabled: false,
-                    external: false,
-                  },
-                  {
-                    title: 'Create Page',
-                    path: '/pages/create',
-                    icon: 'Plus',
-                    disabled: false,
-                    external: false,
-                  },
-                ],
-              },
-              {
-                title: 'Layouts',
-                path: '/layouts',
-                icon: 'Layout',
-                caption: 'Manage layouts',
-                disabled: false,
-                external: false,
-              },
-              {
-                title: 'Components',
-                path: '/components',
-                icon: 'Puzzle',
-                caption: 'Manage components',
-                disabled: false,
-                external: false,
-              },
-              {
-                title: 'Sites',
-                path: '/sites',
-                icon: 'Globe',
-                caption: 'Manage sites',
-                disabled: false,
-                external: false,
-              },
-              {
-                title: 'Settings',
-                path: '/settings',
-                icon: 'Settings',
-                caption: 'System settings',
-                disabled: false,
-                external: false,
-                level2Items: [
-                  {
-                    title: 'General',
-                    path: '/settings/general',
-                    icon: 'Cog',
-                    disabled: false,
-                    external: false,
-                  },
-                  {
-                    title: 'Users',
-                    path: '/settings/users',
-                    icon: 'Users',
-                    disabled: false,
-                    external: false,
-                  },
-                  {
-                    title: 'Roles',
-                    path: '/settings/roles',
-                    icon: 'Shield',
-                    disabled: false,
-                    external: false,
-                  },
-                ],
-              },
-            ],
-          },
-          config: {
+          position: 'sidebar',
+          props: {
             width: 300,
             collapsedWidth: 88,
           },
         },
         {
-          blockType: 'footer',
+          blockType: 'sectionRef',
+          section: createdSections['main-footer'],
           enabled: true,
-          config: {
+          position: 'footer',
+          props: {
             showCopyright: true,
             showLinks: true,
           },
         },
+      ],
+    },
+    {
+      name: 'Simple Layout',
+      slug: 'simple-layout',
+      description: 'Simple layout with minimal header and footer',
+      type: 'simple',
+      status: 'published',
+      components: [
         {
-          blockType: 'navigation',
+          blockType: 'sectionRef',
+          section: createdSections['simple-header'],
           enabled: true,
-          items: [
-            {
-              label: 'Home',
-              path: '/',
-              icon: 'Home',
-            },
-            {
-              label: 'About',
-              path: '/about',
-              icon: 'Info',
-            },
-            {
-              label: 'Contact',
-              path: '/contact',
-              icon: 'Mail',
-            },
-          ],
+          position: 'header',
+          props: {
+            sticky: false,
+            transparent: false,
+          },
+        },
+        {
+          blockType: 'sectionRef',
+          section: createdSections['main-footer'],
+          enabled: true,
+          position: 'footer',
+          props: {
+            showCopyright: true,
+            showLinks: false,
+          },
         },
       ],
     },
@@ -192,79 +251,33 @@ export async function seedLayouts() {
       status: 'published',
       components: [],
     },
-    {
-      name: 'Simple Layout',
-      slug: 'simple-layout',
-      description: 'Simple layout with minimal header',
-      type: 'simple',
-      status: 'published',
-      components: [
-        {
-          blockType: 'header',
-          enabled: true,
-          config: {
-            sticky: false,
-            transparent: false,
-          },
-        },
-        {
-          blockType: 'footer',
-          enabled: true,
-          config: {
-            showCopyright: true,
-            showLinks: false,
-          },
-        },
-      ],
-    },
   ]
 
   for (const layoutData of layouts) {
     try {
-      // Check if layout already exists
       const existing = await payload.find({
         collection: 'layouts',
-        where: {
-          slug: {
-            equals: layoutData.slug,
-          },
-        },
+        where: { slug: { equals: layoutData.slug } },
         limit: 1,
         overrideAccess: true,
       })
 
       if (existing.docs.length > 0) {
-        // Update existing layout with components if not present
-        const existingLayout = existing.docs[0]
-        if (!existingLayout.components || existingLayout.components.length === 0) {
-          await payload.update({
-            collection: 'layouts',
-            id: existingLayout.id,
-            data: {
-              components: layoutData.components || [],
-            },
-            overrideAccess: true,
-          })
-          console.log(`  🔄 Updated layout: ${layoutData.name} (${layoutData.slug}) with components`)
-        } else {
-          console.log(`  ⏭️  Layout "${layoutData.name}" (${layoutData.slug}) already exists with components, skipping...`)
-        }
+        console.log(`    ⏭️  Layout "${layoutData.name}" already exists`)
         continue
       }
 
-      // Create layout
       const layout = await payload.create({
         collection: 'layouts',
         data: layoutData,
         overrideAccess: true,
       })
 
-      console.log(`  ✅ Created layout: ${layout.name} (${layout.slug})`)
+      console.log(`    ✅ Created layout: ${layout.name} (${layout.slug})`)
     } catch (error) {
-      console.error(`  ❌ Error creating layout "${layoutData.name}":`, error)
+      console.error(`    ❌ Error creating layout "${layoutData.name}":`, error)
     }
   }
 
-  console.log('✨ Layouts seeding completed!')
+  console.log('✨ Layouts and sections seeding completed!')
 }
-

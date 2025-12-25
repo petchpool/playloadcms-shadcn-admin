@@ -113,3 +113,12 @@ export function hasAnyRoleSync(user: any, roleSlugs: string[]): boolean {
 
   return false
 }
+
+/**
+ * Check if user has required role(s) for access control
+ * Alias for hasAnyRoleSync for cleaner API
+ */
+export function checkRole(user: any, roles: string | string[]): boolean {
+  const roleSlugs = Array.isArray(roles) ? roles : [roles]
+  return hasAnyRoleSync(user, roleSlugs)
+}
