@@ -169,7 +169,20 @@ export const Sites: CollectionConfig = {
     },
     {
       name: 'theme',
+      type: 'relationship',
+      relationTo: 'themes',
+      required: true,
+      admin: {
+        description: 'Select theme configuration for this site',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'themeOverrides',
       type: 'group',
+      admin: {
+        description: 'Override specific theme values for this site (optional)',
+      },
       fields: [
         {
           name: 'radius',
@@ -576,6 +589,15 @@ export const Sites: CollectionConfig = {
       name: 'createdBy',
       type: 'relationship',
       relationTo: 'users',
+    },
+    {
+      name: 'navigation',
+      type: 'relationship',
+      relationTo: 'blocks',
+      admin: {
+        description:
+          'Navigation block (should contain a navigation block with menu items)',
+      },
     },
     {
       name: 'updatedBy',

@@ -48,11 +48,11 @@ export {
 export { DataFetchBlock, type DataFetchBlockProps } from './data-fetch-block'
 export { StatCardBlock, type StatCardBlockProps } from './stat-card-block'
 
-// Section Architecture exports
+// Block Architecture exports
 export {
-  SectionRenderer,
-  SectionRefBlock,
-  validateSectionProps,
+  BlockRenderer,
+  BlockRefBlock,
+  validateBlockProps,
   getDefaultProps,
-} from './section-renderer'
-export { SectionRefRenderer, type SectionRefRendererProps } from './section-ref-renderer'
+} from './block-renderer'
+export { BlockRefRenderer, type BlockRefRendererProps } from './block-ref-renderer'

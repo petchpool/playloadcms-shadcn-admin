@@ -9,25 +9,7 @@ export async function seedPagesLocalized() {
   const payload = await getPayload({ config })
 
   console.log('\n📄 Seeding Pages (Localized)...')
-  console.log('🌱 Seeding Pages (Localized)...')
-
-  // Delete all existing pages first to avoid conflicts
-  console.log('  🗑️  Deleting existing pages...')
-  const allPages = await payload.find({
-    collection: 'pages',
-    limit: 1000,
-    locale: 'all',
-    overrideAccess: true,
-  })
-
-  for (const page of allPages.docs) {
-    await payload.delete({
-      collection: 'pages',
-      id: page.id,
-      overrideAccess: true,
-    })
-  }
-  console.log(`  ✅ Deleted ${allPages.docs.length} existing pages`)
+  console.log('🌱 Upserting pages with localized content...')
 
   // Helper function to create Lexical content
   const createLexicalContent = (text: string) => {
@@ -1160,7 +1142,7 @@ export async function seedPagesLocalized() {
           draft: false,
         })
 
-        console.log(`  ✅ Updated: ${pageData.titleEn} / ${pageData.titleTh}`)
+        console.log(`  🔄 Updated: ${pageData.titleEn} / ${pageData.titleTh}`)
       } else {
         // Create with EN
         const page = await payload.create({

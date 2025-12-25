@@ -1,5 +1,6 @@
 import { getPayload } from 'payload'
 import config from '../payload.config'
+import { batchSeed } from './utils/batch-seeder'
 
 export async function seedRoles(permissions: any[]) {
   const payload = await getPayload({ config })
@@ -102,57 +103,25 @@ export async function seedRoles(permissions: any[]) {
     },
   ]
 
-  const createdRoles: any[] = []
+  // Use batch seed with transform to add permission IDs
+  const result = await batchSeed(payload, {
+    collection: 'roles',
+    data: roles,
+    uniqueField: 'slug',
+    batchSize: 10,
+    transform: (roleData) => ({
+      name: roleData.name,
+      slug: roleData.slug,
+      description: roleData.description,
+      level: roleData.level,
+      isSystemRole: roleData.isSystemRole,
+      permissions: getPermissionIds(roleData.permissions),
+      status: 'active',
+    }),
+  })
 
-  for (const roleData of roles) {
-    try {
-      // Check if role already exists
-      const existing = await payload.find({
-        collection: 'roles',
-        where: {
-          slug: {
-            equals: roleData.slug,
-          },
-        },
-        limit: 1,
-        overrideAccess: true,
-      })
-
-      if (existing.docs.length > 0) {
-        console.log(`  ⏭️  Role "${roleData.name}" already exists, skipping...`)
-        createdRoles.push(existing.docs[0])
-        continue
-      }
-
-      // Get permission IDs
-      const permissionIds = getPermissionIds(roleData.permissions)
-
-      // Create role
-      const role = await payload.create({
-        collection: 'roles',
-        data: {
-          name: roleData.name,
-          slug: roleData.slug,
-          description: roleData.description,
-          level: roleData.level,
-          isSystemRole: roleData.isSystemRole,
-          permissions: permissionIds,
-          status: 'active',
-        },
-        overrideAccess: true,
-      })
-
-      createdRoles.push(role)
-      console.log(`  ✅ Created role: ${role.name} (${role.slug}) - Level ${role.level}`)
-      console.log(`     - Permissions: ${permissionIds.length}`)
-    } catch (error) {
-      console.error(`  ❌ Error creating role "${roleData.name}":`, error)
-    }
-  }
-
-  console.log(`✨ Created ${createdRoles.length} roles`)
   console.log('✨ Roles seeding completed!')
 
-  return createdRoles
+  return [...result.created, ...result.skipped]
 }
 

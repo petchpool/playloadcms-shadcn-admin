@@ -1,5 +1,6 @@
 import { getPayload } from 'payload'
 import config from '../payload.config'
+import { batchSeed } from './utils/batch-seeder'
 
 export async function seedUsers(roles: any[]) {
   const payload = await getPayload({ config })
@@ -46,73 +47,39 @@ export async function seedUsers(roles: any[]) {
     },
   ]
 
-  const createdUsers: any[] = []
-
-  for (const userData of users) {
-    try {
-      // Check if user already exists
-      const existing = await payload.find({
-        collection: 'users',
-        where: {
-          email: {
-            equals: userData.email,
-          },
-        },
-        limit: 1,
-        overrideAccess: true,
-      })
-
-      if (existing.docs.length > 0) {
-        console.log(`  🔄 User "${userData.email}" already exists, updating...`)
-        // Get role IDs
-        const roleIds = userData.roles.filter(Boolean).map((r) => r.id)
-        
-        // Update existing user with firstName/lastName
-        const updatedUser = await payload.update({
-          collection: 'users',
-          id: existing.docs[0].id,
-          data: {
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            roles: roleIds,
-            status: userData.status,
-          },
-          overrideAccess: true,
-        })
-        
-        createdUsers.push(updatedUser)
-        console.log(`  ✅ Updated user: ${updatedUser.email}`)
-        continue
-      }
-
+  // Use batch seed with updateExisting to handle existing users
+  const result = await batchSeed(payload, {
+    collection: 'users',
+    data: users,
+    uniqueField: 'email',
+    updateExisting: true, // Update existing users with new data
+    batchSize: 10,
+    transform: (userData, existing) => {
       // Get role IDs
-      const roleIds = userData.roles.filter(Boolean).map((r) => r.id)
+      const roleIds = userData.roles.filter(Boolean).map((r: any) => r.id)
 
-      // Create user
-      const user = await payload.create({
-        collection: 'users',
-        data: {
-          email: userData.email,
-          password: userData.password,
+      // For new users, include password. For existing, only update fields without password
+      if (existing) {
+        return {
           firstName: userData.firstName,
           lastName: userData.lastName,
           roles: roleIds,
           status: userData.status,
-        },
-        overrideAccess: true,
-      })
+        }
+      }
 
-      createdUsers.push(user)
-      const roleNames = userData.roles.map((r) => r.name).join(', ')
-      console.log(`  ✅ Created user: ${user.email} (${roleNames})`)
-    } catch (error) {
-      console.error(`  ❌ Error creating user "${userData.email}":`, error)
-    }
-  }
+      return {
+        email: userData.email,
+        password: userData.password,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        roles: roleIds,
+        status: userData.status,
+      }
+    },
+  })
 
-  console.log(`✨ Created ${createdUsers.length} users`)
   console.log('✨ Users seeding completed!')
 
-  return createdUsers
+  return [...result.created, ...result.updated, ...result.skipped]
 }
-

@@ -20,6 +20,7 @@
     "seed:users": "cross-env NODE_OPTIONS=--no-deprecation tsx src/seed/run-seed.ts users",
     "seed:components": "cross-env NODE_OPTIONS=--no-deprecation tsx src/seed/run-seed.ts components",
     "seed:rbac": "cross-env NODE_OPTIONS=--no-deprecation tsx src/seed/run-seed.ts rbac",
+    "seed:navigation": "cross-env NODE_OPTIONS=--no-deprecation tsx src/seed/navigation.ts",
     "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
@@ -28,6 +29,7 @@
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@payloadcms/db-postgres": "3.69.0",
     "@payloadcms/next": "3.69.0",
     "@payloadcms/richtext-lexical": "3.69.0",
@@ -52,7 +54,9 @@
     "cross-env": "^7.0.3",
     "date-fns": "^4.1.0",
     "dotenv": "16.4.7",
+    "framer-motion": "^12.23.26",
     "graphql": "^16.8.1",
+    "jotai": "^2.16.0",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
     "payload": "3.69.0",
@@ -61,9 +65,12 @@
     "react": "19.2.3",
     "react-day-picker": "^9.13.0",
     "react-dom": "19.2.3",
+    "react-hook-form": "^7.69.0",
     "sharp": "0.34.2",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",

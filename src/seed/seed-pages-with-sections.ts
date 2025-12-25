@@ -1,19 +1,20 @@
 import { getPayload } from 'payload'
 import config from '../payload.config'
+import { batchSeed } from './utils/batch-seeder'
 
 /**
- * Seed Pages with Section-based Architecture
+ * Seed Pages with Block-based Architecture
  *
  * This seed:
- * 1. Creates content sections for each page
- * 2. Creates pages that reference these sections
+ * 1. Creates content blocks for each page
+ * 2. Creates pages that reference these blocks
  *
- * Philosophy: Pages = Composition of Sections only
+ * Philosophy: Pages = Composition of Blocks only
  */
-export async function seedPagesWithSections() {
+export async function seedPagesWithBlocks() {
   const payload = await getPayload({ config })
 
-  console.log('\n📄 Seeding Pages with Sections...')
+  console.log('\n📄 Seeding Pages with Blocks...')
 
   // Helper: Create Lexical content
   const createLexicalContent = (text: string) => {
@@ -54,76 +55,15 @@ export async function seedPagesWithSections() {
   }
 
   // ============================================
-  // 1. Delete existing pages
+  // 1. Upsert Content Blocks
   // ============================================
-  console.log('  🗑️  Deleting existing pages...')
-  const allPages = await payload.find({
-    collection: 'pages',
-    limit: 1000,
-    locale: 'all',
-    overrideAccess: true,
-  })
+  console.log('  📦 Upserting content blocks...')
 
-  for (const page of allPages.docs) {
-    await payload.delete({
-      collection: 'pages',
-      id: page.id,
-      overrideAccess: true,
-    })
-  }
-  console.log(`  ✅ Deleted ${allPages.docs.length} existing pages`)
-
-  // ============================================
-  // 2. Delete existing content sections
-  // ============================================
-  console.log('  🗑️  Deleting existing content sections...')
-  const existingSections = await payload.find({
-    collection: 'sections',
-    where: {
-      slug: {
-        in: [
-          'home-hero',
-          'home-stats',
-          'home-features',
-          'dashboard-overview',
-          'dashboard-users-table',
-          'about-content',
-          'contact-content',
-          'analytics-overview',
-          'analytics-pages-table',
-          'analytics-sections-table',
-          'analytics-components-table',
-          'analytics-layouts-table',
-          'analytics-users-table',
-          'analytics-roles-table',
-          'analytics-permissions-table',
-          'analytics-media-table',
-        ],
-      },
-    },
-    limit: 100,
-    overrideAccess: true,
-  })
-
-  for (const section of existingSections.docs) {
-    await payload.delete({
-      collection: 'sections',
-      id: section.id,
-      overrideAccess: true,
-    })
-  }
-  console.log(`  ✅ Deleted ${existingSections.docs.length} existing content sections`)
-
-  // ============================================
-  // 3. Create Content Sections
-  // ============================================
-  console.log('  📦 Creating content sections...')
-
-  const sectionDefinitions = [
-    // Home Page Sections
+  const blockDefinitions = [
+    // Home Page Blocks
     {
       slug: 'home-hero',
-      name: 'Home Hero Section',
+      name: 'Home Hero Block',
       type: 'shared' as const,
       category: 'hero' as const,
       status: 'published' as const,
@@ -139,7 +79,7 @@ export async function seedPagesWithSections() {
     },
     {
       slug: 'home-stats',
-      name: 'Home Statistics Section',
+      name: 'Home Statistics Block',
       type: 'shared' as const,
       category: 'content' as const,
       status: 'published' as const,
@@ -169,7 +109,7 @@ export async function seedPagesWithSections() {
     },
     {
       slug: 'home-features',
-      name: 'Home Features Section',
+      name: 'Home Features Block',
       type: 'shared' as const,
       category: 'features' as const,
       status: 'published' as const,
@@ -221,7 +161,7 @@ export async function seedPagesWithSections() {
       tags: [{ tag: 'home' }, { tag: 'features' }],
     },
 
-    // Dashboard Sections
+    // Dashboard Blocks
     {
       slug: 'dashboard-overview',
       name: 'Dashboard Overview',
@@ -255,6 +195,12 @@ export async function seedPagesWithSections() {
           query: {
             limit: 10,
           },
+          fetchStats: true,
+          statsConfig: {
+            groupBy: 'status',
+            statsDataKey: 'userStats',
+            includeValues: [{ value: 'active' }, { value: 'inactive' }, { value: 'pending' }],
+          },
           children: [
             {
               blockType: 'blocksTable' as const,
@@ -262,6 +208,26 @@ export async function seedPagesWithSections() {
               dataKey: 'users',
               title: 'Users',
               collection: 'users' as const,
+              showStatusTabs: true,
+              statusTabsField: 'status',
+              statusTabsConfig: [
+                {
+                  value: 'active' as const,
+                  label: 'Active',
+                  variant: 'success' as const,
+                },
+                {
+                  value: 'inactive' as const,
+                  label: 'Inactive',
+                  variant: 'error' as const,
+                },
+                {
+                  value: 'pending' as const,
+                  label: 'Pending',
+                  variant: 'warning' as const,
+                },
+              ],
+              allTabLabel: 'All Users',
               columns: [
                 {
                   key: 'user',
@@ -438,22 +404,22 @@ export async function seedPagesWithSections() {
       tags: [{ tag: 'analytics' }, { tag: 'pages' }],
     },
     {
-      slug: 'analytics-sections-table',
-      name: 'Analytics Sections Table',
+      slug: 'analytics-blocks-table',
+      name: 'Analytics Blocks Table',
       type: 'shared' as const,
       category: 'content' as const,
       status: 'published' as const,
       blocks: [
         {
           blockType: 'richText' as const,
-          content: createLexicalContent('## Sections'),
+          content: createLexicalContent('## Blocks'),
         },
         {
           blockType: 'dataFetch' as const,
-          dataKey: 'sections',
+          dataKey: 'blocks',
           source: {
             type: 'collection' as const,
-            collection: 'sections' as const,
+            collection: 'blocks' as const,
           },
           query: {
             limit: 50,
@@ -462,9 +428,9 @@ export async function seedPagesWithSections() {
             {
               blockType: 'blocksTable' as const,
               useExternalData: true,
-              dataKey: 'sections',
-              title: 'All Sections',
-              collection: 'sections' as const,
+              dataKey: 'blocks',
+              title: 'All Blocks',
+              collection: 'blocks' as const,
               columns: [
                 {
                   key: 'name',
@@ -523,7 +489,7 @@ export async function seedPagesWithSections() {
           ],
         },
       ],
-      tags: [{ tag: 'analytics' }, { tag: 'sections' }],
+      tags: [{ tag: 'analytics' }, { tag: 'blocks' }],
     },
     {
       slug: 'analytics-components-table',
@@ -558,7 +524,23 @@ export async function seedPagesWithSections() {
                 { key: 'slug', label: 'Slug', sortable: true, type: 'text' as const },
                 { key: 'type', label: 'Type', sortable: true, type: 'badge' as const },
                 { key: 'category', label: 'Category', sortable: true, type: 'badge' as const },
-                { key: 'status', label: 'Status', sortable: true, type: 'badge' as const },
+                {
+                  key: 'status',
+                  label: 'Status',
+                  sortable: true,
+                  type: 'custom' as const,
+                  blocks: [
+                    {
+                      blockType: 'badge' as const,
+                      field: 'status',
+                      colorMap: {
+                        published: 'success',
+                        draft: 'warning',
+                        archived: 'error',
+                      },
+                    },
+                  ],
+                },
                 { key: 'updatedAt', label: 'Updated', sortable: true, type: 'date' as const },
               ],
               searchFields: [{ field: 'name' }, { field: 'slug' }],
@@ -567,6 +549,238 @@ export async function seedPagesWithSections() {
         },
       ],
       tags: [{ tag: 'analytics' }, { tag: 'components' }],
+    },
+    {
+      slug: 'analytics-themes-table',
+      name: 'Analytics Themes Table',
+      type: 'shared' as const,
+      category: 'content' as const,
+      status: 'published' as const,
+      blocks: [
+        {
+          blockType: 'richText' as const,
+          content: createLexicalContent('## Themes'),
+        },
+        {
+          blockType: 'dataFetch' as const,
+          dataKey: 'themes',
+          source: {
+            type: 'collection' as const,
+            collection: 'themes' as const,
+          },
+          query: {
+            limit: 20,
+          },
+          children: [
+            {
+              blockType: 'blocksTable' as const,
+              useExternalData: true,
+              dataKey: 'themes',
+              title: 'All Themes',
+              collection: 'themes' as const,
+              columns: [
+                {
+                  key: 'theme',
+                  label: 'Theme',
+                  sortable: false,
+                  type: 'custom' as const,
+                  blocks: [
+                    {
+                      blockType: 'group' as const,
+                      direction: 'vertical' as const,
+                      gap: 'sm' as const,
+                      items: [
+                        {
+                          type: 'text' as const,
+                          field: 'name',
+                          config: { className: 'font-medium' },
+                        },
+                        {
+                          type: 'text' as const,
+                          field: 'description',
+                          config: { className: 'text-sm text-muted-foreground' },
+                        },
+                      ],
+                    },
+                  ],
+                },
+                { key: 'slug', label: 'Slug', sortable: true, type: 'text' as const },
+                {
+                  key: 'mode',
+                  label: 'Mode',
+                  sortable: true,
+                  type: 'custom' as const,
+                  blocks: [
+                    {
+                      blockType: 'badge' as const,
+                      field: 'mode',
+                      colorMap: {
+                        dark: 'default',
+                        light: 'secondary',
+                      },
+                    },
+                  ],
+                },
+                {
+                  key: 'status',
+                  label: 'Status',
+                  sortable: true,
+                  type: 'custom' as const,
+                  blocks: [
+                    {
+                      blockType: 'badge' as const,
+                      field: 'status',
+                      colorMap: {
+                        active: 'success',
+                        inactive: 'error',
+                      },
+                    },
+                  ],
+                },
+                { key: 'isDefault', label: 'Default', sortable: true, type: 'boolean' as const },
+                { key: 'updatedAt', label: 'Updated', sortable: true, type: 'date' as const },
+              ],
+              searchFields: [{ field: 'name' }, { field: 'slug' }],
+            },
+          ],
+        },
+      ],
+      tags: [{ tag: 'analytics' }, { tag: 'themes' }],
+    },
+    {
+      slug: 'analytics-sites-table',
+      name: 'Analytics Sites Table',
+      type: 'shared' as const,
+      category: 'content' as const,
+      status: 'published' as const,
+      blocks: [
+        {
+          blockType: 'richText' as const,
+          content: createLexicalContent('## Sites'),
+        },
+        {
+          blockType: 'dataFetch' as const,
+          dataKey: 'sites',
+          source: {
+            type: 'collection' as const,
+            collection: 'sites' as const,
+          },
+          query: {
+            limit: 20,
+          },
+          children: [
+            {
+              blockType: 'blocksTable' as const,
+              useExternalData: true,
+              dataKey: 'sites',
+              title: 'All Sites',
+              collection: 'sites' as const,
+              columns: [
+                { key: 'name', label: 'Name', sortable: true, type: 'text' as const },
+                { key: 'domain', label: 'Domain', sortable: true, type: 'text' as const },
+                {
+                  key: 'status',
+                  label: 'Status',
+                  sortable: true,
+                  type: 'custom' as const,
+                  blocks: [
+                    {
+                      blockType: 'badge' as const,
+                      field: 'status',
+                      colorMap: {
+                        active: 'success',
+                        inactive: 'error',
+                      },
+                    },
+                  ],
+                },
+                { key: 'updatedAt', label: 'Updated', sortable: true, type: 'date' as const },
+              ],
+              searchFields: [{ field: 'name' }, { field: 'domain' }],
+            },
+          ],
+        },
+      ],
+      tags: [{ tag: 'analytics' }, { tag: 'sites' }],
+    },
+    {
+      slug: 'analytics-languages-table',
+      name: 'Analytics Languages Table',
+      type: 'shared' as const,
+      category: 'content' as const,
+      status: 'published' as const,
+      blocks: [
+        {
+          blockType: 'richText' as const,
+          content: createLexicalContent('## Languages'),
+        },
+        {
+          blockType: 'dataFetch' as const,
+          dataKey: 'languages',
+          source: {
+            type: 'collection' as const,
+            collection: 'languages' as const,
+          },
+          query: {
+            limit: 20,
+          },
+          children: [
+            {
+              blockType: 'blocksTable' as const,
+              useExternalData: true,
+              dataKey: 'languages',
+              title: 'All Languages',
+              collection: 'languages' as const,
+              columns: [
+                {
+                  key: 'language',
+                  label: 'Language',
+                  sortable: false,
+                  type: 'custom' as const,
+                  blocks: [
+                    {
+                      blockType: 'group' as const,
+                      direction: 'horizontal' as const,
+                      gap: 'md' as const,
+                      items: [
+                        {
+                          type: 'text' as const,
+                          field: 'flag',
+                          config: { className: 'text-2xl' },
+                        },
+                        {
+                          type: 'text' as const,
+                          template: '{name} ({nativeName})',
+                        },
+                      ],
+                    },
+                  ],
+                },
+                { key: 'code', label: 'Code', sortable: true, type: 'text' as const },
+                {
+                  key: 'status',
+                  label: 'Status',
+                  sortable: true,
+                  type: 'custom' as const,
+                  blocks: [
+                    {
+                      blockType: 'badge' as const,
+                      field: 'status',
+                      colorMap: {
+                        active: 'success',
+                        inactive: 'error',
+                      },
+                    },
+                  ],
+                },
+                { key: 'order', label: 'Order', sortable: true, type: 'number' as const },
+              ],
+              searchFields: [{ field: 'name' }, { field: 'code' }],
+            },
+          ],
+        },
+      ],
+      tags: [{ tag: 'analytics' }, { tag: 'languages' }],
     },
     {
       slug: 'analytics-layouts-table',
@@ -631,6 +845,12 @@ export async function seedPagesWithSections() {
           query: {
             limit: 20,
           },
+          fetchStats: true,
+          statsConfig: {
+            groupBy: 'status',
+            statsDataKey: 'userStats',
+            includeValues: [{ value: 'active' }, { value: 'inactive' }, { value: 'pending' }],
+          },
           children: [
             {
               blockType: 'blocksTable' as const,
@@ -638,6 +858,26 @@ export async function seedPagesWithSections() {
               dataKey: 'users',
               title: 'System Users',
               collection: 'users' as const,
+              showStatusTabs: true,
+              statusTabsField: 'status',
+              statusTabsConfig: [
+                {
+                  value: 'active' as const,
+                  label: 'Active',
+                  variant: 'success' as const,
+                },
+                {
+                  value: 'inactive' as const,
+                  label: 'Inactive',
+                  variant: 'error' as const,
+                },
+                {
+                  value: 'pending' as const,
+                  label: 'Pending',
+                  variant: 'warning' as const,
+                },
+              ],
+              allTabLabel: 'All Users',
               columns: [
                 {
                   key: 'user',
@@ -844,29 +1084,256 @@ export async function seedPagesWithSections() {
       ],
       tags: [{ tag: 'analytics' }, { tag: 'media' }],
     },
+
+    // Forms Examples
+    {
+      slug: 'contact-form',
+      name: 'Contact Form',
+      type: 'shared' as const,
+      category: 'content' as const,
+      status: 'published' as const,
+      blocks: [
+        {
+          blockType: 'form' as const,
+          formId: 'contact-form',
+          title: 'Contact Us',
+          description: 'Send us a message and we will get back to you as soon as possible.',
+          viewType: 'dialog' as const,
+          viewSize: 'md' as const,
+          triggerLabel: 'Open Contact Form',
+          triggerVariant: 'default' as const,
+          triggerSize: 'default' as const,
+          fields: [
+            {
+              name: 'name',
+              label: 'Full Name',
+              type: 'text' as const,
+              placeholder: 'John Doe',
+              required: true,
+              minLength: 2,
+              helperText: 'Please enter your full name',
+            },
+            {
+              name: 'email',
+              label: 'Email Address',
+              type: 'email' as const,
+              placeholder: 'john@example.com',
+              required: true,
+              helperText: 'We will respond to this email',
+            },
+            {
+              name: 'subject',
+              label: 'Subject',
+              type: 'select' as const,
+              required: true,
+              options: [
+                { label: 'General Inquiry', value: 'general' },
+                { label: 'Technical Support', value: 'support' },
+                { label: 'Sales', value: 'sales' },
+                { label: 'Partnership', value: 'partnership' },
+              ],
+            },
+            {
+              name: 'message',
+              label: 'Message',
+              type: 'textarea' as const,
+              placeholder: 'Tell us more about your inquiry...',
+              required: true,
+              minLength: 10,
+              maxLength: 1000,
+              helperText: 'Maximum 1000 characters',
+            },
+            {
+              name: 'newsletter',
+              label: 'Subscribe to our newsletter',
+              type: 'checkbox' as const,
+              defaultValue: 'false',
+            },
+          ],
+          submitEndpoint: '/api/contact',
+          submitMethod: 'POST' as const,
+          submitLabel: 'Send Message',
+          cancelLabel: 'Cancel',
+          successMessage: 'Thank you for contacting us! We will get back to you soon.',
+          errorMessage: 'Failed to send message. Please try again.',
+        },
+      ],
+      tags: [{ tag: 'forms' }, { tag: 'contact' }],
+    },
+
+    {
+      slug: 'user-registration-form',
+      name: 'User Registration Form',
+      type: 'shared' as const,
+      category: 'content' as const,
+      status: 'published' as const,
+      blocks: [
+        {
+          blockType: 'form' as const,
+          formId: 'user-registration',
+          title: 'Create Your Account',
+          description: 'Join our community today! Fill in your details below.',
+          viewType: 'page' as const,
+          triggerLabel: 'Sign Up Now',
+          triggerVariant: 'default' as const,
+          triggerSize: 'lg' as const,
+          fields: [
+            {
+              name: 'firstName',
+              label: 'First Name',
+              type: 'text' as const,
+              placeholder: 'John',
+              required: true,
+              minLength: 2,
+            },
+            {
+              name: 'lastName',
+              label: 'Last Name',
+              type: 'text' as const,
+              placeholder: 'Doe',
+              required: true,
+              minLength: 2,
+            },
+            {
+              name: 'email',
+              label: 'Email Address',
+              type: 'email' as const,
+              placeholder: 'john@example.com',
+              required: true,
+              helperText: 'We will never share your email with anyone',
+            },
+            {
+              name: 'password',
+              label: 'Password',
+              type: 'password' as const,
+              required: true,
+              minLength: 8,
+              helperText: 'Minimum 8 characters',
+            },
+            {
+              name: 'confirmPassword',
+              label: 'Confirm Password',
+              type: 'password' as const,
+              required: true,
+              minLength: 8,
+            },
+            {
+              name: 'role',
+              label: 'Account Type',
+              type: 'select' as const,
+              required: true,
+              defaultValue: 'user',
+              options: [
+                { label: 'User', value: 'user' },
+                { label: 'Editor', value: 'editor' },
+                { label: 'Admin', value: 'admin' },
+              ],
+            },
+            {
+              name: 'agreeTerms',
+              label: 'I agree to the terms and conditions',
+              type: 'checkbox' as const,
+              required: true,
+            },
+          ],
+          submitEndpoint: '/api/register',
+          submitMethod: 'POST' as const,
+          submitLabel: 'Create Account',
+          cancelLabel: 'Cancel',
+          successMessage: 'Account created successfully! Please check your email to verify.',
+          errorMessage: 'Registration failed. Please try again.',
+          redirectUrl: '/dashboard',
+          enableAutosave: true,
+        },
+      ],
+      tags: [{ tag: 'forms' }, { tag: 'registration' }],
+    },
+
+    {
+      slug: 'newsletter-subscription-form',
+      name: 'Newsletter Subscription Form',
+      type: 'shared' as const,
+      category: 'content' as const,
+      status: 'published' as const,
+      blocks: [
+        {
+          blockType: 'form' as const,
+          formId: 'newsletter-subscription',
+          title: 'Subscribe to Newsletter',
+          description: 'Get the latest updates and news delivered to your inbox.',
+          viewType: 'sidebar-right' as const,
+          viewMode: 'overlay' as const,
+          triggerLabel: 'Subscribe',
+          triggerVariant: 'outline' as const,
+          triggerSize: 'sm' as const,
+          fields: [
+            {
+              name: 'email',
+              label: 'Email Address',
+              type: 'email' as const,
+              placeholder: 'your@email.com',
+              required: true,
+            },
+            {
+              name: 'frequency',
+              label: 'Email Frequency',
+              type: 'select' as const,
+              required: true,
+              defaultValue: 'weekly',
+              options: [
+                { label: 'Daily', value: 'daily' },
+                { label: 'Weekly', value: 'weekly' },
+                { label: 'Monthly', value: 'monthly' },
+              ],
+              helperText: 'How often would you like to receive emails?',
+            },
+            {
+              name: 'interests',
+              label: 'Topics of Interest',
+              type: 'select' as const,
+              required: false,
+              options: [
+                { label: 'Technology', value: 'tech' },
+                { label: 'Business', value: 'business' },
+                { label: 'Design', value: 'design' },
+                { label: 'Marketing', value: 'marketing' },
+              ],
+            },
+          ],
+          submitEndpoint: '/api/newsletter',
+          submitMethod: 'POST' as const,
+          submitLabel: 'Subscribe',
+          cancelLabel: 'Maybe Later',
+          successMessage: 'Successfully subscribed! Check your email to confirm.',
+          errorMessage: 'Subscription failed. Please try again.',
+        },
+      ],
+      tags: [{ tag: 'forms' }, { tag: 'newsletter' }],
+    },
   ]
 
-  const createdSections: Record<string, string> = {}
+  // Batch seed blocks
+  const blocksResult = await batchSeed(payload, {
+    collection: 'blocks',
+    data: blockDefinitions,
+    uniqueField: 'slug',
+    updateExisting: true,
+    batchSize: 10,
+  })
 
-  for (const sectionData of sectionDefinitions) {
-    try {
-      const section = await payload.create({
-        collection: 'sections',
-        data: sectionData,
-        overrideAccess: true,
-      })
-
-      createdSections[sectionData.slug] = section.id
-      console.log(`    ✅ Created section: ${sectionData.name}`)
-    } catch (error) {
-      console.error(`    ❌ Error creating section "${sectionData.name}":`, error)
+  // Create map of slug -> ID for page references
+  const createdBlocks: Record<string, string> = {}
+  const allBlocks = [...blocksResult.created, ...blocksResult.updated, ...blocksResult.skipped]
+  for (const block of allBlocks) {
+    if (block && typeof block === 'object' && 'slug' in block && 'id' in block) {
+      createdBlocks[block.slug as string] = block.id as string
     }
   }
 
   // ============================================
-  // 4. Create Pages with Section References
+  // 2. Upsert Pages with Block References
   // ============================================
-  console.log('  📄 Creating pages...')
+  console.log('  📄 Upserting pages...')
 
   const pagesData = [
     {
@@ -874,39 +1341,55 @@ export async function seedPagesWithSections() {
       titleTh: 'หน้าแรก',
       slug: 'home',
       order: 1,
-      contentSections: ['home-hero', 'home-stats', 'home-features'],
+      contentBlocks: ['home-hero', 'home-stats', 'home-features'],
     },
     {
       titleEn: 'Dashboard',
       titleTh: 'แดชบอร์ด',
       slug: 'dashboard',
       order: 2,
-      contentSections: ['dashboard-overview', 'dashboard-users-table'],
+      contentBlocks: [
+        'dashboard-overview',
+        'analytics-pages-table',
+        'analytics-blocks-table',
+        'analytics-components-table',
+        'analytics-themes-table',
+        'analytics-sites-table',
+        'analytics-languages-table',
+        'analytics-layouts-table',
+        'dashboard-users-table',
+        'analytics-roles-table',
+        'analytics-permissions-table',
+        'analytics-media-table',
+      ],
     },
     {
       titleEn: 'About',
       titleTh: 'เกี่ยวกับเรา',
       slug: 'about',
       order: 3,
-      contentSections: ['about-content'],
+      contentBlocks: ['about-content'],
     },
     {
       titleEn: 'Contact',
       titleTh: 'ติดต่อเรา',
       slug: 'contact',
       order: 4,
-      contentSections: ['contact-content'],
+      contentBlocks: ['contact-content'],
     },
     {
       titleEn: 'Analytics',
       titleTh: 'การวิเคราะห์',
       slug: 'analytics',
       order: 5,
-      contentSections: [
+      contentBlocks: [
         'analytics-overview',
         'analytics-pages-table',
-        'analytics-sections-table',
+        'analytics-blocks-table',
         'analytics-components-table',
+        'analytics-themes-table',
+        'analytics-sites-table',
+        'analytics-languages-table',
         'analytics-layouts-table',
         'analytics-users-table',
         'analytics-roles-table',
@@ -914,17 +1397,24 @@ export async function seedPagesWithSections() {
         'analytics-media-table',
       ],
     },
+    {
+      titleEn: 'Forms Demo',
+      titleTh: 'ตัวอย่างฟอร์ม',
+      slug: 'forms-demo',
+      order: 6,
+      contentBlocks: ['contact-form', 'user-registration-form', 'newsletter-subscription-form'],
+    },
   ]
 
   for (const pageData of pagesData) {
     try {
-      // Build content array with section references
-      const contentBlocks = pageData.contentSections.map((sectionSlug, index) => ({
-        blockType: 'sectionRef',
-        section: createdSections[sectionSlug],
+      // Build content array with block references
+      const contentBlocks = pageData.contentBlocks.map((blockSlug, index) => ({
+        blockType: 'blockRef',
+        block: createdBlocks[blockSlug],
       }))
 
-      // Add spacers between sections (except last)
+      // Add spacers between blocks (except last)
       const contentWithSpacers: any[] = []
       contentBlocks.forEach((block, index) => {
         contentWithSpacers.push(block)
@@ -936,24 +1426,63 @@ export async function seedPagesWithSections() {
         }
       })
 
-      // Create page with EN locale first
-      const page = await payload.create({
+      // Check if page exists
+      const existingPage = await payload.find({
         collection: 'pages',
-        data: {
-          title: pageData.titleEn,
-          slug: pageData.slug,
-          pageStatus: 'published',
-          content: contentWithSpacers,
-          order: pageData.order,
-          publishedAt: new Date().toISOString(),
-          seo: {
-            metaTitle: pageData.titleEn,
-            metaDescription: `${pageData.titleEn} page`,
+        where: {
+          slug: {
+            equals: pageData.slug,
           },
         },
+        limit: 1,
         locale: 'en',
         overrideAccess: true,
       })
+
+      let page
+
+      if (existingPage.docs.length > 0) {
+        // Update existing page (EN locale)
+        page = await payload.update({
+          collection: 'pages',
+          id: existingPage.docs[0].id,
+          data: {
+            title: pageData.titleEn,
+            slug: pageData.slug,
+            pageStatus: 'published',
+            content: contentWithSpacers,
+            order: pageData.order,
+            publishedAt: new Date().toISOString(),
+            seo: {
+              metaTitle: pageData.titleEn,
+              metaDescription: `${pageData.titleEn} page`,
+            },
+          },
+          locale: 'en',
+          overrideAccess: true,
+        })
+        console.log(`    🔄 Updated: ${pageData.titleEn} / ${pageData.titleTh}`)
+      } else {
+        // Create new page (EN locale)
+        page = await payload.create({
+          collection: 'pages',
+          data: {
+            title: pageData.titleEn,
+            slug: pageData.slug,
+            pageStatus: 'published',
+            content: contentWithSpacers,
+            order: pageData.order,
+            publishedAt: new Date().toISOString(),
+            seo: {
+              metaTitle: pageData.titleEn,
+              metaDescription: `${pageData.titleEn} page`,
+            },
+          },
+          locale: 'en',
+          overrideAccess: true,
+        })
+        console.log(`    ✅ Created: ${pageData.titleEn} / ${pageData.titleTh}`)
+      }
 
       // Update TH locale
       await payload.update({
@@ -971,12 +1500,10 @@ export async function seedPagesWithSections() {
         locale: 'th',
         overrideAccess: true,
       })
-
-      console.log(`    ✅ Created: ${pageData.titleEn} / ${pageData.titleTh}`)
     } catch (error) {
-      console.error(`    ❌ Error creating page "${pageData.titleEn}":`, error)
+      console.error(`    ❌ Error upserting page "${pageData.titleEn}":`, error)
     }
   }
 
-  console.log('✨ Pages with sections seeding completed!')
+  console.log('✨ Pages with blocks seeding completed!')
 }

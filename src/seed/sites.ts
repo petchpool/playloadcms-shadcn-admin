@@ -50,6 +50,56 @@ export async function seedSites() {
     return
   }
 
+  // Get navigation blocks
+  const navigationBlocks = await payload.find({
+    collection: 'blocks',
+    where: {
+      slug: {
+        in: ['main-sidebar-nav', 'simple-top-nav', 'footer-nav'],
+      },
+    },
+    limit: 3,
+    overrideAccess: true,
+  })
+
+  const mainSidebarNav = navigationBlocks.docs.find((nav) => nav.slug === 'main-sidebar-nav')
+  const simpleTopNav = navigationBlocks.docs.find((nav) => nav.slug === 'simple-top-nav')
+  const footerNav = navigationBlocks.docs.find((nav) => nav.slug === 'footer-nav')
+
+  console.log(
+    `  📍 Found ${navigationBlocks.docs.length} navigation blocks${!mainSidebarNav ? ' (⚠️  main-sidebar-nav not found)' : ''}`,
+  )
+
+  // Get themes
+  const themes = await payload.find({
+    collection: 'themes',
+    where: {
+      status: { equals: 'active' },
+    },
+    limit: 10,
+    overrideAccess: true,
+  })
+
+  const darkTheme = themes.docs.find((t) => t.slug === 'dark-professional')
+  const lightTheme = themes.docs.find((t) => t.slug === 'light-minimal')
+  const purpleTheme = themes.docs.find((t) => t.slug === 'purple-dream')
+
+  console.log(`  🎨 Found ${themes.docs.length} themes`)
+
+  if (!darkTheme) {
+    console.log('  ⚠️  Error: Required theme "dark-professional" not found')
+    console.log('     Available themes:', themes.docs.map(t => t.slug).join(', '))
+    return
+  }
+
+  if (!lightTheme) {
+    console.log('  ⚠️  Warning: "light-minimal" theme not found, will use dark-professional as fallback')
+  }
+
+  if (!purpleTheme) {
+    console.log('  ⚠️  Warning: "purple-dream" theme not found, will use dark-professional as fallback')
+  }
+
   // Helper function to create theme config
   const createThemeConfig = () => ({
     radius: 0.625,
@@ -128,6 +178,7 @@ export async function seedSites() {
     domain: 'localhost',
     subdomains: [],
     defaultLayout: mainLayout.id,
+    navigation: simpleTopNav?.id, // Use simple top nav for main site
     seo: {
       defaultTitle: 'Main Site',
       defaultDescription: 'Main site description',
@@ -140,7 +191,7 @@ export async function seedSites() {
       pathPrefix: true,
       fallbackLanguage: enLanguage.id,
     },
-    theme: createThemeConfig(),
+    theme: darkTheme.id,
     status: 'active',
   }
 
@@ -149,6 +200,7 @@ export async function seedSites() {
     domain: 'admin.localhost',
     subdomains: [],
     defaultLayout: mainLayout.id,
+    navigation: mainSidebarNav?.id, // Use sidebar nav for dashboard
     seo: {
       defaultTitle: 'Dashboard',
       defaultDescription: 'Dashboard site',
@@ -161,7 +213,7 @@ export async function seedSites() {
       pathPrefix: true,
       fallbackLanguage: enLanguage.id,
     },
-    theme: createThemeConfig(),
+    theme: purpleTheme?.id || darkTheme.id,
     status: 'active',
   }
 
@@ -170,6 +222,7 @@ export async function seedSites() {
     domain: 'lobby.localhost',
     subdomains: [],
     defaultLayout: blankLayout.id,
+    navigation: simpleTopNav?.id, // Use simple top nav for lobby
     seo: {
       defaultTitle: 'Lobby',
       defaultDescription: 'Lobby site',
@@ -182,48 +235,50 @@ export async function seedSites() {
       pathPrefix: true,
       fallbackLanguage: enLanguage.id,
     },
-    theme: createThemeConfig(),
+    theme: lightTheme?.id || darkTheme.id,
     status: 'active',
   }
 
-  // Helper function to delete site (pages are shared, so we don't delete them)
-  const deleteSite = async (domain: string) => {
+  // Helper function to upsert site
+  const upsertSite = async (siteData: any) => {
+    // Check if site exists
     const existing = await payload.find({
       collection: 'sites',
       where: {
         domain: {
-          equals: domain,
+          equals: siteData.domain,
         },
       },
       limit: 1,
       overrideAccess: true,
     })
 
-    if (existing.docs.length > 0) {
-      const existingSite = existing.docs[0]
-      console.log(`  🗑️  Deleting existing site "${existingSite.name}" (${existingSite.domain})...`)
+    let site
 
-      // Delete the site (pages are shared, so we don't delete them)
-      await payload.delete({
+    if (existing.docs.length > 0) {
+      // Update existing site
+      const existingSite = existing.docs[0]
+      console.log(`  🔄 Updating existing site "${existingSite.name}" (${existingSite.domain})...`)
+
+      site = await payload.update({
         collection: 'sites',
         id: existingSite.id,
+        data: siteData,
         overrideAccess: true,
       })
-      console.log(`  ✅ Deleted existing site`)
+
+      console.log(`  ✅ Updated site: ${site.name} (${site.domain})`)
+    } else {
+      // Create new site
+      site = await payload.create({
+        collection: 'sites',
+        data: siteData,
+        overrideAccess: true,
+      })
+
+      console.log(`  ✅ Created site: ${site.name} (${site.domain})`)
     }
-  }
 
-  // Helper function to create site
-  const createSite = async (siteData: any) => {
-    await deleteSite(siteData.domain)
-
-    const site = await payload.create({
-      collection: 'sites',
-      data: siteData,
-      overrideAccess: true,
-    })
-
-    console.log(`  ✅ Created site: ${site.name} (${site.domain})`)
     console.log(`     - Default Layout: ${site.defaultLayout ? 'Set' : 'Not set'}`)
     console.log(`     - i18n enabled: ${site.i18n?.enabled ? 'Yes' : 'No'}`)
     console.log(`     - Supported languages: ${site.i18n?.supportedLanguages?.length || 0}`)
@@ -232,17 +287,17 @@ export async function seedSites() {
   }
 
   try {
-    // Create Main Site
-    console.log(`\n  📍 Creating Main Site...`)
-    const mainSite = await createSite(defaultSite)
+    // Upsert Main Site
+    console.log(`\n  📍 Upserting Main Site...`)
+    const mainSite = await upsertSite(defaultSite)
 
-    // Create Dashboard Site
-    console.log(`\n  📍 Creating Dashboard Site...`)
-    const dashboardSiteCreated = await createSite(dashboardSite)
+    // Upsert Dashboard Site
+    console.log(`\n  📍 Upserting Dashboard Site...`)
+    const dashboardSiteCreated = await upsertSite(dashboardSite)
 
-    // Create Lobby Site
-    console.log(`\n  📍 Creating Lobby Site...`)
-    const lobbySiteCreated = await createSite(lobbySite)
+    // Upsert Lobby Site
+    console.log(`\n  📍 Upserting Lobby Site...`)
+    const lobbySiteCreated = await upsertSite(lobbySite)
 
     // Lexical editor root node structure
     const createLexicalContent = (text: string) => ({

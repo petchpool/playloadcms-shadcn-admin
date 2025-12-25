@@ -1,4 +1,16 @@
-import type { Component } from '@/payload-types'
+// Component type for rendering components from Components collection
+type Component = {
+  id?: string | null
+  name?: string | null
+  slug?: string | null
+  description?: string | null
+  category?: string | null
+  type?: string | null
+  status?: 'draft' | 'published' | null
+  code?: string | Record<string, any> | null
+  props?: Record<string, any> | null
+  [key: string]: any
+}
 
 export type ComponentRendererProps = {
   component: Component | string

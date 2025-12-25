@@ -88,7 +88,7 @@ export type Block = {
   id: string
   name: string
   slug: string
-  type: 'block' | 'section' | 'widget'
+  type: 'global' | 'shared' | 'template'
   category?: 'content' | 'media' | 'form' | 'navigation' | 'layout' | 'other' | null
   description?: string | null
   status?: 'draft' | 'published' | null
@@ -199,13 +199,17 @@ type BlocksTableProps = {
   onUrlStateChange?: (state: TableUrlState) => void
   /** Initial URL state (from server-side) */
   initialUrlState?: Partial<TableUrlState>
+  /** External stats data from API (overrides client-side counting) */
+  externalStats?: Record<string, number>
+  /** Loading state for external stats */
+  statsLoading?: boolean
 }
 
 // Type options with icons
 const typeOptions: FacetedFilterOption[] = [
-  { label: 'Block', value: 'block', icon: Component },
-  { label: 'Section', value: 'section', icon: Layers },
-  { label: 'Widget', value: 'widget', icon: LayoutGrid },
+  { label: 'Global', value: 'global', icon: Component },
+  { label: 'Shared', value: 'shared', icon: Layers },
+  { label: 'Template', value: 'template', icon: LayoutGrid },
 ]
 
 // Category options with icons
@@ -225,9 +229,9 @@ const statusOptions: FacetedFilterOption[] = [
 ]
 
 const typeLabels: Record<string, string> = {
-  block: 'Block',
-  section: 'Section',
-  widget: 'Widget',
+  global: 'Global',
+  shared: 'Shared',
+  template: 'Template',
 }
 
 const categoryLabels: Record<string, string> = {
@@ -266,6 +270,8 @@ export function BlocksTable({
   urlGroup,
   onUrlStateChange,
   initialUrlState,
+  externalStats,
+  statsLoading = false,
 }: BlocksTableProps) {
   // URL state sync
   const { state: urlState, updateState: updateUrlState } = useTableUrlState({
@@ -327,11 +333,33 @@ export function BlocksTable({
 
   // Generate status tabs with counts
   const statusTabs = React.useMemo(() => {
+    // If external stats are provided, use them instead of client-side counting
+    if (externalStats) {
+      // Calculate total from external stats
+      const total = Object.values(externalStats).reduce((sum, count) => sum + count, 0)
+      
+      return [
+        {
+          label: allTabLabel,
+          value: 'all',
+          count: total,
+        },
+        ...statusTabsConfig.map((config) => ({
+          label: config.label,
+          value: config.value,
+          count: externalStats[config.value] || 0,
+          variant: config.variant,
+          badgeClassName: config.badgeClassName,
+        })),
+      ]
+    }
+
+    // Otherwise, use client-side counting (original behavior)
     return generateStatusTabs(data, statusTabsField as keyof (typeof data)[0], {
       statuses: statusTabsConfig,
       defaultStatus: 'draft',
     })
-  }, [data, statusTabsField, statusTabsConfig])
+  }, [data, statusTabsField, statusTabsConfig, externalStats, allTabLabel])
 
   // Calculate facet counts
   const facetCounts = React.useMemo(() => {

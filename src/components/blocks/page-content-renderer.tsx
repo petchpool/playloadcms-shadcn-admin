@@ -4,7 +4,8 @@ import { BlocksTableBlock } from './blocks-table-block'
 import { RichTextRenderer } from './rich-text-renderer'
 import { DataFetchBlock } from './data-fetch-block'
 import { StatCardBlock } from './stat-card-block'
-import { SectionRefRenderer } from './section-ref-renderer'
+import { BlockRefRenderer } from './block-ref-renderer'
+import { FormBlockRenderer } from './form-block-renderer'
 
 export type PageContentRendererProps = {
   content?: any[] // Accept any block content array
@@ -277,21 +278,21 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
               />
             )
 
-          case 'sectionRef':
-            if (typeof block.section === 'object' && block.section?.id) {
+          case 'blockRef':
+            if (typeof block.block === 'object' && block.block?.id) {
               return (
-                <SectionRefRenderer
+                <BlockRefRenderer
                   key={index}
-                  sectionId={block.section.id}
+                  blockId={block.block.id}
                   props={block.props}
                   overrides={block.overrides}
                 />
               )
-            } else if (typeof block.section === 'string') {
+            } else if (typeof block.block === 'string') {
               return (
-                <SectionRefRenderer
+                <BlockRefRenderer
                   key={index}
-                  sectionId={block.section}
+                  blockId={block.block}
                   props={block.props}
                   overrides={block.overrides}
                 />
@@ -302,7 +303,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
                 key={index}
                 className="rounded-md border border-yellow-500/50 bg-yellow-500/10 p-4 text-sm text-yellow-700 dark:text-yellow-400"
               >
-                Section reference missing or invalid
+                Block reference missing or invalid
               </div>
             )
 
@@ -371,6 +372,9 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
                 </h2>
               )
             }
+
+          case 'form':
+            return <FormBlockRenderer key={index} {...block} />
 
           default:
             return (

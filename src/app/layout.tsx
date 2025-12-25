@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 
 /**
  * Root Layout - Minimal wrapper for route groups
@@ -10,9 +10,14 @@ import React from 'react'
  * 
  * Note: We don't import globals.css here to avoid conflicts.
  * Each route group imports its own styles.
+ * 
+ * Cache Components Migration:
+ * - Wrapped children with Suspense to support dynamic routes (Payload admin, frontend pages)
+ * - This allows routes to use headers(), cookies(), and database calls without blocking
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  // Return children directly - child layouts will provide <html> and <body>
-  return children
+  // Wrap with Suspense to support Cache Components mode
+  // This allows Payload admin and frontend pages to access dynamic data
+  return <Suspense fallback={null}>{children}</Suspense>
 }
 

@@ -6,6 +6,7 @@ import qs from 'qs'
 import { BlocksTable, type RowAction, type CustomColumn } from './blocks-table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useDataByKey } from './data-context'
+import { useCollectionStats } from '@/hooks/use-collection-stats'
 
 type BlocksTableBlockProps = {
   /** Table title */
@@ -95,6 +96,18 @@ type BlocksTableBlockProps = {
    * Required when useExternalData is true.
    */
   dataKey?: string
+  /**
+   * Fetch count statistics for tabs from API
+   */
+  fetchStats?: boolean
+  /**
+   * Configuration for stats fetching
+   */
+  statsConfig?: {
+    groupBy?: string
+    statsDataKey?: string
+    includeValues?: Array<{ value: string }>
+  }
 }
 
 export function BlocksTableBlock({
@@ -123,8 +136,22 @@ export function BlocksTableBlock({
   urlGroup,
   useExternalData = false,
   dataKey,
+  fetchStats = false,
+  statsConfig,
 }: BlocksTableBlockProps) {
   const searchParams = useSearchParams()
+
+  // Fetch stats if enabled
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+    error: statsError,
+  } = useCollectionStats({
+    collection,
+    groupBy: statsConfig?.groupBy || statusTabsField || 'status',
+    values: statsConfig?.includeValues?.map((v) => v.value),
+    enabled: fetchStats && showStatusTabs,
+  })
 
   // Parse columns if it's a JSON string
   const columns = React.useMemo(() => {
@@ -396,6 +423,8 @@ export function BlocksTableBlock({
           onDelete={onDelete}
           syncUrl={syncUrl}
           urlGroup={urlGroup}
+          externalStats={fetchStats ? statsData?.stats : undefined}
+          statsLoading={statsLoading}
         />
       )}
     </div>

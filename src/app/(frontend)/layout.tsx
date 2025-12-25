@@ -1,6 +1,9 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { Inter, IBM_Plex_Sans_Thai } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
+import { ViewManager } from '@/components/view-manager/view-manager'
+import { ToastProvider } from '@/components/providers/toast-provider'
+import { PageLoading } from '@/components/loading/page-loading'
 import type { Metadata } from 'next'
 import './globals.css'
 
@@ -22,7 +25,9 @@ export const metadata: Metadata = {
   description: 'A powerful CMS with shadcn/ui components',
 }
 
-export default async function FrontendLayout(props: { children: React.ReactNode }) {
+// MIGRATED: Removed async keyword - no async operations in this layout
+// This fixes Cache Components "uncached data accessed" error
+export default function FrontendLayout(props: { children: React.ReactNode }) {
   const { children } = props
 
   return (
@@ -53,7 +58,13 @@ export default async function FrontendLayout(props: { children: React.ReactNode 
       </head>
       <body>
         <ThemeProvider defaultTheme="dark" storageKey="ui-theme">
-          <main>{children}</main>
+          <main>
+            {/* Layout (Header + Sidebar) renders immediately without loading state */}
+            {/* Only page content uses Suspense streaming */}
+            {children}
+          </main>
+          <ViewManager />
+          <ToastProvider />
         </ThemeProvider>
       </body>
     </html>

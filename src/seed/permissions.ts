@@ -1,13 +1,6 @@
 import { getPayload } from 'payload'
 import config from '../payload.config'
-
-// Helper function to generate slug from name
-function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
+import { batchSeed } from './utils/batch-seeder'
 
 const basePermissions = [
   // Pages permissions
@@ -312,49 +305,20 @@ export async function seedPermissions() {
 
   console.log('🌱 Seeding Permissions...')
 
-  const createdPermissions: any[] = []
+  // For permissions, we need to handle slug generation (resource.action)
+  // So we use a custom uniqueField function
+  const result = await batchSeed(payload, {
+    collection: 'permissions',
+    data: basePermissions,
+    uniqueField: (item: any) => `${item.resource}.${item.action}`, // Custom function for slug lookup
+    batchSize: 20,
+    transform: (item) => ({
+      ...item,
+      status: 'active' as const,
+    }),
+  })
 
-  for (const permData of basePermissions) {
-    try {
-      // Check if permission already exists
-      const existing = await payload.find({
-        collection: 'permissions',
-        where: {
-          slug: {
-            equals: `${permData.resource}.${permData.action}`,
-          },
-        },
-        limit: 1,
-        overrideAccess: true,
-      })
-
-      if (existing.docs.length > 0) {
-        console.log(`  ⏭️  Permission "${permData.name}" already exists, skipping...`)
-        createdPermissions.push(existing.docs[0])
-        continue
-      }
-
-      // Create permission
-      const permission = await payload.create({
-        collection: 'permissions',
-        data: {
-          ...permData,
-          slug: generateSlug(permData.name),
-          status: 'active' as const,
-        },
-        draft: false,
-        overrideAccess: true,
-      })
-
-      createdPermissions.push(permission)
-      console.log(`  ✅ Created permission: ${permission.name} (${permission.slug})`)
-    } catch (error) {
-      console.error(`  ❌ Error creating permission "${permData.name}":`, error)
-    }
-  }
-
-  console.log(`✨ Created ${createdPermissions.length} permissions`)
   console.log('✨ Permissions seeding completed!')
 
-  return createdPermissions
+  return [...result.created, ...result.skipped]
 }

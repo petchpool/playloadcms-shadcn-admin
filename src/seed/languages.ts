@@ -1,5 +1,6 @@
 import { getPayload } from 'payload'
 import config from '../payload.config'
+import { batchSeed } from './utils/batch-seeder'
 
 const languages = [
   {
@@ -39,39 +40,12 @@ export async function seedLanguages() {
 
   console.log('🌱 Seeding Languages...')
 
-  for (const languageData of languages) {
-    try {
-      // Check if language already exists
-      const existing = await payload.find({
-        collection: 'languages',
-        where: {
-          code: {
-            equals: languageData.code,
-          },
-        },
-        limit: 1,
-        overrideAccess: true, // Bypass access control for seed script
-      })
-
-      if (existing.docs.length > 0) {
-        console.log(
-          `  ⏭️  Language "${languageData.name}" (${languageData.code}) already exists, skipping...`,
-        )
-        continue
-      }
-
-      // Create language
-      const language = await payload.create({
-        collection: 'languages',
-        data: languageData,
-        overrideAccess: true, // Bypass access control for seed script
-      })
-
-      console.log(`  ✅ Created language: ${language.name} (${language.code})`)
-    } catch (error) {
-      console.error(`  ❌ Error creating language "${languageData.name}":`, error)
-    }
-  }
+  await batchSeed(payload, {
+    collection: 'languages',
+    data: languages,
+    uniqueField: 'code',
+    batchSize: 10,
+  })
 
   console.log('✨ Languages seeding completed!')
 }

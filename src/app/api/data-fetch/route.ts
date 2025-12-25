@@ -48,7 +48,8 @@ export async function GET(request: Request) {
       'sites',
       'layouts',
       'pages',
-      'components',
+      'blocks',
+      'themes',
       'permissions',
       'roles',
     ]
@@ -247,4 +248,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

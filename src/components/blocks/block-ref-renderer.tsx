@@ -3,13 +3,13 @@ import config from '@payload-config'
 import { PageContentRenderer } from './page-content-renderer'
 
 /**
- * Section Reference Renderer (Async Server Component)
+ * Block Reference Renderer (Async Server Component)
  * 
- * Fetches section data from PayloadCMS and renders it
+ * Fetches block data from PayloadCMS and renders it
  */
 
-export type SectionRefRendererProps = {
-  sectionId: string
+export type BlockRefRendererProps = {
+  blockId: string
   props?: Record<string, any>
   overrides?: {
     cssClass?: string
@@ -18,24 +18,24 @@ export type SectionRefRendererProps = {
   }
 }
 
-export async function SectionRefRenderer({
-  sectionId,
+export async function BlockRefRenderer({
+  blockId,
   props = {},
   overrides = {},
-}: SectionRefRendererProps) {
+}: BlockRefRendererProps) {
   try {
-    // Fetch section data
+    // Fetch block data
     const payload = await getPayload({ config })
-    const section = await payload.findByID({
-      collection: 'sections',
-      id: sectionId,
+    const block = await payload.findByID({
+      collection: 'blocks',
+      id: blockId,
       depth: 0,
     })
 
-    if (!section || !section.blocks) {
+    if (!block || !block.blocks) {
       return (
         <div className="rounded-md border border-yellow-500/50 bg-yellow-500/10 p-4 text-sm text-yellow-700 dark:text-yellow-400">
-          Section not found: {sectionId}
+          Block not found: {blockId}
         </div>
       )
     }
@@ -58,7 +58,7 @@ export async function SectionRefRenderer({
     const spacingClass = spacingMap[overrides.spacing || 'md'] || 'py-4'
 
     const wrapperClass = [
-      'section-ref',
+      'block-ref',
       bgClass,
       spacingClass,
       overrides.cssClass,
@@ -67,20 +67,20 @@ export async function SectionRefRenderer({
       .join(' ')
 
     // Process blocks with props injection
-    const processedBlocks = section.blocks.map((block: any) => {
-      return processBlockWithProps(block, props)
+    const processedBlocks = block.blocks.map((childBlock: any) => {
+      return processBlockWithProps(childBlock, props)
     })
 
     return (
-      <div className={wrapperClass} data-section-id={sectionId} data-section-slug={section.slug}>
+      <div className={wrapperClass} data-block-id={blockId} data-block-slug={block.slug}>
         <PageContentRenderer content={processedBlocks} />
       </div>
     )
   } catch (error) {
-    console.error('Error rendering section:', error)
+    console.error('Error rendering block:', error)
     return (
       <div className="rounded-md border border-red-500/50 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-400">
-        Error loading section: {sectionId}
+        Error loading block: {blockId}
       </div>
     )
   }

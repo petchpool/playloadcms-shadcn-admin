@@ -11,11 +11,18 @@ export type ProcessedLayoutBlocks = {
   sidebar: any | null
   navigation: any | null
   components: any[]
+  blockRefs: {
+    header?: string
+    footer?: string
+    sidebar?: string
+    navigation?: string
+  }
 }
 
 /**
  * Process layout blocks and group them by type
  * Returns structured data for layout components
+ * Supports both direct blocks (blockType) and blockRef blocks (position)
  */
 export function LayoutBlocksRenderer({ blocks }: LayoutBlocksRendererProps): ProcessedLayoutBlocks {
   if (!blocks || !Array.isArray(blocks)) {
@@ -25,6 +32,7 @@ export function LayoutBlocksRenderer({ blocks }: LayoutBlocksRendererProps): Pro
       sidebar: null,
       navigation: null,
       components: [],
+      blockRefs: {},
     }
   }
 
@@ -36,10 +44,27 @@ export function LayoutBlocksRenderer({ blocks }: LayoutBlocksRendererProps): Pro
     component: [],
   }
 
-  // Group blocks by type
+  const blockRefs: Record<string, string> = {}
+
+  // Group blocks by type or position (for blockRef blocks)
   blocks.forEach((block) => {
     const blockType = block.blockType
-    if (blockType && blocksByType[blockType]) {
+
+    // Handle blockRef blocks - group by position
+    if (blockType === 'blockRef' && block.position) {
+      const position = block.position
+      if (['header', 'footer', 'sidebar', 'navigation'].includes(position)) {
+        blocksByType[position].push(block)
+        // Store block ID for later fetching
+        if (typeof block.block === 'string') {
+          blockRefs[position] = block.block
+        } else if (block.block?.id) {
+          blockRefs[position] = block.block.id
+        }
+      }
+    }
+    // Handle direct blocks - group by blockType
+    else if (blockType && blocksByType[blockType]) {
       blocksByType[blockType].push(block)
     }
   })
@@ -50,6 +75,7 @@ export function LayoutBlocksRenderer({ blocks }: LayoutBlocksRendererProps): Pro
     sidebar: blocksByType.sidebar.length > 0 ? blocksByType.sidebar[0] : null,
     navigation: blocksByType.navigation.length > 0 ? blocksByType.navigation[0] : null,
     components: blocksByType.component,
+    blockRefs,
   }
 }
 

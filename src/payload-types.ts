@@ -73,8 +73,9 @@ export interface Config {
     sites: Site;
     layouts: Layout;
     pages: Page;
-    components: Component;
-    sections: Section;
+    blocks: Block;
+    navigation: Navigation;
+    themes: Theme;
     permissions: Permission;
     roles: Role;
     'payload-kv': PayloadKv;
@@ -91,8 +92,9 @@ export interface Config {
     sites: SitesSelect<false> | SitesSelect<true>;
     layouts: LayoutsSelect<false> | LayoutsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
-    components: ComponentsSelect<false> | ComponentsSelect<true>;
-    sections: SectionsSelect<false> | SectionsSelect<true>;
+    blocks: BlocksSelect<false> | BlocksSelect<true>;
+    navigation: NavigationSelect<false> | NavigationSelect<true>;
+    themes: ThemesSelect<false> | ThemesSelect<true>;
     permissions: PermissionsSelect<false> | PermissionsSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -392,7 +394,14 @@ export interface Site {
      */
     fallbackLanguage?: (string | null) | Language;
   };
-  theme?: {
+  /**
+   * Select theme configuration for this site
+   */
+  theme: string | Theme;
+  /**
+   * Override specific theme values for this site (optional)
+   */
+  themeOverrides?: {
     /**
      * Border radius base value (rem)
      */
@@ -579,12 +588,16 @@ export interface Site {
   };
   status?: ('active' | 'inactive') | null;
   createdBy?: (string | null) | User;
+  /**
+   * Navigation block (should contain a navigation block with menu items)
+   */
+  navigation?: (string | null) | Block;
   updatedBy?: (string | null) | User;
   updatedAt: string;
   createdAt: string;
 }
 /**
- * Layout templates composed of section references
+ * Layout templates composed of block references
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "layouts".
@@ -602,63 +615,38 @@ export interface Layout {
    */
   type: 'main' | 'simple' | 'auth' | 'blank';
   /**
-   * Layout components - Use Section References for reusable components
+   * Layout components - Use Block References for reusable components
    */
   components?:
-    | (
-        | {
-            /**
-             * Reference a reusable section (e.g., Header, Footer, Sidebar)
-             */
-            section: string | Section;
-            /**
-             * Props to pass to the section (JSON object). Example: { "variant": "dark", "sticky": true }
-             */
-            props?:
-              | {
-                  [k: string]: unknown;
-                }
-              | unknown[]
-              | string
-              | number
-              | boolean
-              | null;
-            /**
-             * Enable/disable this component
-             */
-            enabled?: boolean | null;
-            /**
-             * Where this component should be rendered in the layout
-             */
-            position: 'before' | 'content' | 'after' | 'header' | 'footer' | 'sidebar';
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'sectionRef';
-          }
-        | {
-            /**
-             * Select a reusable component from Components collection
-             */
-            component: string | Component;
-            /**
-             * Component props/configuration (overrides component default props)
-             */
-            props?:
-              | {
-                  [k: string]: unknown;
-                }
-              | unknown[]
-              | string
-              | number
-              | boolean
-              | null;
-            enabled?: boolean | null;
-            position: 'before' | 'content' | 'after' | 'header' | 'footer' | 'sidebar';
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'componentRef';
-          }
-      )[]
+    | {
+        /**
+         * Reference a reusable block (e.g., Header, Footer, Sidebar)
+         */
+        block: string | Block;
+        /**
+         * Props to pass to the block (JSON object). Example: { "variant": "dark", "sticky": true }
+         */
+        props?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        /**
+         * Enable/disable this component
+         */
+        enabled?: boolean | null;
+        /**
+         * Where this component should be rendered in the layout
+         */
+        position: 'before' | 'content' | 'after' | 'header' | 'navigation' | 'footer' | 'sidebar';
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'blockRef';
+      }[]
     | null;
   /**
    * Layout-specific theme overrides (optional)
@@ -699,23 +687,23 @@ export interface Layout {
   createdAt: string;
 }
 /**
- * Reusable section compositions that can be referenced by pages
+ * Reusable content blocks that can be referenced by pages and layouts
  *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "sections".
+ * via the `definition` "blocks".
  */
-export interface Section {
+export interface Block {
   id: string;
   /**
-   * Section name (e.g., "Hero - Landing", "Pricing Table")
+   * Block name (e.g., "Hero - Landing", "Main Navigation")
    */
   name: string;
   /**
-   * Unique identifier for referencing (e.g., "hero-landing")
+   * Unique identifier for referencing (e.g., "hero-landing", "main-nav")
    */
   slug: string;
   /**
-   * What this section is for and when to use it
+   * What this block is for and when to use it
    */
   description?: string | null;
   /**
@@ -729,7 +717,7 @@ export interface Section {
     | ('header' | 'hero' | 'content' | 'features' | 'pricing' | 'testimonials' | 'cta' | 'footer' | 'other')
     | null;
   /**
-   * Blocks that compose this section
+   * Blocks that compose this content
    */
   blocks: (
     | {
@@ -844,7 +832,18 @@ export interface Section {
         source: {
           type: 'collection' | 'global' | 'endpoint';
           collection?:
-            | ('components' | 'sections' | 'pages' | 'layouts' | 'users' | 'media' | 'roles' | 'permissions')
+            | (
+                | 'blocks'
+                | 'pages'
+                | 'layouts'
+                | 'users'
+                | 'media'
+                | 'roles'
+                | 'permissions'
+                | 'themes'
+                | 'sites'
+                | 'languages'
+              )
             | null;
           endpoint?: string | null;
         };
@@ -857,6 +856,32 @@ export interface Section {
         };
         transform?: {
           type?: ('none' | 'count' | 'sum' | 'average') | null;
+        };
+        /**
+         * Fetch count statistics for tabs (separate from main data query)
+         */
+        fetchStats?: boolean | null;
+        /**
+         * Configuration for statistics fetching
+         */
+        statsConfig?: {
+          /**
+           * Field to group by for counting (e.g., "status", "type")
+           */
+          groupBy: string;
+          /**
+           * Key to store stats data in context
+           */
+          statsDataKey?: string | null;
+          /**
+           * Specific values to count (leave empty to count all unique values)
+           */
+          includeValues?:
+            | {
+                value: string;
+                id?: string | null;
+              }[]
+            | null;
         };
         children?:
           | (
@@ -871,14 +896,16 @@ export interface Section {
                   dataKey?: string | null;
                   title?: string | null;
                   collection:
-                    | 'components'
-                    | 'sections'
+                    | 'blocks'
                     | 'pages'
                     | 'layouts'
                     | 'users'
                     | 'media'
                     | 'roles'
-                    | 'permissions';
+                    | 'permissions'
+                    | 'themes'
+                    | 'sites'
+                    | 'languages';
                   /**
                    * Table columns configuration
                    */
@@ -1069,6 +1096,46 @@ export interface Section {
                         id?: string | null;
                       }[]
                     | null;
+                  /**
+                   * Show filter tabs with count statistics
+                   */
+                  showStatusTabs?: boolean | null;
+                  /**
+                   * Field name to count and filter by
+                   */
+                  statusTabsField?: string | null;
+                  /**
+                   * Define tabs with their values, labels, and styling
+                   */
+                  statusTabsConfig?:
+                    | {
+                        /**
+                         * Value to filter by (e.g., "draft", "published", "active")
+                         */
+                        value: string;
+                        /**
+                         * Display label for the tab
+                         */
+                        label: string;
+                        /**
+                         * Badge color variant
+                         */
+                        variant?: ('default' | 'success' | 'warning' | 'error' | 'info' | 'secondary') | null;
+                        /**
+                         * Optional icon name from lucide-react (e.g., "Check", "Clock", "XCircle")
+                         */
+                        icon?: string | null;
+                        /**
+                         * Optional description for this tab
+                         */
+                        description?: string | null;
+                        id?: string | null;
+                      }[]
+                    | null;
+                  /**
+                   * Label for the "All" tab
+                   */
+                  allTabLabel?: string | null;
                   id?: string | null;
                   blockName?: string | null;
                   blockType: 'blocksTable';
@@ -1100,7 +1167,17 @@ export interface Section {
         /**
          * Collection to fetch data from
          */
-        collection: 'components' | 'sections' | 'pages' | 'layouts' | 'users' | 'media' | 'roles' | 'permissions';
+        collection:
+          | 'blocks'
+          | 'pages'
+          | 'layouts'
+          | 'users'
+          | 'media'
+          | 'roles'
+          | 'permissions'
+          | 'themes'
+          | 'sites'
+          | 'languages';
         /**
          * Column configuration (JSON array). Leave empty for auto-detection. Example: [{"key":"name","label":"Name"},{"key":"status","label":"Status"}]
          */
@@ -1168,25 +1245,45 @@ export interface Section {
           order?: ('asc' | 'desc') | null;
         };
         /**
-         * Show status filter tabs
+         * Show filter tabs with count statistics
          */
         showStatusTabs?: boolean | null;
         /**
-         * Field to use for status tabs (default: status)
+         * Field name to count and filter by
          */
         statusTabsField?: string | null;
         /**
-         * Status tabs configuration (JSON array). Example: [{"value":"draft","label":"Draft","variant":"default"},{"value":"published","label":"Published","variant":"success"}]
+         * Define tabs with their values, labels, and styling
          */
         statusTabsConfig?:
           | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
+              /**
+               * Value to filter by (e.g., "draft", "published", "active")
+               */
+              value: string;
+              /**
+               * Display label for the tab
+               */
+              label: string;
+              /**
+               * Badge color variant
+               */
+              variant?: ('default' | 'success' | 'warning' | 'error' | 'info' | 'secondary') | null;
+              /**
+               * Optional icon name from lucide-react (e.g., "Check", "Clock", "XCircle")
+               */
+              icon?: string | null;
+              /**
+               * Optional description for this tab
+               */
+              description?: string | null;
+              id?: string | null;
+            }[]
           | null;
+        /**
+         * Label for the "All" tab
+         */
+        allTabLabel?: string | null;
         /**
          * Show action buttons (view, edit, delete)
          */
@@ -1223,6 +1320,214 @@ export interface Section {
         blockName?: string | null;
         blockType: 'table';
       }
+    | {
+        /**
+         * Unique ID for this navigation instance (e.g., "main-nav", "sidebar-nav")
+         */
+        navigationId?: string | null;
+        /**
+         * Navigation title (e.g., "Main Navigation", "Sidebar Menu")
+         */
+        title?: string | null;
+        /**
+         * Navigation menu items (supports up to 2 levels of nesting)
+         */
+        items?:
+          | {
+              /**
+               * Menu item title
+               */
+              title: string;
+              /**
+               * Link path (e.g., "/dashboard", "/users")
+               */
+              path?: string | null;
+              /**
+               * Lucide icon name (e.g., "Home", "Users", "Settings", "ChevronRight")
+               */
+              icon?: string | null;
+              /**
+               * Optional caption/badge text (e.g., "New", "Beta")
+               */
+              caption?: string | null;
+              /**
+               * Disable this menu item
+               */
+              disabled?: boolean | null;
+              /**
+               * Open link in new tab (for external links)
+               */
+              external?: boolean | null;
+              /**
+               * Group label (for visual separation, e.g., "General", "Pages", "Other")
+               */
+              groupLabel?: string | null;
+              /**
+               * Sub-menu items (Level 2) - Up to 3 levels total
+               */
+              children?:
+                | {
+                    title: string;
+                    path?: string | null;
+                    icon?: string | null;
+                    caption?: string | null;
+                    disabled?: boolean | null;
+                    external?: boolean | null;
+                    id?: string | null;
+                  }[]
+                | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'navigation';
+      }
+    | {
+        /**
+         * Unique form identifier (e.g., "contact-form", "user-registration")
+         */
+        formId: string;
+        /**
+         * Form title (shown in dialog/page header)
+         */
+        title: string;
+        /**
+         * Form description (shown below title)
+         */
+        description?: string | null;
+        /**
+         * How the form should be displayed
+         */
+        viewType: 'dialog' | 'page' | 'sidebar-left' | 'sidebar-right';
+        /**
+         * Dialog/Page size
+         */
+        viewSize?: ('sm' | 'md' | 'lg' | 'xl' | 'full') | null;
+        /**
+         * Sidebar display mode
+         */
+        viewMode?: ('overlay' | 'push') | null;
+        /**
+         * Button text to open the form
+         */
+        triggerLabel: string;
+        /**
+         * Button style
+         */
+        triggerVariant?: ('default' | 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'destructive') | null;
+        /**
+         * Button size
+         */
+        triggerSize?: ('sm' | 'default' | 'lg') | null;
+        /**
+         * Form fields configuration
+         */
+        fields: {
+          /**
+           * Field name (used as form data key)
+           */
+          name: string;
+          /**
+           * Field label (shown to user)
+           */
+          label: string;
+          /**
+           * Field input type
+           */
+          type: 'text' | 'email' | 'password' | 'number' | 'textarea' | 'select' | 'checkbox' | 'date' | 'file';
+          /**
+           * Placeholder text
+           */
+          placeholder?: string | null;
+          /**
+           * Is this field required?
+           */
+          required?: boolean | null;
+          /**
+           * Minimum length (for text fields)
+           */
+          minLength?: number | null;
+          /**
+           * Maximum length (for text fields)
+           */
+          maxLength?: number | null;
+          /**
+           * Minimum value (for number fields)
+           */
+          min?: number | null;
+          /**
+           * Maximum value (for number fields)
+           */
+          max?: number | null;
+          /**
+           * Regex pattern for validation
+           */
+          pattern?: string | null;
+          /**
+           * Options for select field
+           */
+          options?:
+            | {
+                label: string;
+                value: string;
+                id?: string | null;
+              }[]
+            | null;
+          /**
+           * Default value
+           */
+          defaultValue?: string | null;
+          /**
+           * Helper text shown below field
+           */
+          helperText?: string | null;
+          id?: string | null;
+        }[];
+        /**
+         * API endpoint to submit form data (e.g., "/api/contact")
+         */
+        submitEndpoint: string;
+        /**
+         * HTTP method for submission
+         */
+        submitMethod?: ('POST' | 'PUT' | 'PATCH') | null;
+        /**
+         * Submit button label
+         */
+        submitLabel?: string | null;
+        /**
+         * Cancel button label
+         */
+        cancelLabel?: string | null;
+        /**
+         * Success toast message
+         */
+        successMessage?: string | null;
+        /**
+         * Error toast message
+         */
+        errorMessage?: string | null;
+        /**
+         * Redirect to this URL after successful submission (optional)
+         */
+        redirectUrl?: string | null;
+        /**
+         * Show step indicator for multi-step forms
+         */
+        showProgressIndicator?: boolean | null;
+        /**
+         * Auto-save form data to localStorage
+         */
+        enableAutosave?: boolean | null;
+        /**
+         * Custom CSS classes (space-separated)
+         */
+        customCss?: string | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'form';
+      }
   )[];
   /**
    * Define injection points where pages can insert custom content
@@ -1238,7 +1543,7 @@ export interface Section {
       }[]
     | null;
   /**
-   * Define props that can be passed when using this section
+   * Define props that can be passed when using this block
    */
   propsSchema?:
     | {
@@ -1294,45 +1599,112 @@ export interface Section {
   createdAt: string;
 }
 /**
+ * Theme configurations for sites
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "components".
+ * via the `definition` "themes".
  */
-export interface Component {
+export interface Theme {
   id: string;
+  /**
+   * Theme name (e.g., "Dark Professional", "Light Minimal")
+   */
   name: string;
   /**
-   * URL-friendly identifier
+   * URL-friendly identifier (e.g., "dark-professional")
    */
   slug: string;
-  type: 'block' | 'section' | 'widget';
-  category?: ('content' | 'media' | 'form' | 'navigation' | 'layout' | 'other') | null;
+  /**
+   * Brief description of this theme
+   */
   description?: string | null;
   /**
-   * Component code (React/TSX) or configuration JSON
+   * Default color mode for this theme
    */
-  code?: string | null;
+  mode: 'light' | 'dark' | 'auto';
   /**
-   * Component props schema
+   * Primary brand color (hex, rgb, or hsl)
    */
-  props?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
+  primaryColor: string;
   /**
-   * Preview image for this component
+   * Text color on primary background
    */
-  preview?: (string | null) | Media;
-  status?: ('draft' | 'published') | null;
+  primaryForeground?: string | null;
+  secondaryColor?: string | null;
+  secondaryForeground?: string | null;
+  /**
+   * Main background color
+   */
+  backgroundColor?: string | null;
+  /**
+   * Main text color
+   */
+  foregroundColor?: string | null;
+  /**
+   * Muted background color
+   */
+  mutedColor?: string | null;
+  mutedForeground?: string | null;
+  borderColor?: string | null;
+  inputColor?: string | null;
+  /**
+   * Focus ring color
+   */
+  ringColor?: string | null;
+  successColor?: string | null;
+  warningColor?: string | null;
+  errorColor?: string | null;
+  infoColor?: string | null;
+  fontFamily?: {
+    /**
+     * Sans-serif font stack
+     */
+    sans?: string | null;
+    serif?: string | null;
+    mono?: string | null;
+  };
+  fontSize?: {
+    /**
+     * Base font size
+     */
+    base?: string | null;
+    /**
+     * Type scale ratio
+     */
+    scale?: ('1.2' | '1.25' | '1.333' | '1.618') | null;
+  };
+  spacing?: {
+    /**
+     * Base spacing unit
+     */
+    unit?: ('4' | '8' | '16') | null;
+    containerMaxWidth?: string | null;
+    contentMaxWidth?: string | null;
+  };
+  borderRadius?: {
+    sm?: string | null;
+    md?: string | null;
+    lg?: string | null;
+  };
+  shadow?: {
+    sm?: string | null;
+    md?: string | null;
+    lg?: string | null;
+  };
+  /**
+   * Additional custom CSS variables
+   */
+  customCSS?: string | null;
+  status: 'active' | 'inactive';
+  /**
+   * Set as default theme for new sites
+   */
+  isDefault?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
 /**
- * Pages composed of sections and minimal local content
+ * Pages composed of blocks and minimal local content
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages".
@@ -1360,17 +1732,17 @@ export interface Page {
    */
   pageStatus?: ('draft' | 'published' | 'archived') | null;
   /**
-   * Page content - Primarily use Section References. Create sections in Sections collection for complex content.
+   * Page content - Use Block References for complex content
    */
   content?:
     | (
         | {
             /**
-             * Reference a reusable section from Sections collection
+             * Reference a reusable block
              */
-            section: string | Section;
+            block: string | Block;
             /**
-             * Props to pass to the section (JSON object). Example: { "title": "Welcome", "theme": "dark" }
+             * Props to pass to the block (JSON object). Example: { "title": "Welcome", "theme": "dark" }
              */
             props?:
               | {
@@ -1382,7 +1754,53 @@ export interface Page {
               | boolean
               | null;
             /**
-             * Override section settings (optional)
+             * Fill block slots with custom content
+             */
+            slots?:
+              | {
+                  /**
+                   * Name of the slot to fill
+                   */
+                  slotName: string;
+                  /**
+                   * Content to inject into the slot
+                   */
+                  content?:
+                    | (
+                        | {
+                            content: {
+                              root: {
+                                type: string;
+                                children: {
+                                  type: any;
+                                  version: number;
+                                  [k: string]: unknown;
+                                }[];
+                                direction: ('ltr' | 'rtl') | null;
+                                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                                indent: number;
+                                version: number;
+                              };
+                              [k: string]: unknown;
+                            };
+                            id?: string | null;
+                            blockName?: string | null;
+                            blockType: 'richText';
+                          }
+                        | {
+                            text: string;
+                            level?: ('h1' | 'h2' | 'h3' | 'h4') | null;
+                            id?: string | null;
+                            blockName?: string | null;
+                            blockType: 'heading';
+                          }
+                      )[]
+                    | null;
+                  id?: string | null;
+                }[]
+              | null;
+            /**
+             * Override block settings
              */
             overrides?: {
               /**
@@ -1390,11 +1808,95 @@ export interface Page {
                */
               cssClass?: string | null;
               backgroundColor?: ('default' | 'primary' | 'secondary' | 'muted') | null;
-              spacing?: ('none' | 'sm' | 'md' | 'lg') | null;
             };
             id?: string | null;
             blockName?: string | null;
-            blockType: 'sectionRef';
+            blockType: 'blockRef';
+          }
+        | {
+            /**
+             * Rich text content
+             */
+            content: {
+              root: {
+                type: string;
+                children: {
+                  type: any;
+                  version: number;
+                  [k: string]: unknown;
+                }[];
+                direction: ('ltr' | 'rtl') | null;
+                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                indent: number;
+                version: number;
+              };
+              [k: string]: unknown;
+            };
+            maxWidth?: ('prose' | 'wide' | 'full') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'richText';
+          }
+        | {
+            text: string;
+            level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+            align?: ('left' | 'center' | 'right') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'heading';
+          }
+        | {
+            columns: '1' | '2' | '3' | '4';
+            gap?: ('sm' | 'md' | 'lg') | null;
+            items: {
+              content?:
+                | (
+                    | {
+                        content: {
+                          root: {
+                            type: string;
+                            children: {
+                              type: any;
+                              version: number;
+                              [k: string]: unknown;
+                            }[];
+                            direction: ('ltr' | 'rtl') | null;
+                            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                            indent: number;
+                            version: number;
+                          };
+                          [k: string]: unknown;
+                        };
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'richText';
+                      }
+                    | {
+                        text: string;
+                        level?: ('h2' | 'h3' | 'h4') | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'heading';
+                      }
+                  )[]
+                | null;
+              id?: string | null;
+            }[];
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'grid';
+          }
+        | {
+            image: string | Media;
+            /**
+             * Alternative text for accessibility
+             */
+            alt?: string | null;
+            caption?: string | null;
+            size?: ('small' | 'medium' | 'large' | 'full') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'image';
           }
         | {
             height: 'sm' | 'md' | 'lg' | 'xl';
@@ -1404,10 +1906,6 @@ export interface Page {
           }
         | {
             style?: ('solid' | 'dashed' | 'dotted') | null;
-            /**
-             * Margin around divider
-             */
-            spacing?: ('sm' | 'md' | 'lg') | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'divider';
@@ -1445,6 +1943,95 @@ export interface Page {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * Manage navigation menus and menu items
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation".
+ */
+export interface Navigation {
+  id: string;
+  /**
+   * Navigation name (e.g., "Main Navigation", "Footer Menu")
+   */
+  name: string;
+  /**
+   * Unique identifier (e.g., "main-nav", "footer-menu")
+   */
+  slug: string;
+  /**
+   * Optional description for this navigation
+   */
+  description?: string | null;
+  /**
+   * Where this navigation should appear
+   */
+  location: 'main' | 'sidebar' | 'topbar' | 'footer' | 'mobile' | 'dashboard' | 'other';
+  /**
+   * Navigation menu items (supports 2 levels of nesting)
+   */
+  items: {
+    /**
+     * Menu item title
+     */
+    title: string;
+    /**
+     * Link path (e.g., "/dashboard", "/users")
+     */
+    path?: string | null;
+    /**
+     * Lucide icon name (e.g., "Home", "Users", "Settings")
+     */
+    icon?: string | null;
+    /**
+     * Optional caption/badge text (e.g., "New", "Beta")
+     */
+    caption?: string | null;
+    /**
+     * Disable this menu item
+     */
+    disabled?: boolean | null;
+    /**
+     * Open link in new tab (for external links)
+     */
+    external?: boolean | null;
+    /**
+     * Group label for visual separation (e.g., "General", "Settings")
+     */
+    groupLabel?: string | null;
+    /**
+     * Display order (lower numbers appear first)
+     */
+    order?: number | null;
+    /**
+     * Sub-menu items (Level 2)
+     */
+    children?:
+      | {
+          title: string;
+          path?: string | null;
+          icon?: string | null;
+          caption?: string | null;
+          disabled?: boolean | null;
+          external?: boolean | null;
+          order?: number | null;
+          id?: string | null;
+        }[]
+      | null;
+    id?: string | null;
+  }[];
+  /**
+   * Navigation status
+   */
+  status: 'draft' | 'published' | 'archived';
+  /**
+   * Assign this navigation to a specific site (optional)
+   */
+  site?: (string | null) | Site;
+  createdBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1587,12 +2174,16 @@ export interface PayloadLockedDocument {
         value: string | Page;
       } | null)
     | ({
-        relationTo: 'components';
-        value: string | Component;
+        relationTo: 'blocks';
+        value: string | Block;
       } | null)
     | ({
-        relationTo: 'sections';
-        value: string | Section;
+        relationTo: 'navigation';
+        value: string | Navigation;
+      } | null)
+    | ({
+        relationTo: 'themes';
+        value: string | Theme;
       } | null)
     | ({
         relationTo: 'permissions';
@@ -1745,7 +2336,8 @@ export interface SitesSelect<T extends boolean = true> {
         pathPrefix?: T;
         fallbackLanguage?: T;
       };
-  theme?:
+  theme?: T;
+  themeOverrides?:
     | T
     | {
         radius?: T;
@@ -1825,6 +2417,7 @@ export interface SitesSelect<T extends boolean = true> {
       };
   status?: T;
   createdBy?: T;
+  navigation?: T;
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1841,20 +2434,10 @@ export interface LayoutsSelect<T extends boolean = true> {
   components?:
     | T
     | {
-        sectionRef?:
+        blockRef?:
           | T
           | {
-              section?: T;
-              props?: T;
-              enabled?: T;
-              position?: T;
-              id?: T;
-              blockName?: T;
-            };
-        componentRef?:
-          | T
-          | {
-              component?: T;
+              block?: T;
               props?: T;
               enabled?: T;
               position?: T;
@@ -1887,18 +2470,101 @@ export interface PagesSelect<T extends boolean = true> {
   content?:
     | T
     | {
-        sectionRef?:
+        blockRef?:
           | T
           | {
-              section?: T;
+              block?: T;
               props?: T;
+              slots?:
+                | T
+                | {
+                    slotName?: T;
+                    content?:
+                      | T
+                      | {
+                          richText?:
+                            | T
+                            | {
+                                content?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          heading?:
+                            | T
+                            | {
+                                text?: T;
+                                level?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                    id?: T;
+                  };
               overrides?:
                 | T
                 | {
                     cssClass?: T;
                     backgroundColor?: T;
-                    spacing?: T;
                   };
+              id?: T;
+              blockName?: T;
+            };
+        richText?:
+          | T
+          | {
+              content?: T;
+              maxWidth?: T;
+              id?: T;
+              blockName?: T;
+            };
+        heading?:
+          | T
+          | {
+              text?: T;
+              level?: T;
+              align?: T;
+              id?: T;
+              blockName?: T;
+            };
+        grid?:
+          | T
+          | {
+              columns?: T;
+              gap?: T;
+              items?:
+                | T
+                | {
+                    content?:
+                      | T
+                      | {
+                          richText?:
+                            | T
+                            | {
+                                content?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          heading?:
+                            | T
+                            | {
+                                text?: T;
+                                level?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        image?:
+          | T
+          | {
+              image?: T;
+              alt?: T;
+              caption?: T;
+              size?: T;
               id?: T;
               blockName?: T;
             };
@@ -1913,7 +2579,6 @@ export interface PagesSelect<T extends boolean = true> {
           | T
           | {
               style?: T;
-              spacing?: T;
               id?: T;
               blockName?: T;
             };
@@ -1939,26 +2604,9 @@ export interface PagesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "components_select".
+ * via the `definition` "blocks_select".
  */
-export interface ComponentsSelect<T extends boolean = true> {
-  name?: T;
-  slug?: T;
-  type?: T;
-  category?: T;
-  description?: T;
-  code?: T;
-  props?: T;
-  preview?: T;
-  status?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "sections_select".
- */
-export interface SectionsSelect<T extends boolean = true> {
+export interface BlocksSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   description?: T;
@@ -2048,6 +2696,19 @@ export interface SectionsSelect<T extends boolean = true> {
                 | T
                 | {
                     type?: T;
+                  };
+              fetchStats?: T;
+              statsConfig?:
+                | T
+                | {
+                    groupBy?: T;
+                    statsDataKey?: T;
+                    includeValues?:
+                      | T
+                      | {
+                          value?: T;
+                          id?: T;
+                        };
                   };
               children?:
                 | T
@@ -2154,6 +2815,19 @@ export interface SectionsSelect<T extends boolean = true> {
                                 field?: T;
                                 id?: T;
                               };
+                          showStatusTabs?: T;
+                          statusTabsField?: T;
+                          statusTabsConfig?:
+                            | T
+                            | {
+                                value?: T;
+                                label?: T;
+                                variant?: T;
+                                icon?: T;
+                                description?: T;
+                                id?: T;
+                              };
+                          allTabLabel?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -2206,13 +2880,103 @@ export interface SectionsSelect<T extends boolean = true> {
                   };
               showStatusTabs?: T;
               statusTabsField?: T;
-              statusTabsConfig?: T;
+              statusTabsConfig?:
+                | T
+                | {
+                    value?: T;
+                    label?: T;
+                    variant?: T;
+                    icon?: T;
+                    description?: T;
+                    id?: T;
+                  };
+              allTabLabel?: T;
               showActions?: T;
               defaultActions?: T;
               syncUrl?: T;
               urlGroup?: T;
               useExternalData?: T;
               dataKey?: T;
+              id?: T;
+              blockName?: T;
+            };
+        navigation?:
+          | T
+          | {
+              navigationId?: T;
+              title?: T;
+              items?:
+                | T
+                | {
+                    title?: T;
+                    path?: T;
+                    icon?: T;
+                    caption?: T;
+                    disabled?: T;
+                    external?: T;
+                    groupLabel?: T;
+                    children?:
+                      | T
+                      | {
+                          title?: T;
+                          path?: T;
+                          icon?: T;
+                          caption?: T;
+                          disabled?: T;
+                          external?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        form?:
+          | T
+          | {
+              formId?: T;
+              title?: T;
+              description?: T;
+              viewType?: T;
+              viewSize?: T;
+              viewMode?: T;
+              triggerLabel?: T;
+              triggerVariant?: T;
+              triggerSize?: T;
+              fields?:
+                | T
+                | {
+                    name?: T;
+                    label?: T;
+                    type?: T;
+                    placeholder?: T;
+                    required?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    min?: T;
+                    max?: T;
+                    pattern?: T;
+                    options?:
+                      | T
+                      | {
+                          label?: T;
+                          value?: T;
+                          id?: T;
+                        };
+                    defaultValue?: T;
+                    helperText?: T;
+                    id?: T;
+                  };
+              submitEndpoint?: T;
+              submitMethod?: T;
+              submitLabel?: T;
+              cancelLabel?: T;
+              successMessage?: T;
+              errorMessage?: T;
+              redirectUrl?: T;
+              showProgressIndicator?: T;
+              enableAutosave?: T;
+              customCss?: T;
               id?: T;
               blockName?: T;
             };
@@ -2245,6 +3009,110 @@ export interface SectionsSelect<T extends boolean = true> {
       };
   version?: T;
   preview?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation_select".
+ */
+export interface NavigationSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  location?: T;
+  items?:
+    | T
+    | {
+        title?: T;
+        path?: T;
+        icon?: T;
+        caption?: T;
+        disabled?: T;
+        external?: T;
+        groupLabel?: T;
+        order?: T;
+        children?:
+          | T
+          | {
+              title?: T;
+              path?: T;
+              icon?: T;
+              caption?: T;
+              disabled?: T;
+              external?: T;
+              order?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  status?: T;
+  site?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "themes_select".
+ */
+export interface ThemesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  mode?: T;
+  primaryColor?: T;
+  primaryForeground?: T;
+  secondaryColor?: T;
+  secondaryForeground?: T;
+  backgroundColor?: T;
+  foregroundColor?: T;
+  mutedColor?: T;
+  mutedForeground?: T;
+  borderColor?: T;
+  inputColor?: T;
+  ringColor?: T;
+  successColor?: T;
+  warningColor?: T;
+  errorColor?: T;
+  infoColor?: T;
+  fontFamily?:
+    | T
+    | {
+        sans?: T;
+        serif?: T;
+        mono?: T;
+      };
+  fontSize?:
+    | T
+    | {
+        base?: T;
+        scale?: T;
+      };
+  spacing?:
+    | T
+    | {
+        unit?: T;
+        containerMaxWidth?: T;
+        contentMaxWidth?: T;
+      };
+  borderRadius?:
+    | T
+    | {
+        sm?: T;
+        md?: T;
+        lg?: T;
+      };
+  shadow?:
+    | T
+    | {
+        sm?: T;
+        md?: T;
+        lg?: T;
+      };
+  customCSS?: T;
+  status?: T;
+  isDefault?: T;
   updatedAt?: T;
   createdAt?: T;
 }

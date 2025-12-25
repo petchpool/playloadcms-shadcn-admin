@@ -1,32 +1,32 @@
-import type { Section } from '@/payload-types'
+import type { Block } from '@/payload-types'
 import { PageContentRenderer } from './page-content-renderer'
 
-type SectionRendererProps = {
-  section: Section
+type BlockRendererProps = {
+  block: Block
   props?: Record<string, any>
   slots?: Record<string, any[]>
 }
 
 /**
- * Section Renderer
+ * Block Renderer
  * 
- * Resolves and renders a Section with:
- * - Props injection (parameterized sections)
+ * Resolves and renders a Block with:
+ * - Props injection (parameterized blocks)
  * - Slot filling (custom content insertion)
  * - Recursive block rendering
  * 
- * This is the core of the Section-based Architecture
+ * This is the core of the Block-based Architecture
  */
-export async function SectionRenderer({ section, props = {}, slots = {} }: SectionRendererProps) {
-  if (!section || !section.blocks) {
+export async function BlockRenderer({ block, props = {}, slots = {} }: BlockRendererProps) {
+  if (!block || !block.blocks) {
     return null
   }
 
   // Process blocks: inject props and fill slots
-  const processedBlocks = section.blocks.map((block: any) => {
-    // If block is a slot, replace with slot content
-    if (block.blockType === 'slot') {
-      const slotName = block.name
+  const processedBlocks = block.blocks.map((childBlock: any) => {
+    // If childBlock is a slot, replace with slot content
+    if (childBlock.blockType === 'slot') {
+      const slotName = childBlock.name
       const slotContent = slots[slotName]
 
       // Return slot content if provided
@@ -35,8 +35,8 @@ export async function SectionRenderer({ section, props = {}, slots = {} }: Secti
       }
 
       // Return default content if no slot content provided
-      if (block.defaultBlocks) {
-        return block.defaultBlocks
+      if (childBlock.defaultBlocks) {
+        return childBlock.defaultBlocks
       }
 
       // Return null if slot is empty and no default
@@ -44,8 +44,8 @@ export async function SectionRenderer({ section, props = {}, slots = {} }: Secti
     }
 
     // Process other block types
-    // If block has prop placeholders, inject values
-    return processBlock(block, props)
+    // If childBlock has prop placeholders, inject values
+    return processBlock(childBlock, props)
   })
 
   // Flatten processed blocks (slots can return arrays)
@@ -53,9 +53,9 @@ export async function SectionRenderer({ section, props = {}, slots = {} }: Secti
 
   // Render blocks using existing PageContentRenderer
   return (
-    <div data-section={section.slug} className="section">
-      {flattenedBlocks.map((block: any, index: number) => (
-        <PageContentRenderer key={`${block.blockType}-${index}`} blocks={[block]} />
+    <div data-block={block.slug} className="block-content">
+      {flattenedBlocks.map((childBlock: any, index: number) => (
+        <PageContentRenderer key={`${childBlock.blockType}-${index}`} blocks={[childBlock]} />
       ))}
     </div>
   )
@@ -114,23 +114,23 @@ function interpolateProps(template: string, props: Record<string, any>): string 
 }
 
 /**
- * Section Reference Block Component
- * Used when a page references a section
+ * Block Reference Block Component
+ * Used when a page references a block
  */
-type SectionRefBlockProps = {
-  sectionSlug: string
+type BlockRefBlockProps = {
+  blockSlug: string
   props?: Record<string, any>
   slots?: Record<string, any[]>
 }
 
-export async function SectionRefBlock({ sectionSlug, props, slots }: SectionRefBlockProps) {
-  // In a real implementation, fetch the section from Payload
+export async function BlockRefBlock({ blockSlug, props, slots }: BlockRefBlockProps) {
+  // In a real implementation, fetch the block from Payload
   // For now, this is a placeholder that should be called from server component
 
   return (
-    <div data-section-ref={sectionSlug} className="section-ref">
+    <div data-block-ref={blockSlug} className="block-ref">
       <p className="text-muted-foreground text-sm">
-        Section: {sectionSlug}
+        Block: {blockSlug}
         {props && Object.keys(props).length > 0 && ` (with ${Object.keys(props).length} props)`}
         {slots && Object.keys(slots).length > 0 && ` (with ${Object.keys(slots).length} slots)`}
       </p>
@@ -139,20 +139,20 @@ export async function SectionRefBlock({ sectionSlug, props, slots }: SectionRefB
 }
 
 /**
- * Helper to validate section props against schema
+ * Helper to validate block props against schema
  */
-export function validateSectionProps(
-  section: Section,
+export function validateBlockProps(
+  block: Block,
   props: Record<string, any>,
 ): { valid: boolean; errors: string[] } {
   const errors: string[] = []
 
-  if (!section.propsSchema || section.propsSchema.length === 0) {
+  if (!block.propsSchema || block.propsSchema.length === 0) {
     return { valid: true, errors }
   }
 
   // Check required props
-  section.propsSchema.forEach((propDef: any) => {
+  block.propsSchema.forEach((propDef: any) => {
     if (propDef.required && !(propDef.key in props)) {
       errors.push(`Missing required prop: ${propDef.key}`)
     }
@@ -180,14 +180,14 @@ export function validateSectionProps(
 /**
  * Helper to get default props from schema
  */
-export function getDefaultProps(section: Section): Record<string, any> {
-  if (!section.propsSchema || section.propsSchema.length === 0) {
+export function getDefaultProps(block: Block): Record<string, any> {
+  if (!block.propsSchema || block.propsSchema.length === 0) {
     return {}
   }
 
   const defaults: Record<string, any> = {}
 
-  section.propsSchema.forEach((propDef: any) => {
+  block.propsSchema.forEach((propDef: any) => {
     if (propDef.defaultValue !== undefined) {
       defaults[propDef.key] = propDef.defaultValue
     }

@@ -5,6 +5,8 @@ import '@payloadcms/next/css'
 import type { ServerFunctionClient } from 'payload'
 import { handleServerFunctions, RootLayout } from '@payloadcms/next/layouts'
 import React from 'react'
+import { ViewManager } from '@/components/view-manager/view-manager'
+import { ToastProvider } from '@/components/providers/toast-provider'
 
 import { importMap } from './admin/importMap.js'
 import './custom.scss'
@@ -25,6 +27,8 @@ const serverFunction: ServerFunctionClient = async function (args) {
 const Layout = ({ children }: Args) => (
   <RootLayout config={config} importMap={importMap} serverFunction={serverFunction}>
     {children}
+    <ViewManager />
+    <ToastProvider />
   </RootLayout>
 )
 

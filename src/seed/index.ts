@@ -1,16 +1,20 @@
 import { seedLanguages } from './languages'
+import { seedThemes } from './themes'
 import { seedLayouts } from './layouts'
 import { seedSites } from './sites'
 import { seedPermissions } from './permissions'
 import { seedRoles } from './roles'
 import { seedUsers } from './users'
-import { seedComponents } from './components'
-import { seedPagesWithSections } from './seed-pages-with-sections'
+import { seedPagesWithBlocks } from './seed-pages-with-blocks'
+import { seedNavigation } from './navigation'
+import { seedNavigationCollection } from './navigation-collection'
 
 export async function seed() {
   console.log('🚀 Starting database seeding...\n')
 
   await seedLanguages()
+  await seedThemes() // Seed themes before sites (so sites can reference them)
+  await seedNavigation() // Seed navigation before layouts (so layouts can reference them)
   await seedLayouts()
   await seedSites()
 
@@ -20,13 +24,12 @@ export async function seed() {
   const roles = await seedRoles(permissions)
   await seedUsers(roles)
 
-  // Seed Components
-  console.log('\n🧩 Seeding Components...\n')
-  await seedComponents()
+  // Seed Pages with Block-based Architecture
+  console.log('\n📄 Seeding Pages (Block-based)...\n')
+  await seedPagesWithBlocks()
 
-  // Seed Pages with Section-based Architecture
-  console.log('\n📄 Seeding Pages (Section-based)...\n')
-  await seedPagesWithSections()
+  // Seed Navigation Collection
+  await seedNavigationCollection()
 
   console.log('\n🎉 Database seeding completed!')
 }

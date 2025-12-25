@@ -11,10 +11,11 @@ import { Languages } from './collections/Languages'
 import { Sites } from './collections/Sites'
 import { Layouts } from './collections/Layouts'
 import { Pages } from './collections/Pages'
-import { Components } from './collections/Components'
-import { Sections } from './collections/Sections'
+import { Blocks } from './collections/Blocks'
+import { Themes } from './collections/Themes'
 import { Permissions } from './collections/Permissions'
 import { Roles } from './collections/Roles'
+import { Navigation } from './collections/Navigation'
 
 import { Settings } from './globals'
 
@@ -35,8 +36,9 @@ export default buildConfig({
     Sites,
     Layouts,
     Pages,
-    Components,
-    Sections,
+    Blocks,
+    Navigation,
+    Themes,
     Permissions,
     Roles,
   ],

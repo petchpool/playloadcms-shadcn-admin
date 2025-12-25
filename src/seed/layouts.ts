@@ -1,26 +1,58 @@
 import { getPayload } from 'payload'
 import config from '../payload.config'
+import { batchSeed } from './utils/batch-seeder'
 
 /**
- * Seed Layouts (Section-based Architecture)
+ * Seed Layouts (Block-based Architecture)
  *
  * This seed:
- * 1. Creates reusable layout sections (header, footer, sidebar)
- * 2. Creates layouts that reference these sections
+ * 1. Creates reusable layout blocks (header, footer, sidebar)
+ * 2. Creates layouts that reference these blocks
  *
- * Note: Sections are created in the 'Global' type for layouts
+ * Note: Blocks are created in the 'Global' type for layouts
  */
 export async function seedLayouts() {
   const payload = await getPayload({ config })
 
-  console.log('🌱 Seeding Layout Sections and Layouts...')
+  console.log('🌱 Seeding Layout Blocks and Layouts...')
 
   // ============================================
-  // 1. Create Layout Sections (Global Components)
+  // 0. Get Navigation Blocks (should be created by seedNavigation())
   // ============================================
-  console.log('  📦 Creating layout sections...')
+  const navigationBlocks = await payload.find({
+    collection: 'blocks',
+    where: {
+      slug: {
+        in: ['main-sidebar-nav', 'simple-top-nav'],
+      },
+    },
+    limit: 10,
+    overrideAccess: true,
+  })
 
-  const layoutSections = [
+  const mainSidebarNav = navigationBlocks.docs.find((nav) => nav.slug === 'main-sidebar-nav')
+  const simpleTopNav = navigationBlocks.docs.find((nav) => nav.slug === 'simple-top-nav')
+
+  if (!mainSidebarNav) {
+    console.log(
+      '  ⚠️  Warning: main-sidebar-nav not found. Please run navigation seed first (pnpm seed:navigation)',
+    )
+  } else {
+    console.log('  ✅ Found navigation block: main-sidebar-nav')
+  }
+
+  if (!simpleTopNav) {
+    console.log('  ⚠️  Warning: simple-top-nav not found. Please run navigation seed first')
+  } else {
+    console.log('  ✅ Found navigation block: simple-top-nav')
+  }
+
+  // ============================================
+  // 1. Create Layout Blocks (Global Components)
+  // ============================================
+  console.log('  📦 Creating layout blocks...')
+
+  const layoutBlocks = [
     {
       slug: 'main-header',
       name: 'Main Header',
@@ -163,38 +195,25 @@ export async function seedLayouts() {
     },
   ]
 
-  const createdSections: Record<string, string> = {}
+  // Batch seed blocks
+  const blocksResult = await batchSeed(payload, {
+    collection: 'blocks',
+    data: layoutBlocks,
+    uniqueField: 'slug',
+    batchSize: 10,
+  })
 
-  for (const sectionData of layoutSections) {
-    try {
-      const existing = await payload.find({
-        collection: 'sections',
-        where: { slug: { equals: sectionData.slug } },
-        limit: 1,
-        overrideAccess: true,
-      })
-
-      if (existing.docs.length > 0) {
-        createdSections[sectionData.slug] = existing.docs[0].id
-        console.log(`    ⏭️  Section "${sectionData.name}" already exists`)
-        continue
-      }
-
-      const section = await payload.create({
-        collection: 'sections',
-        data: sectionData,
-        overrideAccess: true,
-      })
-
-      createdSections[sectionData.slug] = section.id
-      console.log(`    ✅ Created section: ${sectionData.name}`)
-    } catch (error) {
-      console.error(`    ❌ Error creating section "${sectionData.name}":`, error)
+  // Create map of slug -> ID for layout references
+  const createdBlocks: Record<string, string> = {}
+  const allBlocks = [...blocksResult.created, ...blocksResult.skipped]
+  for (const block of allBlocks) {
+    if (block && typeof block === 'object' && 'slug' in block && 'id' in block) {
+      createdBlocks[block.slug as string] = block.id as string
     }
   }
 
   // ============================================
-  // 2. Create Layouts with Section References
+  // 2. Create Layouts with Block References
   // ============================================
   console.log('  🏗️  Creating layouts...')
 
@@ -202,13 +221,13 @@ export async function seedLayouts() {
     {
       name: 'Main Layout',
       slug: 'main-layout',
-      description: 'Main layout with header, footer, and sidebar (references sections)',
+      description: 'Main layout with header, footer, and sidebar navigation',
       type: 'main' as const,
       status: 'published' as const,
       components: [
         {
-          blockType: 'sectionRef' as const,
-          section: createdSections['main-header'],
+          blockType: 'blockRef' as const,
+          block: createdBlocks['main-header'],
           enabled: true,
           position: 'header' as const,
           props: {
@@ -216,19 +235,49 @@ export async function seedLayouts() {
             transparent: false,
           },
         },
+        // Add top navigation if available
+        ...(simpleTopNav
+          ? [
+              {
+                blockType: 'blockRef' as const,
+                block: simpleTopNav.id,
+                enabled: true,
+                position: 'navigation' as const,
+                props: {
+                  displayMode: 'horizontal',
+                },
+              },
+            ]
+          : []),
+        // Use navigation block for sidebar if available, otherwise fallback to simple sidebar
+        ...(mainSidebarNav
+          ? [
+              {
+                blockType: 'blockRef' as const,
+                block: mainSidebarNav.id,
+                enabled: true,
+                position: 'sidebar' as const,
+                props: {
+                  width: 300,
+                  collapsedWidth: 88,
+                },
+              },
+            ]
+          : [
+              {
+                blockType: 'blockRef' as const,
+                block: createdBlocks['main-sidebar'],
+                enabled: true,
+                position: 'sidebar' as const,
+                props: {
+                  width: 300,
+                  collapsedWidth: 88,
+                },
+              },
+            ]),
         {
-          blockType: 'sectionRef' as const,
-          section: createdSections['main-sidebar'],
-          enabled: true,
-          position: 'sidebar' as const,
-          props: {
-            width: 300,
-            collapsedWidth: 88,
-          },
-        },
-        {
-          blockType: 'sectionRef' as const,
-          section: createdSections['main-footer'],
+          blockType: 'blockRef' as const,
+          block: createdBlocks['main-footer'],
           enabled: true,
           position: 'footer' as const,
           props: {
@@ -246,8 +295,8 @@ export async function seedLayouts() {
       status: 'published' as const,
       components: [
         {
-          blockType: 'sectionRef' as const,
-          section: createdSections['simple-header'],
+          blockType: 'blockRef' as const,
+          block: createdBlocks['simple-header'],
           enabled: true,
           position: 'header' as const,
           props: {
@@ -256,8 +305,8 @@ export async function seedLayouts() {
           },
         },
         {
-          blockType: 'sectionRef' as const,
-          section: createdSections['main-footer'],
+          blockType: 'blockRef' as const,
+          block: createdBlocks['main-footer'],
           enabled: true,
           position: 'footer' as const,
           props: {
@@ -277,31 +326,13 @@ export async function seedLayouts() {
     },
   ]
 
-  for (const layoutData of layouts) {
-    try {
-      const existing = await payload.find({
-        collection: 'layouts',
-        where: { slug: { equals: layoutData.slug } },
-        limit: 1,
-        overrideAccess: true,
-      })
+  // Batch seed layouts
+  await batchSeed(payload, {
+    collection: 'layouts',
+    data: layouts,
+    uniqueField: 'slug',
+    batchSize: 10,
+  })
 
-      if (existing.docs.length > 0) {
-        console.log(`    ⏭️  Layout "${layoutData.name}" already exists`)
-        continue
-      }
-
-      const layout = await payload.create({
-        collection: 'layouts',
-        data: layoutData,
-        overrideAccess: true,
-      })
-
-      console.log(`    ✅ Created layout: ${layout.name} (${layout.slug})`)
-    } catch (error) {
-      console.error(`    ❌ Error creating layout "${layoutData.name}":`, error)
-    }
-  }
-
-  console.log('✨ Layouts and sections seeding completed!')
+  console.log('✨ Layouts and blocks seeding completed!')
 }

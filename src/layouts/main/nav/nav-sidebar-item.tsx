@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -45,7 +45,9 @@ export function NavSidebarItem({ item, depth = 0, isCollapsed = false }: NavSide
     return null
   }
 
-  const handleToggle = () => {
+  const handleToggle = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     if (hasChildren) {
       setOpen(!open)
     }
@@ -74,48 +76,126 @@ export function NavSidebarItem({ item, depth = 0, isCollapsed = false }: NavSide
     return <span className="flex-shrink-0 text-base">{item.icon}</span>
   }
 
-  const itemContent = (
+  const itemMainContent = (
     <>
       {renderIcon()}
-      {!isCollapsed && (
-        <>
-          <span className="flex-1">{item.title}</span>
-          {hasChildren && (
-            <ChevronDown
-              className={cn(
-                'h-4 w-4 flex-shrink-0 transition-transform',
-                open && 'rotate-180',
-              )}
-            />
-          )}
-        </>
-      )}
+      {!isCollapsed && <span className="flex-1">{item.title}</span>}
     </>
   )
 
   if (hasChildren) {
+    const contentRef = useRef<HTMLDivElement>(null)
+    
+    const baseClasses = cn(
+      'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+      depth === 0
+        ? isActive
+          ? 'bg-[var(--sidebar-accent)] text-[var(--sidebar-accent-foreground)]'
+          : 'text-[var(--sidebar-foreground)]/70 hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]'
+        : 'text-[var(--sidebar-foreground)]/60 hover:text-[var(--sidebar-foreground)]/80',
+      item.disabled && 'opacity-50 cursor-not-allowed',
+      isCollapsed && 'justify-center',
+    )
+
     return (
       <div className={cn('space-y-1', depth > 0 && 'ml-4')}>
-        <button
-          onClick={handleToggle}
-          disabled={item.disabled}
-          className={cn(
-            'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-            depth === 0
-              ? isActive
-                ? 'bg-[var(--sidebar-accent)] text-[var(--sidebar-accent-foreground)]'
-                : 'text-[var(--sidebar-foreground)]/70 hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]'
-              : 'text-[var(--sidebar-foreground)]/60 hover:text-[var(--sidebar-foreground)]/80',
-            item.disabled && 'opacity-50 cursor-not-allowed',
-            isCollapsed && 'justify-center',
-          )}
-          title={isCollapsed ? item.title : undefined}
-        >
-          {itemContent}
-        </button>
+        {item.path && !item.disabled ? (
+          // Has link - unified button with chevron inside
+          item.external ? (
+            <a
+              href={item.path}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={baseClasses}
+              title={isCollapsed ? item.title : undefined}
+            >
+              {renderIcon()}
+              {!isCollapsed && <span className="flex-1">{item.title}</span>}
+              {!isCollapsed && (
+                <span
+                  className="flex h-6 w-6 items-center justify-center rounded hover:bg-[var(--sidebar-accent)]/50"
+                  onClick={handleToggle}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      handleToggle(e as any)
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Toggle ${item.title} submenu`}
+                >
+                  <ChevronDown
+                    className={cn(
+                      'h-4 w-4 flex-shrink-0 transition-transform duration-300',
+                      open && 'rotate-180',
+                    )}
+                  />
+                </span>
+              )}
+            </a>
+          ) : (
+            <Link
+              href={item.path}
+              className={baseClasses}
+              title={isCollapsed ? item.title : undefined}
+            >
+              {renderIcon()}
+              {!isCollapsed && <span className="flex-1">{item.title}</span>}
+              {!isCollapsed && (
+                <span
+                  className="flex h-6 w-6 items-center justify-center rounded hover:bg-[var(--sidebar-accent)]/50"
+                  onClick={handleToggle}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      handleToggle(e as any)
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Toggle ${item.title} submenu`}
+                >
+                  <ChevronDown
+                    className={cn(
+                      'h-4 w-4 flex-shrink-0 transition-transform duration-300',
+                      open && 'rotate-180',
+                    )}
+                  />
+                </span>
+              )}
+            </Link>
+          )
+        ) : (
+          // No link - entire button toggles submenu
+          <button
+            onClick={handleToggle}
+            disabled={item.disabled}
+            className={baseClasses}
+            title={isCollapsed ? item.title : undefined}
+          >
+            {renderIcon()}
+            {!isCollapsed && <span className="flex-1">{item.title}</span>}
+            {!isCollapsed && (
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 flex-shrink-0 transition-transform duration-300',
+                  open && 'rotate-180',
+                )}
+              />
+            )}
+          </button>
+        )}
 
-        {open && !isCollapsed && (
-          <div className="ml-4 space-y-1 border-l border-[var(--sidebar-border)] pl-2">
+        {!isCollapsed && (
+          <div
+            ref={contentRef}
+            className={cn(
+              'ml-4 space-y-1 border-l border-[var(--sidebar-border)] pl-2 overflow-hidden transition-all duration-300 ease-in-out',
+              open ? 'opacity-100' : 'opacity-0 max-h-0'
+            )}
+            style={{
+              maxHeight: open ? `${contentRef.current?.scrollHeight || 1000}px` : '0',
+            }}
+          >
             {item.children?.map((child, index) => (
               <NavSidebarItem
                 key={`${child.title}-${index}`}
@@ -162,7 +242,7 @@ export function NavSidebarItem({ item, depth = 0, isCollapsed = false }: NavSide
       )}
       title={isCollapsed ? item.title : undefined}
     >
-      {itemContent}
+      {itemMainContent}
     </Link>
   )
 }

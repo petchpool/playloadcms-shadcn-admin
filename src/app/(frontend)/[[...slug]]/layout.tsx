@@ -3,14 +3,10 @@ import { LayoutResolver } from '@/layouts/utils/layout-resolver'
 import { parseHost } from '@/layouts/utils/parse-host'
 import { headers } from 'next/headers'
 
-export default async function SiteLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const headersList = await headers()
   const host = headersList.get('host') || 'localhost'
-  
+
   // Parse host to get subdomain and domain (supports port numbers)
   const { domain, subdomain } = parseHost(host)
 
@@ -37,4 +33,3 @@ export default async function SiteLayout({
     </LayoutResolver>
   )
 }
-

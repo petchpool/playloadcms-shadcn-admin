@@ -21,7 +21,6 @@ import { seedSites } from './sites'
 import { seedPermissions } from './permissions'
 import { seedRoles } from './roles'
 import { seedUsers } from './users'
-import { seedComponents } from './components'
 
 // Get collection name from command line argument or environment variable
 const collection = process.argv[2] || process.env.SEED_COLLECTION
@@ -74,11 +73,6 @@ async function runSeed() {
       await seedUsers(roles)
       break
 
-    case 'components':
-    case 'component':
-      await seedComponents()
-      break
-
     case 'rbac':
       console.log('🔐 Seeding RBAC System (Permissions -> Roles -> Users)...\n')
       const permsForRbac = await seedPermissions()
@@ -95,7 +89,6 @@ async function runSeed() {
       console.log('  - permissions')
       console.log('  - roles')
       console.log('  - users')
-      console.log('  - components')
       console.log('  - rbac (permissions + roles + users)')
       process.exit(1)
   }

@@ -69,6 +69,14 @@ export type DataFetchBlockProps = {
   errorComponent?: React.ReactNode
   /** Refresh interval in milliseconds (0 = no refresh) */
   refreshInterval?: number
+  /** Fetch count statistics for tabs */
+  fetchStats?: boolean
+  /** Configuration for stats fetching */
+  statsConfig?: {
+    groupBy?: string
+    statsDataKey?: string
+    includeValues?: Array<{ value: string }>
+  }
 }
 
 /**
@@ -97,6 +105,8 @@ export function DataFetchBlock({
   loadingComponent,
   errorComponent,
   refreshInterval = 0,
+  fetchStats = false,
+  statsConfig,
 }: DataFetchBlockProps) {
   const parentData = useData() // Get parent context (for nesting)
   const [fetchedData, setFetchedData] = React.useState<any>(null)
@@ -221,7 +231,12 @@ export function DataFetchBlock({
 
   return (
     <DataProvider value={contextValue}>
-      <DataFetchChildrenRenderer blocks={children} dataKey={dataKey} />
+      <DataFetchChildrenRenderer
+        blocks={children}
+        dataKey={dataKey}
+        fetchStats={fetchStats}
+        statsConfig={statsConfig}
+      />
     </DataProvider>
   )
 }
@@ -229,7 +244,17 @@ export function DataFetchBlock({
 /**
  * Render children blocks within DataFetch context
  */
-function DataFetchChildrenRenderer({ blocks, dataKey }: { blocks?: any[]; dataKey: string }) {
+function DataFetchChildrenRenderer({
+  blocks,
+  dataKey,
+  fetchStats,
+  statsConfig,
+}: {
+  blocks?: any[]
+  dataKey: string
+  fetchStats?: boolean
+  statsConfig?: any
+}) {
   if (!blocks || blocks.length === 0) {
     return (
       <div className="rounded-md border border-dashed border-muted-foreground/25 p-4 text-center text-sm text-muted-foreground">
@@ -243,7 +268,12 @@ function DataFetchChildrenRenderer({ blocks, dataKey }: { blocks?: any[]; dataKe
   return (
     <div className="data-fetch-children space-y-4" data-data-key={dataKey}>
       {blocks.map((block, index) => (
-        <DataFetchChildBlock key={index} block={block} />
+        <DataFetchChildBlock
+          key={index}
+          block={block}
+          fetchStats={fetchStats}
+          statsConfig={statsConfig}
+        />
       ))}
     </div>
   )
@@ -253,7 +283,15 @@ function DataFetchChildrenRenderer({ blocks, dataKey }: { blocks?: any[]; dataKe
  * Render a single child block
  * This component handles the mapping from block config to actual components
  */
-function DataFetchChildBlock({ block }: { block: any }) {
+function DataFetchChildBlock({
+  block,
+  fetchStats,
+  statsConfig,
+}: {
+  block: any
+  fetchStats?: boolean
+  statsConfig?: any
+}) {
   // Import block renderers
   // We'll expand this as we add more block types
   const blockType = block?.blockType
@@ -286,14 +324,25 @@ function DataFetchChildBlock({ block }: { block: any }) {
           }`}
         >
           {block.items?.map((item: any, index: number) => (
-            <DataFetchChildBlock key={index} block={item.content?.[0] || item} />
+            <DataFetchChildBlock
+              key={index}
+              block={item.content?.[0] || item}
+              fetchStats={fetchStats}
+              statsConfig={statsConfig}
+            />
           ))}
         </div>
       )
 
     case 'blocksTable':
       // Render blocks table with external data
-      return <BlocksTableBlockRenderer {...block} />
+      return (
+        <BlocksTableBlockRenderer
+          {...block}
+          fetchStats={fetchStats}
+          statsConfig={statsConfig}
+        />
+      )
 
     default:
       return (
@@ -343,6 +392,8 @@ function BlocksTableBlockRenderer(props: any) {
         {...props}
         useExternalData={props.useExternalData !== false}
         dataKey={props.dataKey}
+        fetchStats={props.fetchStats}
+        statsConfig={props.statsConfig}
       />
     </React.Suspense>
   )

@@ -2,28 +2,28 @@ import type { CollectionConfig } from 'payload'
 import { checkRole } from '@/utils/check-role'
 
 /**
- * Sections Collection
+ * Blocks Collection
  *
- * Reusable, composable block groups that can be referenced by Pages.
- * This solves the problem of block duplication across pages.
+ * Reusable, composable content blocks that can be referenced by Pages and Layouts.
+ * This solves the problem of content duplication across pages.
  *
  * Architecture:
- * - Section = Molecule (composed of atomic Blocks)
- * - Page = Organism (composed of Sections)
- * - Sections can have props (parameters)
- * - Sections can have slots (injection points)
+ * - Block = Reusable content unit (header, hero, table, navigation, etc.)
+ * - Page = Composition of Blocks
+ * - Blocks can have props (parameters)
+ * - Blocks can have slots (injection points)
  *
  * Types:
- * - Global: Site-wide sections (header, footer)
- * - Shared: Reusable sections (hero, pricing, FAQ)
- * - Template: Section templates with props schema
+ * - Global: Site-wide blocks (header, footer, navigation)
+ * - Shared: Reusable blocks (hero, pricing, FAQ)
+ * - Template: Block templates with props schema
  */
-export const Sections: CollectionConfig = {
-  slug: 'sections',
+export const Blocks: CollectionConfig = {
+  slug: 'blocks',
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'slug', 'type', 'category', 'updatedAt'],
-    description: 'Reusable section compositions that can be referenced by pages',
+    description: 'Reusable content blocks that can be referenced by pages and layouts',
   },
   access: {
     read: () => true,
@@ -37,7 +37,7 @@ export const Sections: CollectionConfig = {
       type: 'text',
       required: true,
       admin: {
-        description: 'Section name (e.g., "Hero - Landing", "Pricing Table")',
+        description: 'Block name (e.g., "Hero - Landing", "Main Navigation")',
       },
     },
     {
@@ -47,14 +47,14 @@ export const Sections: CollectionConfig = {
       unique: true,
       index: true,
       admin: {
-        description: 'Unique identifier for referencing (e.g., "hero-landing")',
+        description: 'Unique identifier for referencing (e.g., "hero-landing", "main-nav")',
       },
     },
     {
       name: 'description',
       type: 'textarea',
       admin: {
-        description: 'What this section is for and when to use it',
+        description: 'What this block is for and when to use it',
       },
     },
     {
@@ -110,7 +110,7 @@ export const Sections: CollectionConfig = {
               required: true,
               minRows: 1,
               admin: {
-                description: 'Blocks that compose this section',
+                description: 'Blocks that compose this content',
               },
               blocks: [
                 {
@@ -286,14 +286,16 @@ export const Sections: CollectionConfig = {
                           name: 'collection',
                           type: 'select',
                           options: [
-                            { label: 'Components', value: 'components' },
-                            { label: 'Sections', value: 'sections' },
+                            { label: 'Blocks', value: 'blocks' },
                             { label: 'Pages', value: 'pages' },
                             { label: 'Layouts', value: 'layouts' },
                             { label: 'Users', value: 'users' },
                             { label: 'Media', value: 'media' },
                             { label: 'Roles', value: 'roles' },
                             { label: 'Permissions', value: 'permissions' },
+                            { label: 'Themes', value: 'themes' },
+                            { label: 'Sites', value: 'sites' },
+                            { label: 'Languages', value: 'languages' },
                           ],
                           admin: {
                             condition: (data, siblingData) => siblingData?.type === 'collection',
@@ -344,6 +346,57 @@ export const Sections: CollectionConfig = {
                       ],
                     },
                     {
+                      name: 'fetchStats',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      admin: {
+                        description:
+                          'Fetch count statistics for tabs (separate from main data query)',
+                      },
+                    },
+                    {
+                      name: 'statsConfig',
+                      type: 'group',
+                      admin: {
+                        description: 'Configuration for statistics fetching',
+                        condition: (data, siblingData) => siblingData?.fetchStats === true,
+                      },
+                      fields: [
+                        {
+                          name: 'groupBy',
+                          type: 'text',
+                          required: true,
+                          admin: {
+                            description: 'Field to group by for counting (e.g., "status", "type")',
+                            placeholder: 'status',
+                          },
+                        },
+                        {
+                          name: 'statsDataKey',
+                          type: 'text',
+                          defaultValue: 'stats',
+                          admin: {
+                            description: 'Key to store stats data in context',
+                          },
+                        },
+                        {
+                          name: 'includeValues',
+                          type: 'array',
+                          admin: {
+                            description:
+                              'Specific values to count (leave empty to count all unique values)',
+                          },
+                          fields: [
+                            {
+                              name: 'value',
+                              type: 'text',
+                              required: true,
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    {
                       name: 'children',
                       type: 'blocks',
                       blocks: [
@@ -379,16 +432,18 @@ export const Sections: CollectionConfig = {
                               name: 'collection',
                               type: 'select',
                               required: true,
-                              defaultValue: 'components',
+                              defaultValue: 'blocks',
                               options: [
-                                { label: 'Components', value: 'components' },
-                                { label: 'Sections', value: 'sections' },
+                                { label: 'Blocks', value: 'blocks' },
                                 { label: 'Pages', value: 'pages' },
                                 { label: 'Layouts', value: 'layouts' },
                                 { label: 'Users', value: 'users' },
                                 { label: 'Media', value: 'media' },
                                 { label: 'Roles', value: 'roles' },
                                 { label: 'Permissions', value: 'permissions' },
+                                { label: 'Themes', value: 'themes' },
+                                { label: 'Sites', value: 'sites' },
+                                { label: 'Languages', value: 'languages' },
                               ],
                             },
                             {
@@ -751,6 +806,94 @@ export const Sections: CollectionConfig = {
                                 },
                               ],
                             },
+                            {
+                              name: 'showStatusTabs',
+                              type: 'checkbox',
+                              defaultValue: true,
+                              admin: {
+                                description: 'Show filter tabs with count statistics',
+                              },
+                            },
+                            {
+                              name: 'statusTabsField',
+                              type: 'text',
+                              defaultValue: 'status',
+                              admin: {
+                                description: 'Field name to count and filter by',
+                                placeholder: 'status',
+                                condition: (data, siblingData) =>
+                                  siblingData?.showStatusTabs === true,
+                              },
+                            },
+                            {
+                              name: 'statusTabsConfig',
+                              type: 'array',
+                              admin: {
+                                description: 'Define tabs with their values, labels, and styling',
+                                condition: (data, siblingData) =>
+                                  siblingData?.showStatusTabs === true,
+                              },
+                              fields: [
+                                {
+                                  name: 'value',
+                                  type: 'text',
+                                  required: true,
+                                  admin: {
+                                    description:
+                                      'Value to filter by (e.g., "draft", "published", "active")',
+                                  },
+                                },
+                                {
+                                  name: 'label',
+                                  type: 'text',
+                                  required: true,
+                                  admin: {
+                                    description: 'Display label for the tab',
+                                  },
+                                },
+                                {
+                                  name: 'variant',
+                                  type: 'select',
+                                  defaultValue: 'default',
+                                  options: [
+                                    { label: 'Default', value: 'default' },
+                                    { label: 'Success (Green)', value: 'success' },
+                                    { label: 'Warning (Yellow)', value: 'warning' },
+                                    { label: 'Error (Red)', value: 'error' },
+                                    { label: 'Info (Blue)', value: 'info' },
+                                    { label: 'Secondary', value: 'secondary' },
+                                  ],
+                                  admin: {
+                                    description: 'Badge color variant',
+                                  },
+                                },
+                                {
+                                  name: 'icon',
+                                  type: 'text',
+                                  admin: {
+                                    description:
+                                      'Optional icon name from lucide-react (e.g., "Check", "Clock", "XCircle")',
+                                  },
+                                },
+                                {
+                                  name: 'description',
+                                  type: 'textarea',
+                                  admin: {
+                                    description: 'Optional description for this tab',
+                                  },
+                                },
+                              ],
+                            },
+                            {
+                              name: 'allTabLabel',
+                              type: 'text',
+                              defaultValue: 'All',
+                              admin: {
+                                description: 'Label for the "All" tab',
+                                condition: (data, siblingData) =>
+                                  siblingData?.showStatusTabs === true,
+                              },
+                            },
                           ],
                         },
                         {
@@ -813,16 +956,18 @@ export const Sections: CollectionConfig = {
                       name: 'collection',
                       type: 'select',
                       required: true,
-                      defaultValue: 'components',
+                      defaultValue: 'blocks',
                       options: [
-                        { label: 'Components', value: 'components' },
-                        { label: 'Sections', value: 'sections' },
+                        { label: 'Blocks', value: 'blocks' },
                         { label: 'Pages', value: 'pages' },
                         { label: 'Layouts', value: 'layouts' },
                         { label: 'Users', value: 'users' },
                         { label: 'Media', value: 'media' },
                         { label: 'Roles', value: 'roles' },
                         { label: 'Permissions', value: 'permissions' },
+                        { label: 'Themes', value: 'themes' },
+                        { label: 'Sites', value: 'sites' },
+                        { label: 'Languages', value: 'languages' },
                       ],
                       admin: {
                         description: 'Collection to fetch data from',
@@ -932,23 +1077,84 @@ export const Sections: CollectionConfig = {
                       type: 'checkbox',
                       defaultValue: true,
                       admin: {
-                        description: 'Show status filter tabs',
+                        description: 'Show filter tabs with count statistics',
                       },
                     },
                     {
                       name: 'statusTabsField',
                       type: 'text',
+                      defaultValue: 'status',
                       admin: {
-                        description: 'Field to use for status tabs (default: status)',
+                        description: 'Field name to count and filter by',
                         placeholder: 'status',
+                        condition: (data, siblingData) => siblingData?.showStatusTabs === true,
                       },
                     },
                     {
                       name: 'statusTabsConfig',
-                      type: 'json',
+                      type: 'array',
                       admin: {
-                        description:
-                          'Status tabs configuration (JSON array). Example: [{"value":"draft","label":"Draft","variant":"default"},{"value":"published","label":"Published","variant":"success"}]',
+                        description: 'Define tabs with their values, labels, and styling',
+                        condition: (data, siblingData) => siblingData?.showStatusTabs === true,
+                      },
+                      fields: [
+                        {
+                          name: 'value',
+                          type: 'text',
+                          required: true,
+                          admin: {
+                            description:
+                              'Value to filter by (e.g., "draft", "published", "active")',
+                          },
+                        },
+                        {
+                          name: 'label',
+                          type: 'text',
+                          required: true,
+                          admin: {
+                            description: 'Display label for the tab',
+                          },
+                        },
+                        {
+                          name: 'variant',
+                          type: 'select',
+                          defaultValue: 'default',
+                          options: [
+                            { label: 'Default', value: 'default' },
+                            { label: 'Success (Green)', value: 'success' },
+                            { label: 'Warning (Yellow)', value: 'warning' },
+                            { label: 'Error (Red)', value: 'error' },
+                            { label: 'Info (Blue)', value: 'info' },
+                            { label: 'Secondary', value: 'secondary' },
+                          ],
+                          admin: {
+                            description: 'Badge color variant',
+                          },
+                        },
+                        {
+                          name: 'icon',
+                          type: 'text',
+                          admin: {
+                            description:
+                              'Optional icon name from lucide-react (e.g., "Check", "Clock", "XCircle")',
+                          },
+                        },
+                        {
+                          name: 'description',
+                          type: 'textarea',
+                          admin: {
+                            description: 'Optional description for this tab',
+                          },
+                        },
+                      ],
+                    },
+                    {
+                      name: 'allTabLabel',
+                      type: 'text',
+                      defaultValue: 'All',
+                      admin: {
+                        description: 'Label for the "All" tab',
+                        condition: (data, siblingData) => siblingData?.showStatusTabs === true,
                       },
                     },
                     {
@@ -1004,6 +1210,480 @@ export const Sections: CollectionConfig = {
                     },
                   ],
                 },
+                // ============================================
+                // NAVIGATION BLOCK
+                // ============================================
+                {
+                  slug: 'navigation',
+                  labels: {
+                    singular: 'Navigation',
+                    plural: 'Navigations',
+                  },
+                  fields: [
+                    {
+                      name: 'navigationId',
+                      type: 'text',
+                      admin: {
+                        description:
+                          'Unique ID for this navigation instance (e.g., "main-nav", "sidebar-nav")',
+                      },
+                    },
+                    {
+                      name: 'title',
+                      type: 'text',
+                      admin: {
+                        description: 'Navigation title (e.g., "Main Navigation", "Sidebar Menu")',
+                      },
+                    },
+                    {
+                      name: 'items',
+                      type: 'array',
+                      admin: {
+                        description: 'Navigation menu items (supports up to 2 levels of nesting)',
+                      },
+                      fields: [
+                        {
+                          name: 'title',
+                          type: 'text',
+                          required: true,
+                          admin: {
+                            description: 'Menu item title',
+                          },
+                        },
+                        {
+                          name: 'path',
+                          type: 'text',
+                          admin: {
+                            description: 'Link path (e.g., "/dashboard", "/users")',
+                          },
+                        },
+                        {
+                          name: 'icon',
+                          type: 'text',
+                          admin: {
+                            description:
+                              'Lucide icon name (e.g., "Home", "Users", "Settings", "ChevronRight")',
+                          },
+                        },
+                        {
+                          name: 'caption',
+                          type: 'text',
+                          admin: {
+                            description: 'Optional caption/badge text (e.g., "New", "Beta")',
+                          },
+                        },
+                        {
+                          name: 'disabled',
+                          type: 'checkbox',
+                          defaultValue: false,
+                          admin: {
+                            description: 'Disable this menu item',
+                          },
+                        },
+                        {
+                          name: 'external',
+                          type: 'checkbox',
+                          defaultValue: false,
+                          admin: {
+                            description: 'Open link in new tab (for external links)',
+                          },
+                        },
+                        {
+                          name: 'groupLabel',
+                          type: 'text',
+                          admin: {
+                            description:
+                              'Group label (for visual separation, e.g., "General", "Pages", "Other")',
+                          },
+                        },
+                        {
+                          name: 'children',
+                          type: 'array',
+                          admin: {
+                            description: 'Sub-menu items (Level 2) - Up to 3 levels total',
+                          },
+                          fields: [
+                            {
+                              name: 'title',
+                              type: 'text',
+                              required: true,
+                            },
+                            {
+                              name: 'path',
+                              type: 'text',
+                            },
+                            {
+                              name: 'icon',
+                              type: 'text',
+                            },
+                            {
+                              name: 'caption',
+                              type: 'text',
+                            },
+                            {
+                              name: 'disabled',
+                              type: 'checkbox',
+                              defaultValue: false,
+                            },
+                            {
+                              name: 'external',
+                              type: 'checkbox',
+                              defaultValue: false,
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  slug: 'form',
+                  labels: {
+                    singular: 'Form',
+                    plural: 'Forms',
+                  },
+                  fields: [
+                    // Form Identity
+                    {
+                      name: 'formId',
+                      type: 'text',
+                      required: true,
+                      admin: {
+                        description:
+                          'Unique form identifier (e.g., "contact-form", "user-registration")',
+                      },
+                    },
+                    {
+                      name: 'title',
+                      type: 'text',
+                      required: true,
+                      admin: {
+                        description: 'Form title (shown in dialog/page header)',
+                      },
+                    },
+                    {
+                      name: 'description',
+                      type: 'textarea',
+                      admin: {
+                        description: 'Form description (shown below title)',
+                      },
+                    },
+
+                    // View Configuration
+                    {
+                      name: 'viewType',
+                      type: 'select',
+                      required: true,
+                      defaultValue: 'dialog',
+                      options: [
+                        { label: 'Dialog', value: 'dialog' },
+                        { label: 'Full Page', value: 'page' },
+                        { label: 'Sidebar Left', value: 'sidebar-left' },
+                        { label: 'Sidebar Right', value: 'sidebar-right' },
+                      ],
+                      admin: {
+                        description: 'How the form should be displayed',
+                      },
+                    },
+                    {
+                      name: 'viewSize',
+                      type: 'select',
+                      defaultValue: 'md',
+                      options: [
+                        { label: 'Small', value: 'sm' },
+                        { label: 'Medium', value: 'md' },
+                        { label: 'Large', value: 'lg' },
+                        { label: 'Extra Large', value: 'xl' },
+                        { label: 'Full Width', value: 'full' },
+                      ],
+                      admin: {
+                        description: 'Dialog/Page size',
+                        condition: (data, siblingData) => siblingData?.viewType === 'dialog',
+                      },
+                    },
+                    {
+                      name: 'viewMode',
+                      type: 'select',
+                      defaultValue: 'overlay',
+                      options: [
+                        { label: 'Overlay (with backdrop)', value: 'overlay' },
+                        { label: 'Push (slide content)', value: 'push' },
+                      ],
+                      admin: {
+                        description: 'Sidebar display mode',
+                        condition: (data, siblingData) =>
+                          siblingData?.viewType === 'sidebar-left' ||
+                          siblingData?.viewType === 'sidebar-right',
+                      },
+                    },
+
+                    // Trigger Button Configuration
+                    {
+                      name: 'triggerLabel',
+                      type: 'text',
+                      required: true,
+                      defaultValue: 'Open Form',
+                      admin: {
+                        description: 'Button text to open the form',
+                      },
+                    },
+                    {
+                      name: 'triggerVariant',
+                      type: 'select',
+                      defaultValue: 'default',
+                      options: [
+                        { label: 'Default', value: 'default' },
+                        { label: 'Primary', value: 'primary' },
+                        { label: 'Secondary', value: 'secondary' },
+                        { label: 'Outline', value: 'outline' },
+                        { label: 'Ghost', value: 'ghost' },
+                        { label: 'Link', value: 'link' },
+                        { label: 'Destructive', value: 'destructive' },
+                      ],
+                      admin: {
+                        description: 'Button style',
+                      },
+                    },
+                    {
+                      name: 'triggerSize',
+                      type: 'select',
+                      defaultValue: 'default',
+                      options: [
+                        { label: 'Small', value: 'sm' },
+                        { label: 'Default', value: 'default' },
+                        { label: 'Large', value: 'lg' },
+                      ],
+                      admin: {
+                        description: 'Button size',
+                      },
+                    },
+
+                    // Form Fields
+                    {
+                      name: 'fields',
+                      type: 'array',
+                      required: true,
+                      minRows: 1,
+                      admin: {
+                        description: 'Form fields configuration',
+                      },
+                      fields: [
+                        {
+                          name: 'name',
+                          type: 'text',
+                          required: true,
+                          admin: {
+                            description: 'Field name (used as form data key)',
+                          },
+                        },
+                        {
+                          name: 'label',
+                          type: 'text',
+                          required: true,
+                          admin: {
+                            description: 'Field label (shown to user)',
+                          },
+                        },
+                        {
+                          name: 'type',
+                          type: 'select',
+                          required: true,
+                          defaultValue: 'text',
+                          options: [
+                            { label: 'Text', value: 'text' },
+                            { label: 'Email', value: 'email' },
+                            { label: 'Password', value: 'password' },
+                            { label: 'Number', value: 'number' },
+                            { label: 'Textarea', value: 'textarea' },
+                            { label: 'Select', value: 'select' },
+                            { label: 'Checkbox', value: 'checkbox' },
+                            { label: 'Date', value: 'date' },
+                            { label: 'File', value: 'file' },
+                          ],
+                          admin: {
+                            description: 'Field input type',
+                          },
+                        },
+                        {
+                          name: 'placeholder',
+                          type: 'text',
+                          admin: {
+                            description: 'Placeholder text',
+                          },
+                        },
+                        {
+                          name: 'required',
+                          type: 'checkbox',
+                          defaultValue: false,
+                          admin: {
+                            description: 'Is this field required?',
+                          },
+                        },
+                        {
+                          name: 'minLength',
+                          type: 'number',
+                          admin: {
+                            description: 'Minimum length (for text fields)',
+                          },
+                        },
+                        {
+                          name: 'maxLength',
+                          type: 'number',
+                          admin: {
+                            description: 'Maximum length (for text fields)',
+                          },
+                        },
+                        {
+                          name: 'min',
+                          type: 'number',
+                          admin: {
+                            description: 'Minimum value (for number fields)',
+                          },
+                        },
+                        {
+                          name: 'max',
+                          type: 'number',
+                          admin: {
+                            description: 'Maximum value (for number fields)',
+                          },
+                        },
+                        {
+                          name: 'pattern',
+                          type: 'text',
+                          admin: {
+                            description: 'Regex pattern for validation',
+                          },
+                        },
+                        {
+                          name: 'options',
+                          type: 'array',
+                          admin: {
+                            description: 'Options for select field',
+                            condition: (data, siblingData) => siblingData?.type === 'select',
+                          },
+                          fields: [
+                            {
+                              name: 'label',
+                              type: 'text',
+                              required: true,
+                            },
+                            {
+                              name: 'value',
+                              type: 'text',
+                              required: true,
+                            },
+                          ],
+                        },
+                        {
+                          name: 'defaultValue',
+                          type: 'text',
+                          admin: {
+                            description: 'Default value',
+                          },
+                        },
+                        {
+                          name: 'helperText',
+                          type: 'text',
+                          admin: {
+                            description: 'Helper text shown below field',
+                          },
+                        },
+                      ],
+                    },
+
+                    // Submit Configuration
+                    {
+                      name: 'submitEndpoint',
+                      type: 'text',
+                      required: true,
+                      admin: {
+                        description: 'API endpoint to submit form data (e.g., "/api/contact")',
+                        placeholder: '/api/contact',
+                      },
+                    },
+                    {
+                      name: 'submitMethod',
+                      type: 'select',
+                      defaultValue: 'POST',
+                      options: [
+                        { label: 'POST', value: 'POST' },
+                        { label: 'PUT', value: 'PUT' },
+                        { label: 'PATCH', value: 'PATCH' },
+                      ],
+                      admin: {
+                        description: 'HTTP method for submission',
+                      },
+                    },
+                    {
+                      name: 'submitLabel',
+                      type: 'text',
+                      defaultValue: 'Submit',
+                      admin: {
+                        description: 'Submit button label',
+                      },
+                    },
+                    {
+                      name: 'cancelLabel',
+                      type: 'text',
+                      defaultValue: 'Cancel',
+                      admin: {
+                        description: 'Cancel button label',
+                      },
+                    },
+
+                    // Success/Error Messages
+                    {
+                      name: 'successMessage',
+                      type: 'text',
+                      defaultValue: 'Form submitted successfully!',
+                      admin: {
+                        description: 'Success toast message',
+                      },
+                    },
+                    {
+                      name: 'errorMessage',
+                      type: 'text',
+                      defaultValue: 'An error occurred. Please try again.',
+                      admin: {
+                        description: 'Error toast message',
+                      },
+                    },
+                    {
+                      name: 'redirectUrl',
+                      type: 'text',
+                      admin: {
+                        description: 'Redirect to this URL after successful submission (optional)',
+                        placeholder: '/thank-you',
+                      },
+                    },
+
+                    // Advanced Options
+                    {
+                      name: 'showProgressIndicator',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      admin: {
+                        description: 'Show step indicator for multi-step forms',
+                      },
+                    },
+                    {
+                      name: 'enableAutosave',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      admin: {
+                        description: 'Auto-save form data to localStorage',
+                      },
+                    },
+                    {
+                      name: 'customCss',
+                      type: 'textarea',
+                      admin: {
+                        description: 'Custom CSS classes (space-separated)',
+                        placeholder: 'max-w-2xl mx-auto',
+                      },
+                    },
+                  ],
+                },
               ],
             },
             {
@@ -1031,13 +1711,13 @@ export const Sections: CollectionConfig = {
         },
         {
           label: 'Props Schema',
-          description: 'Define parameters that pages can pass to this section',
+          description: 'Define parameters that pages can pass to this block',
           fields: [
             {
               name: 'propsSchema',
               type: 'array',
               admin: {
-                description: 'Define props that can be passed when using this section',
+                description: 'Define props that can be passed when using this block',
               },
               fields: [
                 {
