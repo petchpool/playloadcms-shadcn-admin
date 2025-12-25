@@ -289,7 +289,10 @@ export async function seedSites() {
       }>,
     ) => {
       console.log(`\n  📄 Creating pages...`)
+      console.log(`  ⏭️  Skipping page creation - using seed-pages-localized.ts instead`)
+      return // Pages are now localized, use seed-pages-localized.ts instead
 
+      // eslint-disable-next-line no-unreachable
       for (const pageData of pages) {
         // Check if page already exists
         const existing = await payload.find({
@@ -297,9 +300,6 @@ export async function seedSites() {
           where: {
             slug: {
               equals: pageData.slug,
-            },
-            language: {
-              equals: enLanguage.id,
             },
           },
           limit: 1,
@@ -338,15 +338,13 @@ export async function seedSites() {
           })
           console.log(`     ✅ Updated page: ${pageData.titleEn} (en)`)
 
+          // Note: Pages are now localized, no need to check Thai page separately
           // Update Thai page if exists
           const existingTh = await payload.find({
             collection: 'pages',
             where: {
               slug: {
                 equals: pageData.slug,
-              },
-              language: {
-                equals: thLanguage.id,
               },
             },
             limit: 1,
@@ -612,6 +610,361 @@ console.log(greet('โลก'))`,
       },
     ]
 
+    // Dashboard blocks with DataFetch and StatCard Grid
+    const dashboardBlocksEn = [
+      {
+        blockType: 'richText',
+        content: createLexicalContent(
+          '# Dashboard\n\nWelcome to the admin dashboard. Here you can see statistics and manage your content.',
+        ),
+      },
+      // DataFetch block for Users count
+      {
+        blockType: 'dataFetch',
+        dataKey: 'usersStats',
+        source: {
+          type: 'collection',
+          collection: 'users',
+        },
+        transform: {
+          type: 'count',
+        },
+        children: [
+          {
+            blockType: 'grid',
+            columns: '4',
+            gap: 'md',
+            items: [
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'Total Users',
+                    icon: 'users',
+                    dataKey: 'usersStats',
+                    valueField: 'value',
+                    format: {
+                      suffix: ' users',
+                    },
+                    trend: {
+                      value: 12,
+                      label: 'vs last month',
+                    },
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'Active Users',
+                    icon: 'activity',
+                    staticValue: '85%',
+                    variant: 'gradient',
+                    trend: {
+                      value: 5,
+                      label: 'this week',
+                    },
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'New Signups',
+                    icon: 'trending-up',
+                    staticValue: '24',
+                    format: {
+                      suffix: ' today',
+                    },
+                    variant: 'outline',
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'Documents',
+                    icon: 'file',
+                    dataKey: 'usersStats',
+                    valueField: 'count',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      // DataFetch block for Components with Table
+      {
+        blockType: 'dataFetch',
+        dataKey: 'componentsData',
+        source: {
+          type: 'collection',
+          collection: 'components',
+        },
+        transform: {
+          type: 'none',
+        },
+        children: [
+          {
+            blockType: 'blocksTable',
+            title: 'Components List',
+            description: 'View components using data from DataFetch context',
+            useExternalData: true,
+            dataKey: 'componentsData',
+            collection: 'components',
+            columns: ['name', 'type', 'category', 'status'],
+          },
+        ],
+      },
+      // DataFetch block for Pages count
+      {
+        blockType: 'dataFetch',
+        dataKey: 'pagesStats',
+        source: {
+          type: 'collection',
+          collection: 'pages',
+        },
+        query: {
+          where: {
+            pageStatus: {
+              equals: 'published',
+            },
+          },
+        },
+        transform: {
+          type: 'count',
+        },
+        children: [
+          {
+            blockType: 'grid',
+            columns: '3',
+            gap: 'md',
+            items: [
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'Published Pages',
+                    icon: 'file',
+                    dataKey: 'pagesStats',
+                    valueField: 'value',
+                    variant: 'gradient',
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'Media Files',
+                    icon: 'image',
+                    staticValue: '156',
+                    format: {
+                      suffix: ' files',
+                    },
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'Sites',
+                    icon: 'globe',
+                    staticValue: '3',
+                    format: {
+                      suffix: ' active',
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ]
+
+    const dashboardBlocksTh = [
+      {
+        blockType: 'richText',
+        content: createLexicalContent(
+          '# แดชบอร์ด\n\nยินดีต้อนรับสู่แดชบอร์ดผู้ดูแลระบบ คุณสามารถดูสถิติและจัดการเนื้อหาได้ที่นี่',
+        ),
+      },
+      // DataFetch block for Users count
+      {
+        blockType: 'dataFetch',
+        dataKey: 'usersStats',
+        source: {
+          type: 'collection',
+          collection: 'users',
+        },
+        transform: {
+          type: 'count',
+        },
+        children: [
+          {
+            blockType: 'grid',
+            columns: '4',
+            gap: 'md',
+            items: [
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'ผู้ใช้ทั้งหมด',
+                    icon: 'users',
+                    dataKey: 'usersStats',
+                    valueField: 'value',
+                    format: {
+                      suffix: ' คน',
+                    },
+                    trend: {
+                      value: 12,
+                      label: 'เทียบกับเดือนที่แล้ว',
+                    },
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'ผู้ใช้ที่ใช้งาน',
+                    icon: 'activity',
+                    staticValue: '85%',
+                    variant: 'gradient',
+                    trend: {
+                      value: 5,
+                      label: 'สัปดาห์นี้',
+                    },
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'สมาชิกใหม่',
+                    icon: 'trending-up',
+                    staticValue: '24',
+                    format: {
+                      suffix: ' วันนี้',
+                    },
+                    variant: 'outline',
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'เอกสาร',
+                    icon: 'file',
+                    dataKey: 'usersStats',
+                    valueField: 'count',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      // DataFetch block for Components with Table
+      {
+        blockType: 'dataFetch',
+        dataKey: 'componentsData',
+        source: {
+          type: 'collection',
+          collection: 'components',
+        },
+        transform: {
+          type: 'none',
+        },
+        children: [
+          {
+            blockType: 'blocksTable',
+            title: 'รายการคอมโพเนนต์',
+            description: 'ดูคอมโพเนนต์จาก DataFetch context',
+            useExternalData: true,
+            dataKey: 'componentsData',
+            collection: 'components',
+            columns: ['name', 'type', 'category', 'status'],
+          },
+        ],
+      },
+      // DataFetch block for Pages count
+      {
+        blockType: 'dataFetch',
+        dataKey: 'pagesStats',
+        source: {
+          type: 'collection',
+          collection: 'pages',
+        },
+        query: {
+          where: {
+            pageStatus: {
+              equals: 'published',
+            },
+          },
+        },
+        transform: {
+          type: 'count',
+        },
+        children: [
+          {
+            blockType: 'grid',
+            columns: '3',
+            gap: 'md',
+            items: [
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'หน้าที่เผยแพร่',
+                    icon: 'file',
+                    dataKey: 'pagesStats',
+                    valueField: 'value',
+                    variant: 'gradient',
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'ไฟล์สื่อ',
+                    icon: 'image',
+                    staticValue: '156',
+                    format: {
+                      suffix: ' ไฟล์',
+                    },
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    blockType: 'statCard',
+                    title: 'เว็บไซต์',
+                    icon: 'globe',
+                    staticValue: '3',
+                    format: {
+                      suffix: ' ใช้งาน',
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ]
+
     // Create pages (shared across all sites)
     await createPages([
       {
@@ -631,6 +984,16 @@ console.log(greet('โลก'))`,
         order: 2,
         blocks: overviewBlocksEn,
         blocksTh: overviewBlocksTh,
+      },
+      {
+        titleEn: 'Dashboard',
+        titleTh: 'แดชบอร์ด',
+        slug: 'dashboard',
+        contentEn: 'Dashboard page with statistics',
+        contentTh: 'หน้าแดชบอร์ดแสดงสถิติ',
+        order: 3,
+        blocks: dashboardBlocksEn,
+        blocksTh: dashboardBlocksTh,
       },
     ])
 

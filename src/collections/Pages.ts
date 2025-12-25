@@ -114,14 +114,6 @@ export const Pages: CollectionConfig = {
       },
     },
     {
-      name: 'language',
-      type: 'relationship',
-      relationTo: 'languages',
-      admin: {
-        description: 'Language of this page (if i18n enabled)',
-      },
-    },
-    {
       name: 'parentPage',
       type: 'relationship',
       relationTo: 'pages',
@@ -819,6 +811,626 @@ export const Pages: CollectionConfig = {
             },
           ],
         },
+        {
+          slug: 'dataFetch',
+          labels: {
+            singular: 'Data Fetch',
+            plural: 'Data Fetches',
+          },
+          fields: [
+            {
+              name: 'dataKey',
+              type: 'text',
+              required: true,
+              admin: {
+                description:
+                  'Unique key to identify this data (e.g., "activeUsers", "totalOrders")',
+              },
+            },
+            {
+              name: 'source',
+              type: 'group',
+              fields: [
+                {
+                  name: 'type',
+                  type: 'select',
+                  required: true,
+                  options: [
+                    { label: 'Collection', value: 'collection' },
+                    { label: 'Global', value: 'global' },
+                    { label: 'API Endpoint', value: 'api' },
+                  ],
+                },
+                {
+                  name: 'collection',
+                  type: 'select',
+                  options: [
+                    { label: 'Users', value: 'users' },
+                    { label: 'Pages', value: 'pages' },
+                    { label: 'Components', value: 'components' },
+                    { label: 'Media', value: 'media' },
+                    { label: 'Sites', value: 'sites' },
+                    { label: 'Layouts', value: 'layouts' },
+                    { label: 'Languages', value: 'languages' },
+                    { label: 'Permissions', value: 'permissions' },
+                    { label: 'Roles', value: 'roles' },
+                  ],
+                  admin: {
+                    description: 'Collection to fetch data from',
+                    condition: (_, siblingData) => siblingData?.type === 'collection',
+                  },
+                },
+                {
+                  name: 'global',
+                  type: 'select',
+                  options: [{ label: 'Settings', value: 'settings' }],
+                  admin: {
+                    description: 'Global to fetch data from',
+                    condition: (_, siblingData) => siblingData?.type === 'global',
+                  },
+                },
+                {
+                  name: 'endpoint',
+                  type: 'text',
+                  admin: {
+                    description: 'API endpoint URL (for custom data sources)',
+                    condition: (_, siblingData) => siblingData?.type === 'api',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'query',
+              type: 'group',
+              admin: {
+                description: 'Query configuration for filtering data',
+              },
+              fields: [
+                {
+                  name: 'where',
+                  type: 'json',
+                  admin: {
+                    description: 'Filter query (e.g., { "status": { "equals": "active" } })',
+                  },
+                },
+                {
+                  name: 'sort',
+                  type: 'text',
+                  admin: {
+                    description: 'Sort field (prefix with - for descending, e.g., "-createdAt")',
+                  },
+                },
+                {
+                  name: 'limit',
+                  type: 'number',
+                  admin: {
+                    description: 'Maximum number of items to fetch (0 = no limit)',
+                  },
+                },
+                {
+                  name: 'depth',
+                  type: 'number',
+                  defaultValue: 0,
+                  admin: {
+                    description: 'Depth for populating relationships (0-3)',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'transform',
+              type: 'group',
+              admin: {
+                description: 'Transform fetched data (count, sum, average, etc.)',
+              },
+              fields: [
+                {
+                  name: 'type',
+                  type: 'select',
+                  options: [
+                    { label: 'None (raw data)', value: 'none' },
+                    { label: 'Count', value: 'count' },
+                    { label: 'Sum', value: 'sum' },
+                    { label: 'Average', value: 'average' },
+                    { label: 'First item', value: 'first' },
+                    { label: 'Last item', value: 'last' },
+                    { label: 'Group By', value: 'groupBy' },
+                  ],
+                },
+                {
+                  name: 'field',
+                  type: 'text',
+                  admin: {
+                    description: 'Field to use for sum/average/groupBy',
+                    condition: (_, siblingData) =>
+                      ['sum', 'average', 'groupBy'].includes(siblingData?.type),
+                  },
+                },
+              ],
+            },
+            {
+              name: 'refreshInterval',
+              type: 'number',
+              defaultValue: 0,
+              admin: {
+                description: 'Auto-refresh interval in milliseconds (0 = no refresh)',
+              },
+            },
+            {
+              name: 'children',
+              type: 'blocks',
+              admin: {
+                description: 'Child blocks that will receive this data',
+              },
+              blocks: [
+                {
+                  slug: 'statCard',
+                  labels: {
+                    singular: 'Stat Card',
+                    plural: 'Stat Cards',
+                  },
+                  fields: [
+                    {
+                      name: 'title',
+                      type: 'text',
+                      required: true,
+                    },
+                    {
+                      name: 'description',
+                      type: 'text',
+                    },
+                    {
+                      name: 'icon',
+                      type: 'select',
+                      options: [
+                        { label: 'Users', value: 'users' },
+                        { label: 'Dollar', value: 'dollar' },
+                        { label: 'Trending Up', value: 'trending-up' },
+                        { label: 'Trending Down', value: 'trending-down' },
+                        { label: 'Box', value: 'box' },
+                        { label: 'Cart', value: 'cart' },
+                        { label: 'File', value: 'file' },
+                        { label: 'Image', value: 'image' },
+                        { label: 'Settings', value: 'settings' },
+                        { label: 'Activity', value: 'activity' },
+                        { label: 'Bar Chart', value: 'bar-chart' },
+                        { label: 'Pie Chart', value: 'pie-chart' },
+                        { label: 'Layers', value: 'layers' },
+                        { label: 'Database', value: 'database' },
+                        { label: 'Globe', value: 'globe' },
+                        { label: 'Mail', value: 'mail' },
+                        { label: 'Bell', value: 'bell' },
+                        { label: 'Calendar', value: 'calendar' },
+                        { label: 'Clock', value: 'clock' },
+                        { label: 'Check Circle', value: 'check-circle' },
+                        { label: 'X Circle', value: 'x-circle' },
+                        { label: 'Alert Circle', value: 'alert-circle' },
+                      ],
+                    },
+                    {
+                      name: 'dataKey',
+                      type: 'text',
+                      admin: {
+                        description:
+                          'Reference to parent DataFetch key (leave empty to use parent)',
+                      },
+                    },
+                    {
+                      name: 'valueField',
+                      type: 'text',
+                      defaultValue: 'value',
+                      admin: {
+                        description: 'Path to value in data (e.g., "value", "count", "data.total")',
+                      },
+                    },
+                    {
+                      name: 'format',
+                      type: 'group',
+                      fields: [
+                        {
+                          name: 'prefix',
+                          type: 'text',
+                          admin: {
+                            description: 'Prefix (e.g., "$", "฿")',
+                          },
+                        },
+                        {
+                          name: 'suffix',
+                          type: 'text',
+                          admin: {
+                            description: 'Suffix (e.g., "%", " users")',
+                          },
+                        },
+                        {
+                          name: 'decimals',
+                          type: 'number',
+                          defaultValue: 0,
+                          admin: {
+                            description: 'Number of decimal places',
+                          },
+                        },
+                      ],
+                    },
+                    {
+                      name: 'trend',
+                      type: 'group',
+                      admin: {
+                        description: 'Trend indicator (optional)',
+                      },
+                      fields: [
+                        {
+                          name: 'value',
+                          type: 'number',
+                          admin: {
+                            description: 'Trend percentage (positive or negative)',
+                          },
+                        },
+                        {
+                          name: 'label',
+                          type: 'text',
+                          admin: {
+                            description: 'Trend label (e.g., "vs last month")',
+                          },
+                        },
+                        {
+                          name: 'invertColors',
+                          type: 'checkbox',
+                          admin: {
+                            description: 'Invert trend colors (positive = bad)',
+                          },
+                        },
+                      ],
+                    },
+                    {
+                      name: 'variant',
+                      type: 'select',
+                      options: [
+                        { label: 'Default', value: 'default' },
+                        { label: 'Gradient', value: 'gradient' },
+                        { label: 'Outline', value: 'outline' },
+                        { label: 'Filled', value: 'filled' },
+                      ],
+                    },
+                    {
+                      name: 'size',
+                      type: 'select',
+                      options: [
+                        { label: 'Small', value: 'sm' },
+                        { label: 'Medium', value: 'md' },
+                        { label: 'Large', value: 'lg' },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  slug: 'grid',
+                  labels: {
+                    singular: 'Grid',
+                    plural: 'Grids',
+                  },
+                  fields: [
+                    {
+                      name: 'columns',
+                      type: 'select',
+                      options: [
+                        { label: '2 Columns', value: '2' },
+                        { label: '3 Columns', value: '3' },
+                        { label: '4 Columns', value: '4' },
+                      ],
+                      defaultValue: '4',
+                    },
+                    {
+                      name: 'gap',
+                      type: 'select',
+                      options: [
+                        { label: 'Small', value: 'sm' },
+                        { label: 'Medium', value: 'md' },
+                        { label: 'Large', value: 'lg' },
+                      ],
+                      defaultValue: 'md',
+                    },
+                    {
+                      name: 'items',
+                      type: 'array',
+                      fields: [
+                        {
+                          name: 'content',
+                          type: 'blocks',
+                          blocks: [
+                            {
+                              slug: 'statCard',
+                              labels: {
+                                singular: 'Stat Card',
+                                plural: 'Stat Cards',
+                              },
+                              fields: [
+                                { name: 'title', type: 'text', required: true },
+                                { name: 'description', type: 'text' },
+                                {
+                                  name: 'icon',
+                                  type: 'select',
+                                  options: [
+                                    { label: 'Users', value: 'users' },
+                                    { label: 'Dollar', value: 'dollar' },
+                                    { label: 'Box', value: 'box' },
+                                    { label: 'Cart', value: 'cart' },
+                                    { label: 'File', value: 'file' },
+                                    { label: 'Activity', value: 'activity' },
+                                  ],
+                                },
+                                { name: 'dataKey', type: 'text' },
+                                {
+                                  name: 'valueField',
+                                  type: 'text',
+                                  defaultValue: 'value',
+                                },
+                                {
+                                  name: 'format',
+                                  type: 'group',
+                                  fields: [
+                                    { name: 'prefix', type: 'text' },
+                                    { name: 'suffix', type: 'text' },
+                                    { name: 'decimals', type: 'number' },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  slug: 'richText',
+                  labels: {
+                    singular: 'Rich Text',
+                    plural: 'Rich Texts',
+                  },
+                  fields: [
+                    {
+                      name: 'content',
+                      type: 'richText',
+                    },
+                  ],
+                },
+                {
+                  slug: 'blocksTable',
+                  labels: {
+                    singular: 'Blocks Table',
+                    plural: 'Blocks Tables',
+                  },
+                  fields: [
+                    {
+                      name: 'title',
+                      type: 'text',
+                      admin: {
+                        description: 'Optional title for the table',
+                      },
+                    },
+                    {
+                      name: 'description',
+                      type: 'textarea',
+                      admin: {
+                        description: 'Optional description for the table',
+                      },
+                    },
+                    {
+                      name: 'useExternalData',
+                      type: 'checkbox',
+                      defaultValue: true,
+                      admin: {
+                        description:
+                          'Use data from parent DataFetch block instead of fetching internally',
+                      },
+                    },
+                    {
+                      name: 'dataKey',
+                      type: 'text',
+                      admin: {
+                        description:
+                          'Data key to reference from DataFetch context (defaults to parent dataKey)',
+                        condition: (_, siblingData) => siblingData?.useExternalData === true,
+                      },
+                    },
+                    {
+                      name: 'collection',
+                      type: 'select',
+                      options: [
+                        { label: 'Users', value: 'users' },
+                        { label: 'Pages', value: 'pages' },
+                        { label: 'Components', value: 'components' },
+                        { label: 'Media', value: 'media' },
+                        { label: 'Sites', value: 'sites' },
+                        { label: 'Layouts', value: 'layouts' },
+                        { label: 'Languages', value: 'languages' },
+                        { label: 'Permissions', value: 'permissions' },
+                        { label: 'Roles', value: 'roles' },
+                      ],
+                      admin: {
+                        description: 'Collection for column inference (when using external data)',
+                      },
+                    },
+                    {
+                      name: 'columns',
+                      type: 'json',
+                      admin: {
+                        description: 'Column configuration (array of column keys or JSON config)',
+                      },
+                    },
+                    {
+                      name: 'limit',
+                      type: 'number',
+                      defaultValue: 10,
+                      admin: {
+                        description: 'Items per page',
+                        condition: (_, siblingData) => siblingData?.useExternalData !== true,
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: 'requiredPermissions',
+              type: 'relationship',
+              relationTo: 'permissions',
+              hasMany: true,
+              admin: {
+                description:
+                  'Permissions required to view/edit this block (leave empty for public)',
+              },
+            },
+          ],
+        },
+        {
+          slug: 'statCard',
+          labels: {
+            singular: 'Stat Card',
+            plural: 'Stat Cards',
+          },
+          fields: [
+            {
+              name: 'title',
+              type: 'text',
+              required: true,
+              admin: {
+                description: 'Card title (e.g., "Total Users")',
+              },
+            },
+            {
+              name: 'description',
+              type: 'text',
+              admin: {
+                description: 'Optional description text',
+              },
+            },
+            {
+              name: 'icon',
+              type: 'select',
+              options: [
+                { label: 'Users', value: 'users' },
+                { label: 'Dollar', value: 'dollar' },
+                { label: 'Trending Up', value: 'trending-up' },
+                { label: 'Trending Down', value: 'trending-down' },
+                { label: 'Box', value: 'box' },
+                { label: 'Cart', value: 'cart' },
+                { label: 'File', value: 'file' },
+                { label: 'Image', value: 'image' },
+                { label: 'Settings', value: 'settings' },
+                { label: 'Activity', value: 'activity' },
+                { label: 'Bar Chart', value: 'bar-chart' },
+                { label: 'Pie Chart', value: 'pie-chart' },
+                { label: 'Layers', value: 'layers' },
+                { label: 'Database', value: 'database' },
+                { label: 'Globe', value: 'globe' },
+              ],
+              admin: {
+                description: 'Icon to display on the card',
+              },
+            },
+            {
+              name: 'staticValue',
+              type: 'text',
+              admin: {
+                description: 'Static value to display (use if not using DataFetch)',
+              },
+            },
+            {
+              name: 'format',
+              type: 'group',
+              fields: [
+                {
+                  name: 'prefix',
+                  type: 'text',
+                  admin: {
+                    description: 'Prefix (e.g., "$", "฿")',
+                  },
+                },
+                {
+                  name: 'suffix',
+                  type: 'text',
+                  admin: {
+                    description: 'Suffix (e.g., "%", " users")',
+                  },
+                },
+                {
+                  name: 'decimals',
+                  type: 'number',
+                  defaultValue: 0,
+                  admin: {
+                    description: 'Number of decimal places',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'trend',
+              type: 'group',
+              admin: {
+                description: 'Trend indicator (optional)',
+              },
+              fields: [
+                {
+                  name: 'value',
+                  type: 'number',
+                  admin: {
+                    description: 'Trend percentage (positive or negative)',
+                  },
+                },
+                {
+                  name: 'label',
+                  type: 'text',
+                  admin: {
+                    description: 'Trend label (e.g., "vs last month")',
+                  },
+                },
+                {
+                  name: 'invertColors',
+                  type: 'checkbox',
+                  admin: {
+                    description: 'Invert trend colors (positive = bad)',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'variant',
+              type: 'select',
+              options: [
+                { label: 'Default', value: 'default' },
+                { label: 'Gradient', value: 'gradient' },
+                { label: 'Outline', value: 'outline' },
+                { label: 'Filled', value: 'filled' },
+              ],
+              admin: {
+                description: 'Card visual style',
+              },
+            },
+            {
+              name: 'size',
+              type: 'select',
+              options: [
+                { label: 'Small', value: 'sm' },
+                { label: 'Medium', value: 'md' },
+                { label: 'Large', value: 'lg' },
+              ],
+              admin: {
+                description: 'Card size',
+              },
+            },
+            {
+              name: 'requiredPermissions',
+              type: 'relationship',
+              relationTo: 'permissions',
+              hasMany: true,
+              admin: {
+                description:
+                  'Permissions required to view/edit this block (leave empty for public)',
+              },
+            },
+          ],
+        },
       ],
     },
     {
@@ -848,29 +1460,6 @@ export const Pages: CollectionConfig = {
               type: 'text',
             },
           ],
-        },
-      ],
-    },
-    {
-      name: 'translations',
-      type: 'group',
-      fields: [
-        {
-          name: 'translationGroup',
-          type: 'text',
-          admin: {
-            description: 'Group ID for linking translations (auto-generated)',
-            readOnly: true,
-          },
-        },
-        {
-          name: 'relatedPages',
-          type: 'relationship',
-          relationTo: 'pages',
-          hasMany: true,
-          admin: {
-            description: 'Related pages in other languages',
-          },
         },
       ],
     },
@@ -925,8 +1514,6 @@ export const Pages: CollectionConfig = {
             .replace(/(^-|-$)/g, '')
         }
 
-        // Validate language if i18n enabled
-        // This will be checked against site settings later
         return data
       },
     ],
@@ -937,12 +1524,6 @@ export const Pages: CollectionConfig = {
         const previousStatus = (originalDoc as any)?._status
         if (currentStatus === 'published' && previousStatus !== 'published') {
           data.publishedAt = new Date()
-        }
-
-        // Generate translationGroup if new page
-        if (operation === 'create' && !data.translations?.translationGroup) {
-          data.translations = data.translations || {}
-          data.translations.translationGroup = `page-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         }
 
         return data

@@ -100,14 +100,14 @@ export interface Config {
   db: {
     defaultIDType: string;
   };
-  fallbackLocale: null;
+  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'th') | ('en' | 'th')[];
   globals: {
     settings: Setting;
   };
   globalsSelect: {
     settings: SettingsSelect<false> | SettingsSelect<true>;
   };
-  locale: null;
+  locale: 'en' | 'th';
   user: User & {
     collection: 'users';
   };
@@ -839,10 +839,6 @@ export interface Page {
    */
   slug: string;
   /**
-   * Language of this page (if i18n enabled)
-   */
-  language?: (string | null) | Language;
-  /**
    * Parent page for hierarchical structure (same language)
    */
   parentPage?: (string | null) | Page;
@@ -1182,6 +1178,354 @@ export interface Page {
             blockName?: string | null;
             blockType: 'blocksTable';
           }
+        | {
+            /**
+             * Unique key to identify this data (e.g., "activeUsers", "totalOrders")
+             */
+            dataKey: string;
+            source: {
+              type: 'collection' | 'global' | 'api';
+              /**
+               * Collection to fetch data from
+               */
+              collection?:
+                | (
+                    | 'users'
+                    | 'pages'
+                    | 'components'
+                    | 'media'
+                    | 'sites'
+                    | 'layouts'
+                    | 'languages'
+                    | 'permissions'
+                    | 'roles'
+                  )
+                | null;
+              /**
+               * Global to fetch data from
+               */
+              global?: 'settings' | null;
+              /**
+               * API endpoint URL (for custom data sources)
+               */
+              endpoint?: string | null;
+            };
+            /**
+             * Query configuration for filtering data
+             */
+            query?: {
+              /**
+               * Filter query (e.g., { "status": { "equals": "active" } })
+               */
+              where?:
+                | {
+                    [k: string]: unknown;
+                  }
+                | unknown[]
+                | string
+                | number
+                | boolean
+                | null;
+              /**
+               * Sort field (prefix with - for descending, e.g., "-createdAt")
+               */
+              sort?: string | null;
+              /**
+               * Maximum number of items to fetch (0 = no limit)
+               */
+              limit?: number | null;
+              /**
+               * Depth for populating relationships (0-3)
+               */
+              depth?: number | null;
+            };
+            /**
+             * Transform fetched data (count, sum, average, etc.)
+             */
+            transform?: {
+              type?: ('none' | 'count' | 'sum' | 'average' | 'first' | 'last' | 'groupBy') | null;
+              /**
+               * Field to use for sum/average/groupBy
+               */
+              field?: string | null;
+            };
+            /**
+             * Auto-refresh interval in milliseconds (0 = no refresh)
+             */
+            refreshInterval?: number | null;
+            /**
+             * Child blocks that will receive this data
+             */
+            children?:
+              | (
+                  | {
+                      title: string;
+                      description?: string | null;
+                      icon?:
+                        | (
+                            | 'users'
+                            | 'dollar'
+                            | 'trending-up'
+                            | 'trending-down'
+                            | 'box'
+                            | 'cart'
+                            | 'file'
+                            | 'image'
+                            | 'settings'
+                            | 'activity'
+                            | 'bar-chart'
+                            | 'pie-chart'
+                            | 'layers'
+                            | 'database'
+                            | 'globe'
+                            | 'mail'
+                            | 'bell'
+                            | 'calendar'
+                            | 'clock'
+                            | 'check-circle'
+                            | 'x-circle'
+                            | 'alert-circle'
+                          )
+                        | null;
+                      /**
+                       * Reference to parent DataFetch key (leave empty to use parent)
+                       */
+                      dataKey?: string | null;
+                      /**
+                       * Path to value in data (e.g., "value", "count", "data.total")
+                       */
+                      valueField?: string | null;
+                      format?: {
+                        /**
+                         * Prefix (e.g., "$", "฿")
+                         */
+                        prefix?: string | null;
+                        /**
+                         * Suffix (e.g., "%", " users")
+                         */
+                        suffix?: string | null;
+                        /**
+                         * Number of decimal places
+                         */
+                        decimals?: number | null;
+                      };
+                      /**
+                       * Trend indicator (optional)
+                       */
+                      trend?: {
+                        /**
+                         * Trend percentage (positive or negative)
+                         */
+                        value?: number | null;
+                        /**
+                         * Trend label (e.g., "vs last month")
+                         */
+                        label?: string | null;
+                        /**
+                         * Invert trend colors (positive = bad)
+                         */
+                        invertColors?: boolean | null;
+                      };
+                      variant?: ('default' | 'gradient' | 'outline' | 'filled') | null;
+                      size?: ('sm' | 'md' | 'lg') | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'statCard';
+                    }
+                  | {
+                      columns?: ('2' | '3' | '4') | null;
+                      gap?: ('sm' | 'md' | 'lg') | null;
+                      items?:
+                        | {
+                            content?:
+                              | {
+                                  title: string;
+                                  description?: string | null;
+                                  icon?: ('users' | 'dollar' | 'box' | 'cart' | 'file' | 'activity') | null;
+                                  dataKey?: string | null;
+                                  valueField?: string | null;
+                                  format?: {
+                                    prefix?: string | null;
+                                    suffix?: string | null;
+                                    decimals?: number | null;
+                                  };
+                                  id?: string | null;
+                                  blockName?: string | null;
+                                  blockType: 'statCard';
+                                }[]
+                              | null;
+                            id?: string | null;
+                          }[]
+                        | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'grid';
+                    }
+                  | {
+                      content?: {
+                        root: {
+                          type: string;
+                          children: {
+                            type: any;
+                            version: number;
+                            [k: string]: unknown;
+                          }[];
+                          direction: ('ltr' | 'rtl') | null;
+                          format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                          indent: number;
+                          version: number;
+                        };
+                        [k: string]: unknown;
+                      } | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'richText';
+                    }
+                  | {
+                      /**
+                       * Optional title for the table
+                       */
+                      title?: string | null;
+                      /**
+                       * Optional description for the table
+                       */
+                      description?: string | null;
+                      /**
+                       * Use data from parent DataFetch block instead of fetching internally
+                       */
+                      useExternalData?: boolean | null;
+                      /**
+                       * Data key to reference from DataFetch context (defaults to parent dataKey)
+                       */
+                      dataKey?: string | null;
+                      /**
+                       * Collection for column inference (when using external data)
+                       */
+                      collection?:
+                        | (
+                            | 'users'
+                            | 'pages'
+                            | 'components'
+                            | 'media'
+                            | 'sites'
+                            | 'layouts'
+                            | 'languages'
+                            | 'permissions'
+                            | 'roles'
+                          )
+                        | null;
+                      /**
+                       * Column configuration (array of column keys or JSON config)
+                       */
+                      columns?:
+                        | {
+                            [k: string]: unknown;
+                          }
+                        | unknown[]
+                        | string
+                        | number
+                        | boolean
+                        | null;
+                      /**
+                       * Items per page
+                       */
+                      limit?: number | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'blocksTable';
+                    }
+                )[]
+              | null;
+            /**
+             * Permissions required to view/edit this block (leave empty for public)
+             */
+            requiredPermissions?: (string | Permission)[] | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'dataFetch';
+          }
+        | {
+            /**
+             * Card title (e.g., "Total Users")
+             */
+            title: string;
+            /**
+             * Optional description text
+             */
+            description?: string | null;
+            /**
+             * Icon to display on the card
+             */
+            icon?:
+              | (
+                  | 'users'
+                  | 'dollar'
+                  | 'trending-up'
+                  | 'trending-down'
+                  | 'box'
+                  | 'cart'
+                  | 'file'
+                  | 'image'
+                  | 'settings'
+                  | 'activity'
+                  | 'bar-chart'
+                  | 'pie-chart'
+                  | 'layers'
+                  | 'database'
+                  | 'globe'
+                )
+              | null;
+            /**
+             * Static value to display (use if not using DataFetch)
+             */
+            staticValue?: string | null;
+            format?: {
+              /**
+               * Prefix (e.g., "$", "฿")
+               */
+              prefix?: string | null;
+              /**
+               * Suffix (e.g., "%", " users")
+               */
+              suffix?: string | null;
+              /**
+               * Number of decimal places
+               */
+              decimals?: number | null;
+            };
+            /**
+             * Trend indicator (optional)
+             */
+            trend?: {
+              /**
+               * Trend percentage (positive or negative)
+               */
+              value?: number | null;
+              /**
+               * Trend label (e.g., "vs last month")
+               */
+              label?: string | null;
+              /**
+               * Invert trend colors (positive = bad)
+               */
+              invertColors?: boolean | null;
+            };
+            /**
+             * Card visual style
+             */
+            variant?: ('default' | 'gradient' | 'outline' | 'filled') | null;
+            /**
+             * Card size
+             */
+            size?: ('sm' | 'md' | 'lg') | null;
+            /**
+             * Permissions required to view/edit this block (leave empty for public)
+             */
+            requiredPermissions?: (string | Permission)[] | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'statCard';
+          }
       )[]
     | null;
   seo?: {
@@ -1194,16 +1538,6 @@ export interface Page {
           id?: string | null;
         }[]
       | null;
-  };
-  translations?: {
-    /**
-     * Group ID for linking translations (auto-generated)
-     */
-    translationGroup?: string | null;
-    /**
-     * Related pages in other languages
-     */
-    relatedPages?: (string | Page)[] | null;
   };
   featuredImage?: (string | null) | Media;
   /**
@@ -1624,7 +1958,6 @@ export interface LayoutsSelect<T extends boolean = true> {
 export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
-  language?: T;
   parentPage?: T;
   layout?: T;
   pageStatus?: T;
@@ -1807,6 +2140,150 @@ export interface PagesSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
+        dataFetch?:
+          | T
+          | {
+              dataKey?: T;
+              source?:
+                | T
+                | {
+                    type?: T;
+                    collection?: T;
+                    global?: T;
+                    endpoint?: T;
+                  };
+              query?:
+                | T
+                | {
+                    where?: T;
+                    sort?: T;
+                    limit?: T;
+                    depth?: T;
+                  };
+              transform?:
+                | T
+                | {
+                    type?: T;
+                    field?: T;
+                  };
+              refreshInterval?: T;
+              children?:
+                | T
+                | {
+                    statCard?:
+                      | T
+                      | {
+                          title?: T;
+                          description?: T;
+                          icon?: T;
+                          dataKey?: T;
+                          valueField?: T;
+                          format?:
+                            | T
+                            | {
+                                prefix?: T;
+                                suffix?: T;
+                                decimals?: T;
+                              };
+                          trend?:
+                            | T
+                            | {
+                                value?: T;
+                                label?: T;
+                                invertColors?: T;
+                              };
+                          variant?: T;
+                          size?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    grid?:
+                      | T
+                      | {
+                          columns?: T;
+                          gap?: T;
+                          items?:
+                            | T
+                            | {
+                                content?:
+                                  | T
+                                  | {
+                                      statCard?:
+                                        | T
+                                        | {
+                                            title?: T;
+                                            description?: T;
+                                            icon?: T;
+                                            dataKey?: T;
+                                            valueField?: T;
+                                            format?:
+                                              | T
+                                              | {
+                                                  prefix?: T;
+                                                  suffix?: T;
+                                                  decimals?: T;
+                                                };
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                              };
+                          id?: T;
+                          blockName?: T;
+                        };
+                    richText?:
+                      | T
+                      | {
+                          content?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    blocksTable?:
+                      | T
+                      | {
+                          title?: T;
+                          description?: T;
+                          useExternalData?: T;
+                          dataKey?: T;
+                          collection?: T;
+                          columns?: T;
+                          limit?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                  };
+              requiredPermissions?: T;
+              id?: T;
+              blockName?: T;
+            };
+        statCard?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+              icon?: T;
+              staticValue?: T;
+              format?:
+                | T
+                | {
+                    prefix?: T;
+                    suffix?: T;
+                    decimals?: T;
+                  };
+              trend?:
+                | T
+                | {
+                    value?: T;
+                    label?: T;
+                    invertColors?: T;
+                  };
+              variant?: T;
+              size?: T;
+              requiredPermissions?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
   seo?:
     | T
@@ -1820,12 +2297,6 @@ export interface PagesSelect<T extends boolean = true> {
               keyword?: T;
               id?: T;
             };
-      };
-  translations?:
-    | T
-    | {
-        translationGroup?: T;
-        relatedPages?: T;
       };
   featuredImage?: T;
   publishedAt?: T;

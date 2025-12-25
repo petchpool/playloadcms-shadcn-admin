@@ -56,8 +56,10 @@ export interface UseTableUrlStateReturn {
   state: TableUrlState
   /** Set entire state */
   setState: (state: Partial<TableUrlState>) => void
-  /** Update specific fields */
+  /** Update specific fields (debounced) */
   updateState: (updates: Partial<TableUrlState>) => void
+  /** Update specific fields immediately (no debounce) */
+  updateStateImmediate: (updates: Partial<TableUrlState>) => void
   /** Reset to defaults */
   resetState: () => void
   /** Get URL string for current state */
@@ -350,7 +352,7 @@ export function useTableUrlState(options: UseTableUrlStateOptions = {}): UseTabl
     [defaults, debouncedUpdateUrl],
   )
 
-  // Update specific fields
+  // Update specific fields (debounced)
   const updateState = useCallback(
     (updates: Partial<TableUrlState>) => {
       const mergedState = { ...state, ...updates }
@@ -366,6 +368,25 @@ export function useTableUrlState(options: UseTableUrlStateOptions = {}): UseTabl
       debouncedUpdateUrl(mergedState)
     },
     [state, debouncedUpdateUrl],
+  )
+
+  // Update specific fields immediately (no debounce)
+  const updateStateImmediate = useCallback(
+    (updates: Partial<TableUrlState>) => {
+      const mergedState = { ...state, ...updates }
+
+      // Special handling for filters - merge instead of replace
+      if (updates.filters) {
+        mergedState.filters = {
+          ...state.filters,
+          ...updates.filters,
+        }
+      }
+
+      // Update URL immediately without debounce
+      updateUrl(mergedState)
+    },
+    [state, updateUrl],
   )
 
   // Reset to defaults (only for this table's group)
@@ -397,6 +418,7 @@ export function useTableUrlState(options: UseTableUrlStateOptions = {}): UseTabl
     state,
     setState,
     updateState,
+    updateStateImmediate,
     resetState,
     getUrl,
     parseUrl,

@@ -168,12 +168,14 @@ type BlocksTableProps = {
   /** Custom row actions */
   rowActions?: RowAction[]
   /** Default row actions (View, Edit, Delete) - set to false to disable */
-  defaultActions?: boolean | {
-    view?: boolean | ((row: any) => void)
-    edit?: boolean | ((row: any) => void)
-    delete?: boolean | ((row: any) => void)
-    copy?: boolean
-  }
+  defaultActions?:
+    | boolean
+    | {
+        view?: boolean | ((row: any) => void)
+        edit?: boolean | ((row: any) => void)
+        delete?: boolean | ((row: any) => void)
+        copy?: boolean
+      }
   /** Custom columns to add */
   customColumns?: CustomColumn[]
   /** Callback when View action is clicked */
@@ -285,10 +287,16 @@ export function BlocksTable({
 
   const initialState = getInitialState()
 
+  // Local state for page/limit to sync with URL immediately
+  const [currentPage, setCurrentPage] = React.useState(initialState.page || pagination?.page || 1)
+  const [currentLimit, setCurrentLimit] = React.useState(
+    initialState.limit || pagination?.limit || 10,
+  )
+
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(
-    initialState.columnVisibility || {}
+    initialState.columnVisibility || {},
   )
   const [globalFilter, setGlobalFilter] = React.useState(initialState.search || '')
   const [rowSelection, setRowSelection] = React.useState({})
@@ -298,13 +306,13 @@ export function BlocksTable({
 
   // Multi-select filter states
   const [typeFilter, setTypeFilter] = React.useState<Set<string>>(
-    arrayToSet(initialState.filters?.type)
+    arrayToSet(initialState.filters?.type),
   )
   const [categoryFilter, setCategoryFilter] = React.useState<Set<string>>(
-    arrayToSet(initialState.filters?.category)
+    arrayToSet(initialState.filters?.category),
   )
   const [statusFilter, setStatusFilter] = React.useState<Set<string>>(
-    arrayToSet(initialState.filters?.status)
+    arrayToSet(initialState.filters?.status),
   )
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>(() => {
     if (initialState.dateRange?.from || initialState.dateRange?.to) {
@@ -494,7 +502,9 @@ export function BlocksTable({
         const description = row.getValue('description') as string | null
         if (!description) return <span className="text-muted-foreground">-</span>
         return (
-          <span className="max-w-[300px] truncate text-sm text-muted-foreground">{description}</span>
+          <span className="max-w-[300px] truncate text-sm text-muted-foreground">
+            {description}
+          </span>
         )
       },
     },
@@ -562,7 +572,7 @@ export function BlocksTable({
             label: 'View',
             icon: Eye,
             separator: true,
-            onClick: typeof defaults.view === 'function' ? defaults.view : (onView || (() => {})),
+            onClick: typeof defaults.view === 'function' ? defaults.view : onView || (() => {}),
           })
         }
 
@@ -571,7 +581,7 @@ export function BlocksTable({
           actions.push({
             label: 'Edit',
             icon: Edit,
-            onClick: typeof defaults.edit === 'function' ? defaults.edit : (onEdit || (() => {})),
+            onClick: typeof defaults.edit === 'function' ? defaults.edit : onEdit || (() => {}),
           })
         }
 
@@ -582,7 +592,8 @@ export function BlocksTable({
             icon: Trash2,
             variant: 'destructive',
             separator: true,
-            onClick: typeof defaults.delete === 'function' ? defaults.delete : (onDelete || (() => {})),
+            onClick:
+              typeof defaults.delete === 'function' ? defaults.delete : onDelete || (() => {}),
           })
         }
       }
@@ -640,10 +651,45 @@ export function BlocksTable({
         .map(([, col]) => col)
     } else {
       // Return only enabled columns in the specified order
-      dataCols = enabledColumns
+      // Support both array of strings and array of objects
+      const columnKeys = enabledColumns.map((col: string | any) => {
+        if (typeof col === 'string') {
+          return col
+        }
+        // Handle object format: { key: 'name', label: 'Name', sortable: true }
+        return col.key || col.id || col
+      })
+
+      console.log('🔍 BlocksTable - enabledColumns:', enabledColumns)
+      console.log('🔍 BlocksTable - columnKeys:', columnKeys)
+      console.log('🔍 BlocksTable - available columns:', Object.keys(allColumns))
+
+      dataCols = columnKeys
         .filter((key: string) => key !== 'select')
-        .map((key: string) => allColumns[key])
-        .filter((col: ColumnDef<Block> | undefined) => col !== undefined) as ColumnDef<Block>[]
+        .map((key: string) => {
+          const col = allColumns[key]
+          if (!col) {
+            console.warn(`⚠️ BlocksTable - Column "${key}" not found in allColumns`)
+            return null
+          }
+
+          // If enabledColumns contains objects with custom labels, update header
+          const colConfig = enabledColumns.find(
+            (c: any) => typeof c === 'object' && (c.key === key || c.id === key),
+          )
+          if (colConfig && typeof colConfig === 'object' && colConfig.label) {
+            return {
+              ...col,
+              header: colConfig.label,
+            }
+          }
+          return col
+        })
+        .filter(
+          (col: ColumnDef<Block> | null | undefined) => col !== null && col !== undefined,
+        ) as ColumnDef<Block>[]
+
+      console.log('🔍 BlocksTable - final dataCols:', dataCols.length, 'columns')
     }
 
     // Add custom columns
@@ -721,13 +767,13 @@ export function BlocksTable({
     }
   }
 
-  // Sync state to URL
+  // Sync all state to URL
   React.useEffect(() => {
     if (!syncUrl) return
 
     const newUrlState: TableUrlState = {
-      page: pagination?.page !== 1 ? pagination?.page : undefined,
-      limit: pagination?.limit !== 10 ? pagination?.limit : undefined,
+      page: currentPage !== 1 ? currentPage : undefined,
+      limit: currentLimit !== 10 ? currentLimit : undefined,
       search: globalFilter || undefined,
       statusTab: activeStatusTab !== 'all' ? activeStatusTab : undefined,
       filters: {
@@ -735,12 +781,13 @@ export function BlocksTable({
         ...(categoryFilter.size > 0 && { category: setToArray(categoryFilter) }),
         ...(statusFilter.size > 0 && { status: setToArray(statusFilter) }),
       },
-      dateRange: dateRange?.from || dateRange?.to
-        ? {
-            from: formatDateForUrl(dateRange?.from),
-            to: formatDateForUrl(dateRange?.to),
-          }
-        : undefined,
+      dateRange:
+        dateRange?.from || dateRange?.to
+          ? {
+              from: formatDateForUrl(dateRange?.from),
+              to: formatDateForUrl(dateRange?.to),
+            }
+          : undefined,
       columnVisibility: Object.keys(columnVisibility).length > 0 ? columnVisibility : undefined,
     }
 
@@ -748,6 +795,8 @@ export function BlocksTable({
     onUrlStateChange?.(newUrlState)
   }, [
     syncUrl,
+    currentPage,
+    currentLimit,
     globalFilter,
     activeStatusTab,
     typeFilter,
@@ -755,8 +804,6 @@ export function BlocksTable({
     statusFilter,
     dateRange,
     columnVisibility,
-    pagination?.page,
-    pagination?.limit,
     updateUrlState,
     onUrlStateChange,
   ])
@@ -778,54 +825,29 @@ export function BlocksTable({
     setDateRange(undefined)
     setActiveStatusTab('all')
     setColumnVisibility({})
-    
-    // Also clear URL state and reset to page 1
-    if (syncUrl) {
-      updateUrlState({ page: 1 })
-      onPageChange?.(1)
-    }
+    setCurrentPage(1)
+    setCurrentLimit(10)
+
+    // Also reset data fetch
+    onPageChange?.(1)
   }
 
   // Handle page change with URL sync
   const handlePageChange = (newPage: number) => {
+    // Update local state first (this will trigger useEffect to sync URL)
+    setCurrentPage(newPage)
+    // Then call the callback to fetch data
     onPageChange?.(newPage)
-    // Sync URL immediately (don't wait for pagination prop to change)
-    if (syncUrl) {
-      updateUrlState({
-        page: newPage !== 1 ? newPage : undefined,
-        limit: pagination?.limit !== 10 ? pagination?.limit : undefined,
-        search: globalFilter || undefined,
-        statusTab: activeStatusTab !== 'all' ? activeStatusTab : undefined,
-        filters: {
-          ...(typeFilter.size > 0 && { type: setToArray(typeFilter) }),
-          ...(categoryFilter.size > 0 && { category: setToArray(categoryFilter) }),
-          ...(statusFilter.size > 0 && { status: setToArray(statusFilter) }),
-        },
-        columnVisibility: Object.keys(columnVisibility).length > 0 ? columnVisibility : undefined,
-      })
-    }
   }
 
   // Handle limit change with URL sync
   const handleLimitChange = (newLimit: number) => {
+    // Update local state first (this will trigger useEffect to sync URL)
+    setCurrentLimit(newLimit)
+    setCurrentPage(1) // Reset to page 1
+    // Then call the callbacks to fetch data
     onLimitChange?.(newLimit)
-    // Reset to page 1 when changing limit
     onPageChange?.(1)
-    // Sync URL immediately (don't wait for pagination prop to change)
-    if (syncUrl) {
-      updateUrlState({
-        page: undefined, // Reset to page 1
-        limit: newLimit !== 10 ? newLimit : undefined,
-        search: globalFilter || undefined,
-        statusTab: activeStatusTab !== 'all' ? activeStatusTab : undefined,
-        filters: {
-          ...(typeFilter.size > 0 && { type: setToArray(typeFilter) }),
-          ...(categoryFilter.size > 0 && { category: setToArray(categoryFilter) }),
-          ...(statusFilter.size > 0 && { status: setToArray(statusFilter) }),
-        },
-        columnVisibility: Object.keys(columnVisibility).length > 0 ? columnVisibility : undefined,
-      })
-    }
   }
 
   return (

@@ -2,6 +2,8 @@ import Image from 'next/image'
 import { ComponentRenderer } from './component-renderer'
 import { BlocksTableBlock } from './blocks-table-block'
 import { RichTextRenderer } from './rich-text-renderer'
+import { DataFetchBlock } from './data-fetch-block'
+import { StatCardBlock } from './stat-card-block'
 
 export type PageContentRendererProps = {
   content: any[] // Accept any block content array
@@ -224,6 +226,47 @@ export function PageContentRenderer({ content }: PageContentRendererProps) {
                 defaultSort={block.defaultSort}
                 syncUrl={block.urlSettings?.syncUrl ?? false}
                 urlGroup={block.urlSettings?.urlGroup}
+              />
+            )
+
+          case 'dataFetch':
+            return (
+              <DataFetchBlock
+                key={index}
+                dataKey={block.dataKey}
+                source={{
+                  type: block.source?.type || 'collection',
+                  collection: block.source?.collection,
+                  global: block.source?.global,
+                  endpoint: block.source?.endpoint,
+                }}
+                query={{
+                  where: block.query?.where,
+                  sort: block.query?.sort,
+                  limit: block.query?.limit,
+                  depth: block.query?.depth,
+                }}
+                transform={{
+                  type: block.transform?.type || 'none',
+                  field: block.transform?.field,
+                }}
+                refreshInterval={block.refreshInterval}
+                children={block.children}
+              />
+            )
+
+          case 'statCard':
+            return (
+              <StatCardBlock
+                key={index}
+                title={block.title}
+                description={block.description}
+                icon={block.icon}
+                staticValue={block.staticValue}
+                format={block.format}
+                trend={block.trend}
+                variant={block.variant}
+                size={block.size}
               />
             )
 

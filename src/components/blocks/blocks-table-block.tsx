@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import qs from 'qs'
 import { BlocksTable, type RowAction, type CustomColumn } from './blocks-table'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useDataByKey } from './data-context'
 
 type BlocksTableBlockProps = {
   /** Table title */
@@ -84,13 +85,23 @@ type BlocksTableBlockProps = {
    * // Table 2: urlGroup="orders" -> ?orders[page]=2&orders[limit]=25
    */
   urlGroup?: string
+  /**
+   * Use external data from DataFetch context instead of fetching internally.
+   * When true, the table will use data from the specified dataKey.
+   */
+  useExternalData?: boolean
+  /**
+   * Data key to reference from DataFetch context.
+   * Required when useExternalData is true.
+   */
+  dataKey?: string
 }
 
 export function BlocksTableBlock({
   title,
   description,
   limit = 10,
-  columns,
+  columns: columnsProp,
   collection = 'components',
   searchFields,
   filterFields,
@@ -110,8 +121,35 @@ export function BlocksTableBlock({
   onDelete,
   syncUrl = false,
   urlGroup,
+  useExternalData = false,
+  dataKey,
 }: BlocksTableBlockProps) {
   const searchParams = useSearchParams()
+
+  // Parse columns if it's a JSON string
+  const columns = React.useMemo(() => {
+    if (!columnsProp) return undefined
+    
+    // If it's already an array, return as is
+    if (Array.isArray(columnsProp)) {
+      return columnsProp
+    }
+    
+    // If it's a string, try to parse as JSON
+    if (typeof columnsProp === 'string') {
+      try {
+        return JSON.parse(columnsProp)
+      } catch (e) {
+        console.warn('Failed to parse columns JSON:', e)
+        return undefined
+      }
+    }
+    
+    return columnsProp
+  }, [columnsProp])
+
+  // Get external data from context if useExternalData is true
+  const externalData = useDataByKey(dataKey || '')
 
   // Parse initial state from URL when syncUrl is enabled
   const getInitialUrlState = React.useCallback(() => {
@@ -132,9 +170,9 @@ export function BlocksTableBlock({
 
   const initialUrlState = getInitialUrlState()
 
-  const [data, setData] = React.useState<any[]>([])
-  const [loading, setLoading] = React.useState(true)
-  const [error, setError] = React.useState<string | null>(null)
+  const [internalData, setInternalData] = React.useState<any[]>([])
+  const [internalLoading, setInternalLoading] = React.useState(!useExternalData)
+  const [internalError, setInternalError] = React.useState<string | null>(null)
   const [pagination, setPagination] = React.useState({
     page: initialUrlState.page,
     limit: initialUrlState.limit,
@@ -144,11 +182,34 @@ export function BlocksTableBlock({
     hasPrevPage: false,
   })
 
+  // Determine which data source to use
+  const data = useExternalData ? externalData.docs || externalData.data || [] : internalData
+  const loading = useExternalData ? externalData.loading : internalLoading
+  const error = useExternalData ? externalData.error : internalError
+
+  // Update pagination when using external data
+  React.useEffect(() => {
+    if (useExternalData && externalData.data) {
+      const docs = externalData.docs || externalData.data || []
+      const totalDocs = externalData.count ?? docs.length
+      setPagination((prev) => ({
+        ...prev,
+        totalDocs,
+        totalPages: Math.ceil(totalDocs / prev.limit) || 1,
+        hasNextPage: prev.page < Math.ceil(totalDocs / prev.limit),
+        hasPrevPage: prev.page > 1,
+      }))
+    }
+  }, [useExternalData, externalData])
+
   const fetchBlocks = React.useCallback(
     async (page: number = 1, pageLimit: number = limit) => {
+      // Skip fetch if using external data
+      if (useExternalData) return
+
       try {
-        setLoading(true)
-        setError(null)
+        setInternalLoading(true)
+        setInternalError(null)
 
         const params = new URLSearchParams({
           collection: collection,
@@ -202,7 +263,7 @@ export function BlocksTableBlock({
         const blocksData = Array.isArray(result.data) ? result.data : []
         console.log('Processed blocks:', blocksData.length)
 
-        setData(blocksData)
+        setInternalData(blocksData)
         setPagination(
           result.pagination || {
             page: 1,
@@ -214,41 +275,55 @@ export function BlocksTableBlock({
           },
         )
       } catch (err: any) {
-        setError(err.message || 'Failed to load blocks')
+        setInternalError(err.message || 'Failed to load blocks')
         console.error('Error fetching blocks:', err)
       } finally {
-        setLoading(false)
+        setInternalLoading(false)
       }
     },
-    [limit, collection, searchFields, populate, select, defaultSort],
+    [limit, collection, searchFields, populate, select, defaultSort, useExternalData],
   )
 
   React.useEffect(() => {
-    fetchBlocks(initialUrlState.page, initialUrlState.limit)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!useExternalData) {
+      fetchBlocks(initialUrlState.page, initialUrlState.limit)
+    }
+  }, [useExternalData]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePageChange = (newPage: number) => {
-    fetchBlocks(newPage, pagination.limit)
+    // Update pagination state immediately for URL sync
+    setPagination((prev) => ({ ...prev, page: newPage }))
+    if (!useExternalData) {
+      fetchBlocks(newPage, pagination.limit)
+    }
   }
 
   const handleLimitChange = (newLimit: number) => {
-    fetchBlocks(1, newLimit)
+    // Update pagination state immediately for URL sync
+    setPagination((prev) => ({ ...prev, page: 1, limit: newLimit }))
+    if (!useExternalData) {
+      fetchBlocks(1, newLimit)
+    }
   }
 
   const handleFilterChange = React.useCallback(
     (filters: Record<string, string>) => {
       // Re-fetch with new filters
-      fetchBlocks(1, pagination.limit)
+      if (!useExternalData) {
+        fetchBlocks(1, pagination.limit)
+      }
     },
-    [fetchBlocks, pagination.limit],
+    [fetchBlocks, pagination.limit, useExternalData],
   )
 
   const handleSearchChange = React.useCallback(
     (search: string) => {
       // Re-fetch with new search
-      fetchBlocks(1, pagination.limit)
+      if (!useExternalData) {
+        fetchBlocks(1, pagination.limit)
+      }
     },
-    [fetchBlocks, pagination.limit],
+    [fetchBlocks, pagination.limit, useExternalData],
   )
 
   if (loading && data.length === 0) {
@@ -289,9 +364,11 @@ export function BlocksTableBlock({
       )}
       {data.length === 0 && !loading ? (
         <div className="rounded-lg border border-muted bg-muted/50 p-8 text-center">
-          <p className="text-muted-foreground mb-2">No blocks found.</p>
+          <p className="text-muted-foreground mb-2">No data found.</p>
           <p className="text-sm text-muted-foreground">
-            Components collection is empty. Run the seed script to populate data.
+            {useExternalData
+              ? `No data available from "${dataKey}" context.`
+              : 'Collection is empty. Run the seed script to populate data.'}
           </p>
         </div>
       ) : (

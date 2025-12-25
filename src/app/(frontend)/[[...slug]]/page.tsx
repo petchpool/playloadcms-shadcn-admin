@@ -5,8 +5,15 @@ import { parseHost } from '@/layouts/utils/parse-host'
 import { headers } from 'next/headers'
 import { PageContentRenderer } from '@/components/blocks/page-content-renderer'
 
-export default async function Page({ params }: { params: Promise<{ slug?: string[] }> }) {
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug?: string[] }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
   const resolvedParams = await params
+  const resolvedSearchParams = await searchParams
 
   // Skip static files
   const staticFiles = ['favicon.ico', 'robots.txt', 'sitemap.xml', '_next', 'api']
@@ -42,7 +49,28 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
   const slug = resolvedParams.slug?.join('/') || ''
   console.log('slug', slug)
 
+  // Detect locale from:
+  // 1. URL query parameter (?locale=th)
+  // 2. Accept-Language header
+  // 3. Default to 'en'
+  const supportedLocales = ['en', 'th']
+  const queryLocale =
+    typeof resolvedSearchParams.locale === 'string' ? resolvedSearchParams.locale : undefined
+  const headerLocale = headersList.get('accept-language')?.split(',')[0]?.split('-')[0]
+  const detectedLocale =
+    (queryLocale && supportedLocales.includes(queryLocale)
+      ? queryLocale
+      : headerLocale && supportedLocales.includes(headerLocale)
+        ? headerLocale
+        : 'en') || 'en'
+
+  console.log('Detected locale:', detectedLocale, {
+    queryLocale,
+    headerLocale,
+  })
+
   // Find page by slug (pages are shared across all sites)
+  // Use locale parameter to get localized content
   const pages = await payload.find({
     collection: 'pages',
     where: {
@@ -61,6 +89,8 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
     },
     limit: 1,
     depth: 3, // Increase depth to load component relationships
+    locale: detectedLocale as 'en' | 'th', // Specify locale for localized content
+    fallbackLocale: 'en', // Fallback to English if content not found
   })
 
   console.log('pages', pages)
@@ -80,7 +110,25 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
             <li>Domain: {siteData.site.domain}</li>
             <li>Layout Type: {siteData.layoutType}</li>
             <li>Site ID: {siteData.site.id}</li>
+            <li>Locale: {detectedLocale}</li>
           </ul>
+        </div>
+        <div className="mt-4">
+          <p className="text-sm text-muted-foreground mb-2">Try switching language:</p>
+          <div className="flex gap-2">
+            <a
+              href={`?locale=en`}
+              className="px-3 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+            >
+              English
+            </a>
+            <a
+              href={`?locale=th`}
+              className="px-3 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+            >
+              ไทย
+            </a>
+          </div>
         </div>
       </div>
     )
