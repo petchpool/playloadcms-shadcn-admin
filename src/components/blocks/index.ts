@@ -19,6 +19,20 @@ export {
   type ColumnType,
   type DataTableConfig,
 } from './data-table-columns'
+export {
+  renderCustomCell,
+  renderBlock,
+  renderBadge,
+  renderAvatar,
+  renderLink,
+  renderIcon,
+  renderText,
+  renderImage,
+  renderGroup,
+  parseTemplate,
+  getNestedValue,
+  getInitials,
+} from './cell-renderer'
 
 // Data Fetch & Context exports
 export {

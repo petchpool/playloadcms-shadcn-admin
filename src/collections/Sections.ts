@@ -393,7 +393,352 @@ export const Sections: CollectionConfig = {
                             },
                             {
                               name: 'columns',
-                              type: 'json',
+                              type: 'array',
+                              admin: {
+                                description: 'Table columns configuration',
+                              },
+                              fields: [
+                                {
+                                  name: 'key',
+                                  type: 'text',
+                                  required: true,
+                                  admin: {
+                                    description: 'Unique column identifier',
+                                  },
+                                },
+                                {
+                                  name: 'label',
+                                  type: 'text',
+                                  required: true,
+                                  admin: {
+                                    description: 'Column header label',
+                                  },
+                                },
+                                {
+                                  name: 'accessor',
+                                  type: 'text',
+                                  admin: {
+                                    description:
+                                      'Custom accessor (template: "{firstName} {lastName}", path: "user.email", or field: "email"). If not provided, uses key.',
+                                  },
+                                },
+                                {
+                                  name: 'sortable',
+                                  type: 'checkbox',
+                                  defaultValue: true,
+                                  admin: {
+                                    description: 'Enable sorting for this column',
+                                  },
+                                },
+                                {
+                                  name: 'type',
+                                  type: 'select',
+                                  options: [
+                                    { label: 'Text', value: 'text' },
+                                    { label: 'Number', value: 'number' },
+                                    { label: 'Date', value: 'date' },
+                                    { label: 'Boolean', value: 'boolean' },
+                                    { label: 'Badge', value: 'badge' },
+                                    { label: 'Custom', value: 'custom' },
+                                  ],
+                                  admin: {
+                                    description: 'Column display type',
+                                  },
+                                },
+                                {
+                                  name: 'width',
+                                  type: 'text',
+                                  admin: {
+                                    description: 'Column width (e.g., "200px", "20%")',
+                                  },
+                                },
+                                {
+                                  name: 'blocks',
+                                  type: 'blocks',
+                                  admin: {
+                                    description:
+                                      'Custom rendering blocks for this column. Use for complex cell content like avatars, badges, links, etc.',
+                                    condition: (data, siblingData) =>
+                                      siblingData?.type === 'custom',
+                                  },
+                                  blocks: [
+                                    {
+                                      slug: 'badge',
+                                      labels: {
+                                        singular: 'Badge',
+                                        plural: 'Badges',
+                                      },
+                                      fields: [
+                                        {
+                                          name: 'field',
+                                          type: 'text',
+                                          required: true,
+                                          admin: {
+                                            description: 'Field name to display',
+                                          },
+                                        },
+                                        {
+                                          name: 'variant',
+                                          type: 'select',
+                                          options: [
+                                            { label: 'Default', value: 'default' },
+                                            { label: 'Success', value: 'success' },
+                                            { label: 'Warning', value: 'warning' },
+                                            { label: 'Error', value: 'error' },
+                                            { label: 'Info', value: 'info' },
+                                          ],
+                                        },
+                                        {
+                                          name: 'colorMap',
+                                          type: 'json',
+                                          admin: {
+                                            description:
+                                              'Map field values to badge variants. Example: {"active": "success", "inactive": "error"}',
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    {
+                                      slug: 'avatar',
+                                      labels: {
+                                        singular: 'Avatar',
+                                        plural: 'Avatars',
+                                      },
+                                      fields: [
+                                        {
+                                          name: 'imageField',
+                                          type: 'text',
+                                          admin: {
+                                            description: 'Field containing image URL',
+                                          },
+                                        },
+                                        {
+                                          name: 'nameField',
+                                          type: 'text',
+                                          admin: {
+                                            description: 'Field for fallback initials',
+                                          },
+                                        },
+                                        {
+                                          name: 'size',
+                                          type: 'select',
+                                          defaultValue: 'md',
+                                          options: [
+                                            { label: 'Small', value: 'sm' },
+                                            { label: 'Medium', value: 'md' },
+                                            { label: 'Large', value: 'lg' },
+                                          ],
+                                        },
+                                      ],
+                                    },
+                                    {
+                                      slug: 'link',
+                                      labels: {
+                                        singular: 'Link',
+                                        plural: 'Links',
+                                      },
+                                      fields: [
+                                        {
+                                          name: 'textField',
+                                          type: 'text',
+                                          required: true,
+                                          admin: {
+                                            description: 'Field for link text',
+                                          },
+                                        },
+                                        {
+                                          name: 'urlField',
+                                          type: 'text',
+                                          admin: {
+                                            description: 'Field for URL (optional)',
+                                          },
+                                        },
+                                        {
+                                          name: 'urlPattern',
+                                          type: 'text',
+                                          admin: {
+                                            description:
+                                              'URL pattern template. Example: "/users/{id}"',
+                                          },
+                                        },
+                                        {
+                                          name: 'external',
+                                          type: 'checkbox',
+                                          admin: {
+                                            description: 'Open in new tab',
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    {
+                                      slug: 'icon',
+                                      labels: {
+                                        singular: 'Icon',
+                                        plural: 'Icons',
+                                      },
+                                      fields: [
+                                        {
+                                          name: 'iconField',
+                                          type: 'text',
+                                          admin: {
+                                            description: 'Field containing icon name',
+                                          },
+                                        },
+                                        {
+                                          name: 'iconMap',
+                                          type: 'json',
+                                          admin: {
+                                            description:
+                                              'Map field values to icon names. Example: {"user": "UserIcon", "admin": "ShieldIcon"}',
+                                          },
+                                        },
+                                        {
+                                          name: 'textField',
+                                          type: 'text',
+                                          admin: {
+                                            description: 'Field for text next to icon',
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    {
+                                      slug: 'text',
+                                      labels: {
+                                        singular: 'Text',
+                                        plural: 'Texts',
+                                      },
+                                      fields: [
+                                        {
+                                          name: 'field',
+                                          type: 'text',
+                                          required: true,
+                                          admin: {
+                                            description: 'Field name to display',
+                                          },
+                                        },
+                                        {
+                                          name: 'template',
+                                          type: 'text',
+                                          admin: {
+                                            description:
+                                              'Template string. Example: "{firstName} {lastName}"',
+                                          },
+                                        },
+                                        {
+                                          name: 'className',
+                                          type: 'text',
+                                          admin: {
+                                            description: 'CSS classes for styling',
+                                          },
+                                        },
+                                        {
+                                          name: 'truncate',
+                                          type: 'number',
+                                          admin: {
+                                            description: 'Max characters before truncating',
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    {
+                                      slug: 'image',
+                                      labels: {
+                                        singular: 'Image',
+                                        plural: 'Images',
+                                      },
+                                      fields: [
+                                        {
+                                          name: 'urlField',
+                                          type: 'text',
+                                          required: true,
+                                          admin: {
+                                            description: 'Field containing image URL',
+                                          },
+                                        },
+                                        {
+                                          name: 'altField',
+                                          type: 'text',
+                                          admin: {
+                                            description: 'Field for alt text',
+                                          },
+                                        },
+                                        {
+                                          name: 'width',
+                                          type: 'number',
+                                          defaultValue: 48,
+                                        },
+                                        {
+                                          name: 'height',
+                                          type: 'number',
+                                          defaultValue: 48,
+                                        },
+                                        {
+                                          name: 'rounded',
+                                          type: 'checkbox',
+                                          defaultValue: true,
+                                        },
+                                      ],
+                                    },
+                                    {
+                                      slug: 'group',
+                                      labels: {
+                                        singular: 'Group',
+                                        plural: 'Groups',
+                                      },
+                                      fields: [
+                                        {
+                                          name: 'direction',
+                                          type: 'select',
+                                          defaultValue: 'horizontal',
+                                          options: [
+                                            { label: 'Horizontal', value: 'horizontal' },
+                                            { label: 'Vertical', value: 'vertical' },
+                                          ],
+                                        },
+                                        {
+                                          name: 'gap',
+                                          type: 'select',
+                                          defaultValue: 'sm',
+                                          options: [
+                                            { label: 'None', value: 'none' },
+                                            { label: 'Small', value: 'sm' },
+                                            { label: 'Medium', value: 'md' },
+                                            { label: 'Large', value: 'lg' },
+                                          ],
+                                        },
+                                        {
+                                          name: 'items',
+                                          type: 'array',
+                                          fields: [
+                                            {
+                                              name: 'type',
+                                              type: 'select',
+                                              required: true,
+                                              options: [
+                                                { label: 'Text', value: 'text' },
+                                                { label: 'Badge', value: 'badge' },
+                                                { label: 'Avatar', value: 'avatar' },
+                                                { label: 'Icon', value: 'icon' },
+                                              ],
+                                            },
+                                            {
+                                              name: 'field',
+                                              type: 'text',
+                                            },
+                                            {
+                                              name: 'config',
+                                              type: 'json',
+                                              admin: {
+                                                description: 'Configuration for the item',
+                                              },
+                                            },
+                                          ],
+                                        },
+                                      ],
+                                    },
+                                  ],
+                                },
+                              ],
                             },
                             {
                               name: 'searchFields',

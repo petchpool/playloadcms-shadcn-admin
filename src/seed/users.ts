@@ -63,8 +63,25 @@ export async function seedUsers(roles: any[]) {
       })
 
       if (existing.docs.length > 0) {
-        console.log(`  ⏭️  User "${userData.email}" already exists, skipping...`)
-        createdUsers.push(existing.docs[0])
+        console.log(`  🔄 User "${userData.email}" already exists, updating...`)
+        // Get role IDs
+        const roleIds = userData.roles.filter(Boolean).map((r) => r.id)
+        
+        // Update existing user with firstName/lastName
+        const updatedUser = await payload.update({
+          collection: 'users',
+          id: existing.docs[0].id,
+          data: {
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            roles: roleIds,
+            status: userData.status,
+          },
+          overrideAccess: true,
+        })
+        
+        createdUsers.push(updatedUser)
+        console.log(`  ✅ Updated user: ${updatedUser.email}`)
         continue
       }
 

@@ -879,14 +879,189 @@ export interface Section {
                     | 'media'
                     | 'roles'
                     | 'permissions';
+                  /**
+                   * Table columns configuration
+                   */
                   columns?:
                     | {
-                        [k: string]: unknown;
-                      }
-                    | unknown[]
-                    | string
-                    | number
-                    | boolean
+                        /**
+                         * Unique column identifier
+                         */
+                        key: string;
+                        /**
+                         * Column header label
+                         */
+                        label: string;
+                        /**
+                         * Custom accessor (template: "{firstName} {lastName}", path: "user.email", or field: "email"). If not provided, uses key.
+                         */
+                        accessor?: string | null;
+                        /**
+                         * Enable sorting for this column
+                         */
+                        sortable?: boolean | null;
+                        /**
+                         * Column display type
+                         */
+                        type?: ('text' | 'number' | 'date' | 'boolean' | 'badge' | 'custom') | null;
+                        /**
+                         * Column width (e.g., "200px", "20%")
+                         */
+                        width?: string | null;
+                        /**
+                         * Custom rendering blocks for this column. Use for complex cell content like avatars, badges, links, etc.
+                         */
+                        blocks?:
+                          | (
+                              | {
+                                  /**
+                                   * Field name to display
+                                   */
+                                  field: string;
+                                  variant?: ('default' | 'success' | 'warning' | 'error' | 'info') | null;
+                                  /**
+                                   * Map field values to badge variants. Example: {"active": "success", "inactive": "error"}
+                                   */
+                                  colorMap?:
+                                    | {
+                                        [k: string]: unknown;
+                                      }
+                                    | unknown[]
+                                    | string
+                                    | number
+                                    | boolean
+                                    | null;
+                                  id?: string | null;
+                                  blockName?: string | null;
+                                  blockType: 'badge';
+                                }
+                              | {
+                                  /**
+                                   * Field containing image URL
+                                   */
+                                  imageField?: string | null;
+                                  /**
+                                   * Field for fallback initials
+                                   */
+                                  nameField?: string | null;
+                                  size?: ('sm' | 'md' | 'lg') | null;
+                                  id?: string | null;
+                                  blockName?: string | null;
+                                  blockType: 'avatar';
+                                }
+                              | {
+                                  /**
+                                   * Field for link text
+                                   */
+                                  textField: string;
+                                  /**
+                                   * Field for URL (optional)
+                                   */
+                                  urlField?: string | null;
+                                  /**
+                                   * URL pattern template. Example: "/users/{id}"
+                                   */
+                                  urlPattern?: string | null;
+                                  /**
+                                   * Open in new tab
+                                   */
+                                  external?: boolean | null;
+                                  id?: string | null;
+                                  blockName?: string | null;
+                                  blockType: 'link';
+                                }
+                              | {
+                                  /**
+                                   * Field containing icon name
+                                   */
+                                  iconField?: string | null;
+                                  /**
+                                   * Map field values to icon names. Example: {"user": "UserIcon", "admin": "ShieldIcon"}
+                                   */
+                                  iconMap?:
+                                    | {
+                                        [k: string]: unknown;
+                                      }
+                                    | unknown[]
+                                    | string
+                                    | number
+                                    | boolean
+                                    | null;
+                                  /**
+                                   * Field for text next to icon
+                                   */
+                                  textField?: string | null;
+                                  id?: string | null;
+                                  blockName?: string | null;
+                                  blockType: 'icon';
+                                }
+                              | {
+                                  /**
+                                   * Field name to display
+                                   */
+                                  field: string;
+                                  /**
+                                   * Template string. Example: "{firstName} {lastName}"
+                                   */
+                                  template?: string | null;
+                                  /**
+                                   * CSS classes for styling
+                                   */
+                                  className?: string | null;
+                                  /**
+                                   * Max characters before truncating
+                                   */
+                                  truncate?: number | null;
+                                  id?: string | null;
+                                  blockName?: string | null;
+                                  blockType: 'text';
+                                }
+                              | {
+                                  /**
+                                   * Field containing image URL
+                                   */
+                                  urlField: string;
+                                  /**
+                                   * Field for alt text
+                                   */
+                                  altField?: string | null;
+                                  width?: number | null;
+                                  height?: number | null;
+                                  rounded?: boolean | null;
+                                  id?: string | null;
+                                  blockName?: string | null;
+                                  blockType: 'image';
+                                }
+                              | {
+                                  direction?: ('horizontal' | 'vertical') | null;
+                                  gap?: ('none' | 'sm' | 'md' | 'lg') | null;
+                                  items?:
+                                    | {
+                                        type: 'text' | 'badge' | 'avatar' | 'icon';
+                                        field?: string | null;
+                                        /**
+                                         * Configuration for the item
+                                         */
+                                        config?:
+                                          | {
+                                              [k: string]: unknown;
+                                            }
+                                          | unknown[]
+                                          | string
+                                          | number
+                                          | boolean
+                                          | null;
+                                        id?: string | null;
+                                      }[]
+                                    | null;
+                                  id?: string | null;
+                                  blockName?: string | null;
+                                  blockType: 'group';
+                                }
+                            )[]
+                          | null;
+                        id?: string | null;
+                      }[]
                     | null;
                   searchFields?:
                     | {
@@ -1884,7 +2059,95 @@ export interface SectionsSelect<T extends boolean = true> {
                           dataKey?: T;
                           title?: T;
                           collection?: T;
-                          columns?: T;
+                          columns?:
+                            | T
+                            | {
+                                key?: T;
+                                label?: T;
+                                accessor?: T;
+                                sortable?: T;
+                                type?: T;
+                                width?: T;
+                                blocks?:
+                                  | T
+                                  | {
+                                      badge?:
+                                        | T
+                                        | {
+                                            field?: T;
+                                            variant?: T;
+                                            colorMap?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                      avatar?:
+                                        | T
+                                        | {
+                                            imageField?: T;
+                                            nameField?: T;
+                                            size?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                      link?:
+                                        | T
+                                        | {
+                                            textField?: T;
+                                            urlField?: T;
+                                            urlPattern?: T;
+                                            external?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                      icon?:
+                                        | T
+                                        | {
+                                            iconField?: T;
+                                            iconMap?: T;
+                                            textField?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                      text?:
+                                        | T
+                                        | {
+                                            field?: T;
+                                            template?: T;
+                                            className?: T;
+                                            truncate?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                      image?:
+                                        | T
+                                        | {
+                                            urlField?: T;
+                                            altField?: T;
+                                            width?: T;
+                                            height?: T;
+                                            rounded?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                      group?:
+                                        | T
+                                        | {
+                                            direction?: T;
+                                            gap?: T;
+                                            items?:
+                                              | T
+                                              | {
+                                                  type?: T;
+                                                  field?: T;
+                                                  config?: T;
+                                                  id?: T;
+                                                };
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                              };
                           searchFields?:
                             | T
                             | {

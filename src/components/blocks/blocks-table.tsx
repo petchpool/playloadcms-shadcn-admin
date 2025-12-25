@@ -82,6 +82,7 @@ import {
 } from '@/hooks/use-table-url-state'
 import { cn } from '@/lib/utils'
 import type { DateRange } from 'react-day-picker'
+import { renderCustomCell, parseTemplate, getNestedValue } from './cell-renderer'
 
 export type Block = {
   id: string
@@ -656,27 +657,56 @@ export function BlocksTable({
         if (typeof col === 'string') {
           return col
         }
-        // Handle object format: { key: 'name', label: 'Name', sortable: true }
+        // Handle object format: { key: 'name', label: 'Name', sortable: true, type: 'custom', blocks: [...] }
         return col.key || col.id || col
       })
-
-      console.log('🔍 BlocksTable - enabledColumns:', enabledColumns)
-      console.log('🔍 BlocksTable - columnKeys:', columnKeys)
-      console.log('🔍 BlocksTable - available columns:', Object.keys(allColumns))
 
       dataCols = columnKeys
         .filter((key: string) => key !== 'select')
         .map((key: string) => {
+          // Find column config from enabledColumns
+          const colConfig = enabledColumns.find(
+            (c: any) => typeof c === 'object' && (c.key === key || c.id === key),
+          )
+
+          // Check if this is a custom column with blocks or accessor
+          if (colConfig && typeof colConfig === 'object' && (colConfig.blocks || colConfig.accessor || colConfig.type === 'custom')) {
+            // Create custom column definition
+            const customCol: ColumnDef<Block> = {
+              id: key,
+              accessorKey: key,
+              header: ({ column }) => {
+                const label = colConfig.label || key
+                if (colConfig.sortable !== false) {
+                  return (
+                    <Button
+                      variant="ghost"
+                      onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                      className="h-8 px-2"
+                    >
+                      {label}
+                      <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  )
+                }
+                return label
+              },
+              cell: ({ row }) => {
+                return renderCustomCell(colConfig, row.original)
+              },
+              enableSorting: colConfig.sortable !== false,
+            }
+
+            return customCol
+          }
+
+          // Use predefined column from allColumns
           const col = allColumns[key]
           if (!col) {
-            console.warn(`⚠️ BlocksTable - Column "${key}" not found in allColumns`)
             return null
           }
 
           // If enabledColumns contains objects with custom labels, update header
-          const colConfig = enabledColumns.find(
-            (c: any) => typeof c === 'object' && (c.key === key || c.id === key),
-          )
           if (colConfig && typeof colConfig === 'object' && colConfig.label) {
             return {
               ...col,
@@ -688,8 +718,6 @@ export function BlocksTable({
         .filter(
           (col: ColumnDef<Block> | null | undefined) => col !== null && col !== undefined,
         ) as ColumnDef<Block>[]
-
-      console.log('🔍 BlocksTable - final dataCols:', dataCols.length, 'columns')
     }
 
     // Add custom columns
