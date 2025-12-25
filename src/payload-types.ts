@@ -846,52 +846,130 @@ export interface Section {
          */
         description?: string | null;
         /**
-         * Payload collection to fetch data from
+         * Collection to fetch data from
          */
-        collection: 'components' | 'sections' | 'layouts' | 'pages' | 'users';
+        collection: 'components' | 'sections' | 'pages' | 'layouts' | 'users' | 'media' | 'roles' | 'permissions';
         /**
-         * Column keys to display (e.g., name, type, status)
+         * Column configuration (JSON array). Leave empty for auto-detection. Example: [{"key":"name","label":"Name"},{"key":"status","label":"Status"}]
          */
         columns?:
           | {
-              /**
-               * Field name (e.g., name, type, category)
-               */
-              key: string;
-              id?: string | null;
-            }[]
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
           | null;
         /**
          * Items per page
          */
         limit?: number | null;
         /**
-         * Show status tabs header
+         * Fields to search in
+         */
+        searchFields?:
+          | {
+              field: string;
+              id?: string | null;
+            }[]
+          | null;
+        /**
+         * Filter configuration (JSON array). Example: [{"field":"status","label":"Status","type":"select","options":[{"label":"Draft","value":"draft"}]}]
+         */
+        filterFields?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        /**
+         * Relationship population settings
+         */
+        populate?: {
+          /**
+           * Population depth (0 = no population)
+           */
+          depth?: number | null;
+          /**
+           * Fields to populate
+           */
+          fields?:
+            | {
+                field?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+        };
+        /**
+         * Fields to select (comma-separated)
+         */
+        select?: string | null;
+        defaultSort?: {
+          /**
+           * Field to sort by
+           */
+          field?: string | null;
+          order?: ('asc' | 'desc') | null;
+        };
+        /**
+         * Show status filter tabs
          */
         showStatusTabs?: boolean | null;
         /**
-         * Allow single or multiple item selection
+         * Field to use for status tabs (default: status)
          */
-        selectionMode: 'single' | 'multiple';
+        statusTabsField?: string | null;
         /**
-         * Maximum number of items that can be selected (for multiple mode)
+         * Status tabs configuration (JSON array). Example: [{"value":"draft","label":"Draft","variant":"default"},{"value":"published","label":"Published","variant":"success"}]
          */
-        maxSelection?: number | null;
+        statusTabsConfig?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
         /**
-         * Show selection summary at the top
+         * Show action buttons (view, edit, delete)
          */
-        showSelectionSummary?: boolean | null;
+        showActions?: boolean | null;
         /**
-         * Enable URL sync for table state
+         * Default actions configuration (JSON object). Set to false to disable. Example: {"view":true,"edit":true,"delete":true,"copy":false}
+         */
+        defaultActions?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        /**
+         * Sync table state to URL parameters
          */
         syncUrl?: boolean | null;
         /**
-         * URL params namespace (required when multiple tables on same page)
+         * Group/namespace for URL params (for multiple tables on same page)
          */
         urlGroup?: string | null;
+        /**
+         * Use data from DataFetch context instead of fetching internally
+         */
+        useExternalData?: boolean | null;
+        /**
+         * Data key from DataFetch context (required if useExternalData is true)
+         */
+        dataKey?: string | null;
         id?: string | null;
         blockName?: string | null;
-        blockType: 'blocksTableSelection';
+        blockType: 'table';
       }
   )[];
   /**
@@ -1697,25 +1775,48 @@ export interface SectionsSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
-        blocksTableSelection?:
+        table?:
           | T
           | {
               title?: T;
               description?: T;
               collection?: T;
-              columns?:
+              columns?: T;
+              limit?: T;
+              searchFields?:
                 | T
                 | {
-                    key?: T;
+                    field?: T;
                     id?: T;
                   };
-              limit?: T;
+              filterFields?: T;
+              populate?:
+                | T
+                | {
+                    depth?: T;
+                    fields?:
+                      | T
+                      | {
+                          field?: T;
+                          id?: T;
+                        };
+                  };
+              select?: T;
+              defaultSort?:
+                | T
+                | {
+                    field?: T;
+                    order?: T;
+                  };
               showStatusTabs?: T;
-              selectionMode?: T;
-              maxSelection?: T;
-              showSelectionSummary?: T;
+              statusTabsField?: T;
+              statusTabsConfig?: T;
+              showActions?: T;
+              defaultActions?: T;
               syncUrl?: T;
               urlGroup?: T;
+              useExternalData?: T;
+              dataKey?: T;
               id?: T;
               blockName?: T;
             };

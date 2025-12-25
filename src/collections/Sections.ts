@@ -252,6 +252,222 @@ export const Sections: CollectionConfig = {
                     },
                   ],
                 },
+                {
+                  slug: 'table',
+                  labels: {
+                    singular: 'Data Table',
+                    plural: 'Data Tables',
+                  },
+                  fields: [
+                    {
+                      name: 'title',
+                      type: 'text',
+                      admin: {
+                        description: 'Table title (optional)',
+                      },
+                    },
+                    {
+                      name: 'description',
+                      type: 'textarea',
+                      admin: {
+                        description: 'Table description (optional)',
+                      },
+                    },
+                    {
+                      name: 'collection',
+                      type: 'select',
+                      required: true,
+                      defaultValue: 'components',
+                      options: [
+                        { label: 'Components', value: 'components' },
+                        { label: 'Sections', value: 'sections' },
+                        { label: 'Pages', value: 'pages' },
+                        { label: 'Layouts', value: 'layouts' },
+                        { label: 'Users', value: 'users' },
+                        { label: 'Media', value: 'media' },
+                        { label: 'Roles', value: 'roles' },
+                        { label: 'Permissions', value: 'permissions' },
+                      ],
+                      admin: {
+                        description: 'Collection to fetch data from',
+                      },
+                    },
+                    {
+                      name: 'columns',
+                      type: 'json',
+                      admin: {
+                        description:
+                          'Column configuration (JSON array). Leave empty for auto-detection. Example: [{"key":"name","label":"Name"},{"key":"status","label":"Status"}]',
+                      },
+                    },
+                    {
+                      name: 'limit',
+                      type: 'number',
+                      defaultValue: 10,
+                      admin: {
+                        description: 'Items per page',
+                      },
+                    },
+                    {
+                      name: 'searchFields',
+                      type: 'array',
+                      admin: {
+                        description: 'Fields to search in',
+                      },
+                      fields: [
+                        {
+                          name: 'field',
+                          type: 'text',
+                          required: true,
+                        },
+                      ],
+                    },
+                    {
+                      name: 'filterFields',
+                      type: 'json',
+                      admin: {
+                        description:
+                          'Filter configuration (JSON array). Example: [{"field":"status","label":"Status","type":"select","options":[{"label":"Draft","value":"draft"}]}]',
+                      },
+                    },
+                    {
+                      name: 'populate',
+                      type: 'group',
+                      admin: {
+                        description: 'Relationship population settings',
+                      },
+                      fields: [
+                        {
+                          name: 'depth',
+                          type: 'number',
+                          defaultValue: 0,
+                          admin: {
+                            description: 'Population depth (0 = no population)',
+                          },
+                        },
+                        {
+                          name: 'fields',
+                          type: 'array',
+                          admin: {
+                            description: 'Fields to populate',
+                          },
+                          fields: [
+                            {
+                              name: 'field',
+                              type: 'text',
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      name: 'select',
+                      type: 'text',
+                      admin: {
+                        description: 'Fields to select (comma-separated)',
+                        placeholder: 'name,slug,status,createdAt',
+                      },
+                    },
+                    {
+                      name: 'defaultSort',
+                      type: 'group',
+                      fields: [
+                        {
+                          name: 'field',
+                          type: 'text',
+                          admin: {
+                            description: 'Field to sort by',
+                            placeholder: 'createdAt',
+                          },
+                        },
+                        {
+                          name: 'order',
+                          type: 'select',
+                          options: [
+                            { label: 'Ascending', value: 'asc' },
+                            { label: 'Descending', value: 'desc' },
+                          ],
+                          defaultValue: 'desc',
+                        },
+                      ],
+                    },
+                    {
+                      name: 'showStatusTabs',
+                      type: 'checkbox',
+                      defaultValue: true,
+                      admin: {
+                        description: 'Show status filter tabs',
+                      },
+                    },
+                    {
+                      name: 'statusTabsField',
+                      type: 'text',
+                      admin: {
+                        description: 'Field to use for status tabs (default: status)',
+                        placeholder: 'status',
+                      },
+                    },
+                    {
+                      name: 'statusTabsConfig',
+                      type: 'json',
+                      admin: {
+                        description:
+                          'Status tabs configuration (JSON array). Example: [{"value":"draft","label":"Draft","variant":"default"},{"value":"published","label":"Published","variant":"success"}]',
+                      },
+                    },
+                    {
+                      name: 'showActions',
+                      type: 'checkbox',
+                      defaultValue: true,
+                      admin: {
+                        description: 'Show action buttons (view, edit, delete)',
+                      },
+                    },
+                    {
+                      name: 'defaultActions',
+                      type: 'json',
+                      admin: {
+                        description:
+                          'Default actions configuration (JSON object). Set to false to disable. Example: {"view":true,"edit":true,"delete":true,"copy":false}',
+                      },
+                    },
+                    {
+                      name: 'syncUrl',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      admin: {
+                        description: 'Sync table state to URL parameters',
+                      },
+                    },
+                    {
+                      name: 'urlGroup',
+                      type: 'text',
+                      admin: {
+                        description:
+                          'Group/namespace for URL params (for multiple tables on same page)',
+                        placeholder: 'table1',
+                      },
+                    },
+                    {
+                      name: 'useExternalData',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      admin: {
+                        description:
+                          'Use data from DataFetch context instead of fetching internally',
+                      },
+                    },
+                    {
+                      name: 'dataKey',
+                      type: 'text',
+                      admin: {
+                        description:
+                          'Data key from DataFetch context (required if useExternalData is true)',
+                        placeholder: 'myData',
+                      },
+                    },
+                  ],
+                },
               ],
             },
             {

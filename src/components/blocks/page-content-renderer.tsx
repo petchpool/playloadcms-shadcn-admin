@@ -7,27 +7,31 @@ import { StatCardBlock } from './stat-card-block'
 import { SectionRefRenderer } from './section-ref-renderer'
 
 export type PageContentRendererProps = {
-  content: any[] // Accept any block content array
+  content?: any[] // Accept any block content array
+  blocks?: any[] // Alternative prop name for compatibility
 }
 
 /**
  * Render page content blocks
  */
-export function PageContentRenderer({ content }: PageContentRendererProps) {
-  if (!content || !Array.isArray(content)) {
-    console.log('PageContentRenderer: No content or not an array', content)
+export function PageContentRenderer({ content, blocks }: PageContentRendererProps) {
+  // Support both 'content' and 'blocks' prop names
+  const items = content || blocks
+  
+  if (!items || !Array.isArray(items)) {
+    console.log('PageContentRenderer: No content or not an array', items)
     return null
   }
 
-  console.log('PageContentRenderer: Rendering', content.length, 'blocks')
+  console.log('PageContentRenderer: Rendering', items.length, 'blocks')
   console.log(
     'PageContentRenderer: Block types:',
-    content.map((b) => b.blockType),
+    items.map((b) => b.blockType),
   )
 
   return (
     <div className="page-content space-y-8">
-      {content.map((block, index) => {
+      {items.map((block, index) => {
         console.log(`Rendering block ${index}:`, block.blockType, block)
         switch (block.blockType) {
           case 'richText':
@@ -200,7 +204,8 @@ export function PageContentRenderer({ content }: PageContentRendererProps) {
               </div>
             )
 
-          case 'blocksTable':
+          case 'table':
+          case 'blocksTable': // Backward compatibility
             console.log('Rendering blocksTable block:', {
               title: block.title,
               description: block.description,
@@ -211,7 +216,15 @@ export function PageContentRenderer({ content }: PageContentRendererProps) {
               filterFields: block.filterFields,
               populate: block.populate,
               defaultSort: block.defaultSort,
-              urlSettings: block.urlSettings,
+              showStatusTabs: block.showStatusTabs,
+              statusTabsField: block.statusTabsField,
+              statusTabsConfig: block.statusTabsConfig,
+              showActions: block.showActions,
+              defaultActions: block.defaultActions,
+              syncUrl: block.syncUrl,
+              urlGroup: block.urlGroup,
+              useExternalData: block.useExternalData,
+              dataKey: block.dataKey,
             })
             return (
               <BlocksTableBlock
@@ -221,12 +234,33 @@ export function PageContentRenderer({ content }: PageContentRendererProps) {
                 limit={block.limit || 10}
                 columns={block.columns}
                 collection={block.collection || 'components'}
-                searchFields={block.searchFields}
+                searchFields={
+                  block.searchFields
+                    ? block.searchFields.map((sf: any) =>
+                        typeof sf === 'object' && sf.field ? sf.field : sf,
+                      )
+                    : undefined
+                }
                 filterFields={block.filterFields}
-                populate={block.populate}
+                populate={{
+                  depth: block.populate?.depth || 0,
+                  fields: block.populate?.fields
+                    ? block.populate.fields.map((f: any) =>
+                        typeof f === 'object' && f.field ? f.field : f,
+                      )
+                    : undefined,
+                }}
+                select={block.select}
                 defaultSort={block.defaultSort}
-                syncUrl={block.urlSettings?.syncUrl ?? false}
-                urlGroup={block.urlSettings?.urlGroup}
+                showStatusTabs={block.showStatusTabs ?? true}
+                statusTabsField={block.statusTabsField}
+                statusTabsConfig={block.statusTabsConfig}
+                showActions={block.showActions ?? true}
+                defaultActions={block.defaultActions}
+                syncUrl={block.syncUrl ?? false}
+                urlGroup={block.urlGroup}
+                useExternalData={block.useExternalData ?? false}
+                dataKey={block.dataKey}
               />
             )
 
@@ -331,18 +365,40 @@ export function PageContentRenderer({ content }: PageContentRendererProps) {
             )
 
           case 'heading':
-            const HeadingTag = (block.level || 'h2') as keyof JSX.IntrinsicElements
+            const level = block.level || 'h2'
             const alignClass =
               block.align === 'center'
                 ? 'text-center'
                 : block.align === 'right'
                   ? 'text-right'
                   : 'text-left'
-            return (
-              <HeadingTag key={index} className={`heading-block ${alignClass}`}>
-                {block.text}
-              </HeadingTag>
-            )
+            
+            // Render heading based on level
+            if (level === 'h1') {
+              return (
+                <h1 key={index} className={`heading-block ${alignClass}`}>
+                  {block.text}
+                </h1>
+              )
+            } else if (level === 'h3') {
+              return (
+                <h3 key={index} className={`heading-block ${alignClass}`}>
+                  {block.text}
+                </h3>
+              )
+            } else if (level === 'h4') {
+              return (
+                <h4 key={index} className={`heading-block ${alignClass}`}>
+                  {block.text}
+                </h4>
+              )
+            } else {
+              return (
+                <h2 key={index} className={`heading-block ${alignClass}`}>
+                  {block.text}
+                </h2>
+              )
+            }
 
           default:
             return (
