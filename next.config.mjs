@@ -6,6 +6,15 @@ const nextConfig = {
   // Moved from experimental to root level per Next.js 16.1.1 requirements
   cacheComponents: true,
 
+  // Required for Docker deployment
+  output: 'standalone',
+
+  // Include Payload CMS files in the standalone output
+  outputFileTracingIncludes: {
+    '/api/**/*': ['./src/**/*'],
+    '/*': ['./public/**/*'],
+  },
+
   // Your Next.js config here
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
