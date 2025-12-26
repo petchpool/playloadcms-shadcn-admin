@@ -25,6 +25,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Create public directory if it doesn't exist
+RUN mkdir -p public
+
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
@@ -34,8 +37,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # These can be dummy values for build time
 ARG DATABASE_URL
 ARG PAYLOAD_SECRET
-ENV DATABASE_URL=${DATABASE_URL:-"mongodb://localhost:27017/dummy"}
-ENV PAYLOAD_SECRET=${PAYLOAD_SECRET:-"dummy-secret-for-build"}
+ENV DATABASE_URL=${DATABASE_URL:-"postgresql://dummy:dummy@localhost:5432/dummy"}
+ENV PAYLOAD_SECRET=${PAYLOAD_SECRET:-"dummy-secret-for-build-minimum-32-characters"}
 
 RUN \
   if [ -f yarn.lock ]; then yarn run build; \
@@ -54,8 +57,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy public folder
-COPY --from=builder /app/public ./public
+# Copy public folder (created in builder stage if not exists)
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 # Set the correct permission for prerender cache
 RUN mkdir .next
