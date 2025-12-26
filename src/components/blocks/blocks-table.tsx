@@ -335,26 +335,85 @@ export function BlocksTable({
   const statusTabs = React.useMemo(() => {
     // If external stats are provided, use them instead of client-side counting
     if (externalStats) {
+      // Debug logging
+      console.log('Using external stats:', externalStats)
+      console.log('Status tabs config:', statusTabsConfig)
+
       // Calculate total from external stats
       const total = Object.values(externalStats).reduce((sum, count) => sum + count, 0)
-      
-      return [
+
+      // Helper function to format label (capitalize first letter)
+      const formatLabel = (value: string) => {
+        return value.charAt(0).toUpperCase() + value.slice(1)
+      }
+
+      // Helper function to get variant based on value
+      const getVariant = (value: string): StatusTab['variant'] => {
+        const lowerValue = value.toLowerCase()
+        if (lowerValue === 'published' || lowerValue === 'active') return 'success'
+        if (lowerValue === 'draft' || lowerValue === 'pending') return 'warning'
+        if (lowerValue === 'inactive' || lowerValue === 'suspended' || lowerValue === 'archived')
+          return 'destructive'
+        return 'secondary'
+      }
+
+      // If statusTabsConfig is provided, use it (but include all values from externalStats)
+      if (statusTabsConfig && statusTabsConfig.length > 0) {
+        // Create a map of configured tabs
+        const configMap = new Map(statusTabsConfig.map((c) => [c.value, c]))
+
+        // Get all unique values from externalStats
+        const allValues = new Set([
+          ...statusTabsConfig.map((c) => c.value),
+          ...Object.keys(externalStats),
+        ])
+
+        const tabs = [
+          {
+            label: allTabLabel,
+            value: 'all',
+            count: total,
+          },
+          ...Array.from(allValues).map((value) => {
+            const config = configMap.get(value)
+            const count = externalStats[value] ?? 0
+            return {
+              label: config?.label || formatLabel(value),
+              value,
+              count,
+              variant: config?.variant || getVariant(value),
+              badgeClassName: config?.badgeClassName,
+            }
+          }),
+        ]
+
+        console.log('Generated status tabs (with config):', tabs)
+        return tabs
+      }
+
+      // If no statusTabsConfig, generate tabs automatically from externalStats
+      const tabs = [
         {
           label: allTabLabel,
           value: 'all',
           count: total,
         },
-        ...statusTabsConfig.map((config) => ({
-          label: config.label,
-          value: config.value,
-          count: externalStats[config.value] || 0,
-          variant: config.variant,
-          badgeClassName: config.badgeClassName,
-        })),
+        ...Object.entries(externalStats)
+          .filter(([_, count]) => count > 0) // Only show tabs with count > 0
+          .map(([value, count]) => ({
+            label: formatLabel(value),
+            value,
+            count,
+            variant: getVariant(value) as StatusTab['variant'],
+          })),
       ]
+
+      console.log('Generated status tabs (auto):', tabs)
+      return tabs
     }
 
     // Otherwise, use client-side counting (original behavior)
+    console.log('Using client-side counting (no external stats)')
     return generateStatusTabs(data, statusTabsField as keyof (typeof data)[0], {
       statuses: statusTabsConfig,
       defaultStatus: 'draft',
@@ -698,7 +757,11 @@ export function BlocksTable({
           )
 
           // Check if this is a custom column with blocks or accessor
-          if (colConfig && typeof colConfig === 'object' && (colConfig.blocks || colConfig.accessor || colConfig.type === 'custom')) {
+          if (
+            colConfig &&
+            typeof colConfig === 'object' &&
+            (colConfig.blocks || colConfig.accessor || colConfig.type === 'custom')
+          ) {
             // Create custom column definition
             const customCol: ColumnDef<Block> = {
               id: key,

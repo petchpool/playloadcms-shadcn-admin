@@ -4,6 +4,7 @@ import * as React from 'react'
 import { DataProvider, useData, applyTransform, type TransformType } from './data-context'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle } from 'lucide-react'
+import { useCollectionStats } from '@/hooks/use-collection-stats'
 
 /**
  * Source configuration for data fetching
@@ -133,6 +134,34 @@ export function DataFetchBlock({
     }
     return []
   }, [source, sources])
+
+  // Determine stats collection (use statsCollection from config or first source collection)
+  const statsCollection = React.useMemo(() => {
+    if (statsConfig?.statsCollection) {
+      return statsConfig.statsCollection
+    }
+    // Auto-detect from first collection source
+    const firstCollectionSource = normalizedSources.find((s) => s.type === 'collection')
+    return firstCollectionSource?.collection
+  }, [statsConfig?.statsCollection, normalizedSources])
+
+  // Memoize values array for stats
+  const statsValues = React.useMemo(() => {
+    if (!statsConfig?.includeValues) return undefined
+    return statsConfig.includeValues.map((v) => v.value)
+  }, [statsConfig?.includeValues])
+
+  // Fetch stats if enabled
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+    error: statsError,
+  } = useCollectionStats({
+    collection: statsCollection || '',
+    groupBy: statsConfig?.groupBy || 'status',
+    values: statsValues,
+    enabled: fetchStats && Boolean(statsCollection),
+  })
 
   const fetchSingleSource = React.useCallback(
     async (sourceConfig: DataSource): Promise<any> => {
@@ -315,8 +344,33 @@ export function DataFetchBlock({
       }
     }
 
+    // Store stats data if fetched
+    if (fetchStats && statsData) {
+      const statsKey = statsConfig?.statsDataKey || 'stats'
+      baseContext[statsKey] = {
+        stats: statsData.stats,
+        total: statsData.total,
+        collection: statsData.collection,
+        groupBy: statsData.groupBy,
+        loading: statsLoading,
+        error: statsError ?? undefined,
+      }
+    }
+
     return baseContext
-  }, [parentData, dataKey, fetchedData, loading, error, mergeStrategy])
+  }, [
+    parentData,
+    dataKey,
+    fetchedData,
+    loading,
+    error,
+    mergeStrategy,
+    fetchStats,
+    statsData,
+    statsConfig?.statsDataKey,
+    statsLoading,
+    statsError,
+  ])
 
   // Loading state
   if (loading && showLoading && !fetchedData) {
@@ -508,8 +562,9 @@ function BlocksTableBlockRenderer(props: any) {
         {...props}
         useExternalData={props.useExternalData !== false}
         dataKey={props.dataKey}
-        fetchStats={props.fetchStats}
+        fetchStats={props.fetchStats || false}
         statsConfig={props.statsConfig}
+        useParentStats={props.useExternalData !== false && props.fetchStats !== false}
       />
     </React.Suspense>
   )

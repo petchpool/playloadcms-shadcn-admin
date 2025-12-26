@@ -237,6 +237,9 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
                 urlGroup={block.urlGroup}
                 useExternalData={block.useExternalData ?? false}
                 dataKey={block.dataKey}
+                fetchStats={block.fetchStats}
+                statsConfig={block.statsConfig}
+                useParentStats={block.useParentStats ?? false}
               />
             )
 

@@ -426,11 +426,33 @@ export const Blocks: CollectionConfig = {
                       },
                       fields: [
                         {
+                          name: 'statsCollection',
+                          type: 'select',
+                          admin: {
+                            description:
+                              'Collection to fetch stats from (defaults to first source collection)',
+                          },
+                          options: [
+                            { label: 'Auto (Use first source)', value: '' },
+                            { label: 'Blocks', value: 'blocks' },
+                            { label: 'Pages', value: 'pages' },
+                            { label: 'Layouts', value: 'layouts' },
+                            { label: 'Users', value: 'users' },
+                            { label: 'Media', value: 'media' },
+                            { label: 'Roles', value: 'roles' },
+                            { label: 'Permissions', value: 'permissions' },
+                            { label: 'Themes', value: 'themes' },
+                            { label: 'Sites', value: 'sites' },
+                            { label: 'Languages', value: 'languages' },
+                          ],
+                        },
+                        {
                           name: 'groupBy',
                           type: 'text',
                           required: true,
                           admin: {
-                            description: 'Field to group by for counting (e.g., "status", "type")',
+                            description:
+                              'Field to group by for counting (e.g., "status", "pageStatus", "type")',
                             placeholder: 'status',
                           },
                         },
@@ -447,7 +469,7 @@ export const Blocks: CollectionConfig = {
                           type: 'array',
                           admin: {
                             description:
-                              'Specific values to count (leave empty to count all unique values)',
+                              'Specific values to count (leave empty to count all unique values automatically)',
                           },
                           fields: [
                             {
@@ -456,6 +478,15 @@ export const Blocks: CollectionConfig = {
                               required: true,
                             },
                           ],
+                        },
+                        {
+                          name: 'autoGenerateTabs',
+                          type: 'checkbox',
+                          defaultValue: true,
+                          admin: {
+                            description:
+                              'Automatically generate tabs from stats data (if disabled, only show tabs from statusTabsConfig)',
+                          },
                         },
                       ],
                     },
@@ -878,6 +909,18 @@ export const Blocks: CollectionConfig = {
                               },
                             },
                             {
+                              name: 'useParentStats',
+                              type: 'checkbox',
+                              defaultValue: false,
+                              admin: {
+                                description:
+                                  'Use stats from parent DataFetch block (requires fetchStats enabled in parent)',
+                                condition: (data, siblingData) =>
+                                  siblingData?.showStatusTabs === true &&
+                                  siblingData?.useExternalData === true,
+                              },
+                            },
+                            {
                               name: 'statusTabsField',
                               type: 'text',
                               defaultValue: 'status',
@@ -1141,6 +1184,18 @@ export const Blocks: CollectionConfig = {
                       defaultValue: true,
                       admin: {
                         description: 'Show filter tabs with count statistics',
+                      },
+                    },
+                    {
+                      name: 'useParentStats',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      admin: {
+                        description:
+                          'Use stats from parent DataFetch block (requires fetchStats enabled in parent)',
+                        condition: (data, siblingData) =>
+                          siblingData?.showStatusTabs === true &&
+                          siblingData?.useExternalData === true,
                       },
                     },
                     {

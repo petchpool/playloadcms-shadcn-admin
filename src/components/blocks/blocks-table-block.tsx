@@ -108,6 +108,10 @@ type BlocksTableBlockProps = {
     statsDataKey?: string
     includeValues?: Array<{ value: string }>
   }
+  /**
+   * Use stats from parent DataFetch block
+   */
+  useParentStats?: boolean
 }
 
 export function BlocksTableBlock({
@@ -138,8 +142,26 @@ export function BlocksTableBlock({
   dataKey,
   fetchStats = false,
   statsConfig,
+  useParentStats = false,
 }: BlocksTableBlockProps) {
   const searchParams = useSearchParams()
+
+  // Get external data from context if useExternalData is true
+  const externalData = useDataByKey(dataKey || '')
+
+  // Get stats key from config
+  const statsKey = React.useMemo(() => {
+    return statsConfig?.statsDataKey || 'stats'
+  }, [statsConfig?.statsDataKey])
+
+  // Get stats from parent context (always call hook at top level)
+  const parentStatsRaw = useDataByKey(statsKey)
+
+  // Only use parent stats if useParentStats is enabled
+  const parentStats = React.useMemo(() => {
+    if (!useParentStats || !useExternalData) return null
+    return parentStatsRaw
+  }, [useParentStats, useExternalData, parentStatsRaw])
 
   // Memoize values array to prevent unnecessary re-fetches
   const statsValues = React.useMemo(() => {
@@ -147,7 +169,7 @@ export function BlocksTableBlock({
     return statsConfig.includeValues.map((v) => v.value)
   }, [statsConfig?.includeValues])
 
-  // Fetch stats if enabled
+  // Fetch stats if enabled (only if not using parent stats)
   const {
     data: statsData,
     isLoading: statsLoading,
@@ -156,18 +178,60 @@ export function BlocksTableBlock({
     collection,
     groupBy: statsConfig?.groupBy || statusTabsField || 'status',
     values: statsValues,
-    enabled: fetchStats && showStatusTabs,
+    enabled: fetchStats && showStatusTabs && !useParentStats,
   })
+
+  // Use parent stats if available, otherwise use fetched stats
+  const finalStatsData = React.useMemo(() => {
+    if (useParentStats && parentStats && 'stats' in parentStats && parentStats.stats) {
+      return { stats: parentStats.stats as Record<string, number> }
+    }
+    return statsData
+  }, [useParentStats, parentStats, statsData])
+
+  const finalStatsLoading = useParentStats ? parentStats?.loading : statsLoading
+  const finalStatsError = useParentStats ? parentStats?.error : statsError
+
+  // Debug logging
+  React.useEffect(() => {
+    if (fetchStats && showStatusTabs) {
+      console.log('Stats config:', {
+        useParentStats,
+        collection,
+        groupBy: statsConfig?.groupBy || statusTabsField || 'status',
+        values: statsValues,
+        enabled: fetchStats && showStatusTabs && !useParentStats,
+      })
+      console.log('Parent stats:', parentStats)
+      console.log('Fetched stats:', statsData)
+      console.log('Final stats:', finalStatsData)
+      console.log('Stats loading:', finalStatsLoading)
+      console.log('Stats error:', finalStatsError)
+    }
+  }, [
+    fetchStats,
+    showStatusTabs,
+    useParentStats,
+    collection,
+    statsConfig,
+    statusTabsField,
+    statsValues,
+    parentStats,
+    statsData,
+    finalStatsData,
+    finalStatsLoading,
+    finalStatsError,
+  ])
 
   // Parse columns if it's a JSON string
   const columns = React.useMemo(() => {
     if (!columnsProp) return undefined
-    
+
     // If it's already an array, return as is
     if (Array.isArray(columnsProp)) {
       return columnsProp
     }
-    
+
     // If it's a string, try to parse as JSON
     if (typeof columnsProp === 'string') {
       try {
@@ -177,12 +241,9 @@ export function BlocksTableBlock({
         return undefined
       }
     }
-    
+
     return columnsProp
   }, [columnsProp])
-
-  // Get external data from context if useExternalData is true
-  const externalData = useDataByKey(dataKey || '')
 
   // Parse initial state from URL when syncUrl is enabled
   const getInitialUrlState = React.useCallback(() => {
@@ -429,8 +490,8 @@ export function BlocksTableBlock({
           onDelete={onDelete}
           syncUrl={syncUrl}
           urlGroup={urlGroup}
-          externalStats={fetchStats ? statsData?.stats : undefined}
-          statsLoading={statsLoading}
+          externalStats={fetchStats && finalStatsData?.stats ? finalStatsData.stats : undefined}
+          statsLoading={finalStatsLoading}
         />
       )}
     </div>

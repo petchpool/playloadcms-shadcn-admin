@@ -361,6 +361,12 @@ export async function seedPagesWithBlocks() {
           query: {
             limit: 20,
           },
+          fetchStats: true,
+          statsConfig: {
+            statsCollection: 'pages' as const,
+            groupBy: 'pageStatus',
+            autoGenerateTabs: true,
+          },
           children: [
             {
               blockType: 'blocksTable' as const,
@@ -368,6 +374,9 @@ export async function seedPagesWithBlocks() {
               dataKey: 'pages',
               title: 'All Pages',
               collection: 'pages' as const,
+              showStatusTabs: true,
+              useParentStats: true,
+              statusTabsField: 'pageStatus',
               columns: [
                 {
                   key: 'title',
@@ -808,7 +817,7 @@ export async function seedPagesWithBlocks() {
           statsConfig: {
             groupBy: 'status',
             statsDataKey: 'userStats',
-            includeValues: [{ value: 'active' }, { value: 'inactive' }, { value: 'pending' }],
+            includeValues: [{ value: 'active' }, { value: 'inactive' }, { value: 'suspended' }],
           },
           children: [
             {
@@ -831,8 +840,8 @@ export async function seedPagesWithBlocks() {
                   variant: 'error' as const,
                 },
                 {
-                  value: 'pending' as const,
-                  label: 'Pending',
+                  value: 'suspended' as const,
+                  label: 'Suspended',
                   variant: 'warning' as const,
                 },
               ],

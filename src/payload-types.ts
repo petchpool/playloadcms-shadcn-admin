@@ -904,7 +904,25 @@ export interface Block {
          */
         statsConfig?: {
           /**
-           * Field to group by for counting (e.g., "status", "type")
+           * Collection to fetch stats from (defaults to first source collection)
+           */
+          statsCollection?:
+            | (
+                | ''
+                | 'blocks'
+                | 'pages'
+                | 'layouts'
+                | 'users'
+                | 'media'
+                | 'roles'
+                | 'permissions'
+                | 'themes'
+                | 'sites'
+                | 'languages'
+              )
+            | null;
+          /**
+           * Field to group by for counting (e.g., "status", "pageStatus", "type")
            */
           groupBy: string;
           /**
@@ -912,7 +930,7 @@ export interface Block {
            */
           statsDataKey?: string | null;
           /**
-           * Specific values to count (leave empty to count all unique values)
+           * Specific values to count (leave empty to count all unique values automatically)
            */
           includeValues?:
             | {
@@ -920,6 +938,10 @@ export interface Block {
                 id?: string | null;
               }[]
             | null;
+          /**
+           * Automatically generate tabs from stats data (if disabled, only show tabs from statusTabsConfig)
+           */
+          autoGenerateTabs?: boolean | null;
         };
         children?:
           | (
@@ -1139,6 +1161,10 @@ export interface Block {
                    */
                   showStatusTabs?: boolean | null;
                   /**
+                   * Use stats from parent DataFetch block (requires fetchStats enabled in parent)
+                   */
+                  useParentStats?: boolean | null;
+                  /**
                    * Field name to count and filter by
                    */
                   statusTabsField?: string | null;
@@ -1286,6 +1312,10 @@ export interface Block {
          * Show filter tabs with count statistics
          */
         showStatusTabs?: boolean | null;
+        /**
+         * Use stats from parent DataFetch block (requires fetchStats enabled in parent)
+         */
+        useParentStats?: boolean | null;
         /**
          * Field name to count and filter by
          */
@@ -2750,6 +2780,7 @@ export interface BlocksSelect<T extends boolean = true> {
               statsConfig?:
                 | T
                 | {
+                    statsCollection?: T;
                     groupBy?: T;
                     statsDataKey?: T;
                     includeValues?:
@@ -2758,6 +2789,7 @@ export interface BlocksSelect<T extends boolean = true> {
                           value?: T;
                           id?: T;
                         };
+                    autoGenerateTabs?: T;
                   };
               children?:
                 | T
@@ -2865,6 +2897,7 @@ export interface BlocksSelect<T extends boolean = true> {
                                 id?: T;
                               };
                           showStatusTabs?: T;
+                          useParentStats?: T;
                           statusTabsField?: T;
                           statusTabsConfig?:
                             | T
@@ -2928,6 +2961,7 @@ export interface BlocksSelect<T extends boolean = true> {
                     order?: T;
                   };
               showStatusTabs?: T;
+              useParentStats?: T;
               statusTabsField?: T;
               statusTabsConfig?:
                 | T
