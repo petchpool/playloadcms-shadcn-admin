@@ -76,10 +76,12 @@ export async function seedPagesLocalized() {
         {
           blockType: 'dataFetch',
           dataKey: 'totalUsers',
-          source: {
-            type: 'collection',
-            collection: 'users',
-          },
+          sources: [
+            {
+              type: 'collection',
+              collection: 'users',
+            },
+          ],
           query: {
             limit: 0,
           },
@@ -90,10 +92,12 @@ export async function seedPagesLocalized() {
             {
               blockType: 'dataFetch',
               dataKey: 'totalPages',
-              source: {
-                type: 'collection',
-                collection: 'pages',
-              },
+              sources: [
+                {
+                  type: 'collection',
+                  collection: 'pages',
+                },
+              ],
               query: {
                 limit: 0,
               },
@@ -104,10 +108,12 @@ export async function seedPagesLocalized() {
                 {
                   blockType: 'dataFetch',
                   dataKey: 'totalComponents',
-                  source: {
-                    type: 'collection',
-                    collection: 'components',
-                  },
+                  sources: [
+                    {
+                      type: 'collection',
+                      collection: 'components',
+                    },
+                  ],
                   query: {
                     limit: 0,
                   },
@@ -190,10 +196,12 @@ export async function seedPagesLocalized() {
         {
           blockType: 'dataFetch',
           dataKey: 'totalUsers',
-          source: {
-            type: 'collection',
-            collection: 'users',
-          },
+          sources: [
+            {
+              type: 'collection',
+              collection: 'users',
+            },
+          ],
           query: {
             limit: 0,
           },
@@ -204,10 +212,12 @@ export async function seedPagesLocalized() {
             {
               blockType: 'dataFetch',
               dataKey: 'totalPages',
-              source: {
-                type: 'collection',
-                collection: 'pages',
-              },
+              sources: [
+                {
+                  type: 'collection',
+                  collection: 'pages',
+                },
+              ],
               query: {
                 limit: 0,
               },
@@ -218,10 +228,12 @@ export async function seedPagesLocalized() {
                 {
                   blockType: 'dataFetch',
                   dataKey: 'totalComponents',
-                  source: {
-                    type: 'collection',
-                    collection: 'components',
-                  },
+                  sources: [
+                    {
+                      type: 'collection',
+                      collection: 'components',
+                    },
+                  ],
                   query: {
                     limit: 0,
                   },
@@ -313,10 +325,12 @@ export async function seedPagesLocalized() {
         {
           blockType: 'dataFetch',
           dataKey: 'activeUsers',
-          source: {
-            type: 'collection',
-            collection: 'users',
-          },
+          sources: [
+            {
+              type: 'collection',
+              collection: 'users',
+            },
+          ],
           query: {
             limit: 0,
           },
@@ -397,10 +411,12 @@ export async function seedPagesLocalized() {
         {
           blockType: 'dataFetch',
           dataKey: 'componentsList',
-          source: {
-            type: 'collection',
-            collection: 'components',
-          },
+          sources: [
+            {
+              type: 'collection',
+              collection: 'components',
+            },
+          ],
           query: {
             limit: 10,
             sort: '-createdAt',
@@ -452,10 +468,12 @@ export async function seedPagesLocalized() {
         {
           blockType: 'dataFetch',
           dataKey: 'activeUsers',
-          source: {
-            type: 'collection',
-            collection: 'users',
-          },
+          sources: [
+            {
+              type: 'collection',
+              collection: 'users',
+            },
+          ],
           query: {
             limit: 0,
           },
@@ -533,10 +551,12 @@ export async function seedPagesLocalized() {
         {
           blockType: 'dataFetch',
           dataKey: 'componentsList',
-          source: {
-            type: 'collection',
-            collection: 'components',
-          },
+          sources: [
+            {
+              type: 'collection',
+              collection: 'components',
+            },
+          ],
           query: {
             limit: 10,
             sort: '-createdAt',
@@ -788,10 +808,12 @@ export async function seedPagesLocalized() {
         {
           blockType: 'dataFetch',
           dataKey: 'pagesCount',
-          source: {
-            type: 'collection',
-            collection: 'pages',
-          },
+          sources: [
+            {
+              type: 'collection',
+              collection: 'pages',
+            },
+          ],
           query: {
             limit: 0,
           },
@@ -802,10 +824,12 @@ export async function seedPagesLocalized() {
             {
               blockType: 'dataFetch',
               dataKey: 'layoutsCount',
-              source: {
-                type: 'collection',
-                collection: 'layouts',
-              },
+              sources: [
+                {
+                  type: 'collection',
+                  collection: 'layouts',
+                },
+              ],
               query: {
                 limit: 0,
               },
@@ -816,10 +840,12 @@ export async function seedPagesLocalized() {
                 {
                   blockType: 'dataFetch',
                   dataKey: 'rolesCount',
-                  source: {
-                    type: 'collection',
-                    collection: 'roles',
-                  },
+                  sources: [
+                    {
+                      type: 'collection',
+                      collection: 'roles',
+                    },
+                  ],
                   query: {
                     limit: 0,
                   },
@@ -940,10 +966,12 @@ export async function seedPagesLocalized() {
         {
           blockType: 'dataFetch',
           dataKey: 'pagesCount',
-          source: {
-            type: 'collection',
-            collection: 'pages',
-          },
+          sources: [
+            {
+              type: 'collection',
+              collection: 'pages',
+            },
+          ],
           query: {
             limit: 0,
           },
@@ -954,10 +982,12 @@ export async function seedPagesLocalized() {
             {
               blockType: 'dataFetch',
               dataKey: 'layoutsCount',
-              source: {
-                type: 'collection',
-                collection: 'layouts',
-              },
+              sources: [
+                {
+                  type: 'collection',
+                  collection: 'layouts',
+                },
+              ],
               query: {
                 limit: 0,
               },
@@ -968,10 +998,12 @@ export async function seedPagesLocalized() {
                 {
                   blockType: 'dataFetch',
                   dataKey: 'rolesCount',
-                  source: {
-                    type: 'collection',
-                    collection: 'roles',
-                  },
+                  sources: [
+                    {
+                      type: 'collection',
+                      collection: 'roles',
+                    },
+                  ],
                   query: {
                     limit: 0,
                   },

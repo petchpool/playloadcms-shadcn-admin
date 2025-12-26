@@ -268,8 +268,13 @@ export const Blocks: CollectionConfig = {
                       },
                     },
                     {
-                      name: 'source',
-                      type: 'group',
+                      name: 'sources',
+                      type: 'array',
+                      required: true,
+                      minRows: 1,
+                      admin: {
+                        description: 'Multiple data sources to fetch from',
+                      },
                       fields: [
                         {
                           name: 'type',
@@ -302,12 +307,70 @@ export const Blocks: CollectionConfig = {
                           },
                         },
                         {
+                          name: 'global',
+                          type: 'select',
+                          options: [{ label: 'Settings', value: 'settings' }],
+                          admin: {
+                            condition: (data, siblingData) => siblingData?.type === 'global',
+                          },
+                        },
+                        {
                           name: 'endpoint',
                           type: 'text',
                           admin: {
                             condition: (data, siblingData) => siblingData?.type === 'endpoint',
+                            description: 'API endpoint URL',
                           },
                         },
+                        {
+                          name: 'dataKey',
+                          type: 'text',
+                          admin: {
+                            description:
+                              'Optional key to store this source data separately. If not provided, data will be merged with other sources.',
+                          },
+                        },
+                        {
+                          name: 'query',
+                          type: 'group',
+                          fields: [
+                            {
+                              name: 'limit',
+                              type: 'number',
+                              admin: {
+                                description:
+                                  'Limit for this source (overrides global limit if set)',
+                              },
+                            },
+                            {
+                              name: 'sort',
+                              type: 'text',
+                              admin: {
+                                description: 'Sort field for this source (e.g., "-createdAt")',
+                              },
+                            },
+                            {
+                              name: 'where',
+                              type: 'json',
+                              admin: {
+                                description: 'Query conditions for this source (JSON format)',
+                              },
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      name: 'mergeStrategy',
+                      type: 'select',
+                      defaultValue: 'union',
+                      admin: {
+                        description:
+                          'How to merge data from multiple sources. "union" combines all results, "separate" stores each source under its dataKey',
+                      },
+                      options: [
+                        { label: 'Union (Combine all results)', value: 'union' },
+                        { label: 'Separate (Store each source separately)', value: 'separate' },
                       ],
                     },
                     {

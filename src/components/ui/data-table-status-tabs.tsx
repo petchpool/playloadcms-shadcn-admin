@@ -53,10 +53,13 @@ export function DataTableStatusTabs({
   // Calculate total if not provided
   const calculatedTotal = totalCount ?? tabs.reduce((sum, tab) => sum + (tab.count || 0), 0)
 
+  // Filter out any existing "all" tab to avoid duplicates
+  const filteredTabs = showAllTab ? tabs.filter((tab) => tab.value !== 'all') : tabs
+
   // All tabs including "All" tab
   const allTabs: StatusTab[] = showAllTab
-    ? [{ value: 'all', label: allTabLabel, count: calculatedTotal, variant: 'outline' }, ...tabs]
-    : tabs
+    ? [{ value: 'all', label: allTabLabel, count: calculatedTotal, variant: 'outline' }, ...filteredTabs]
+    : filteredTabs
 
   return (
     <div className={cn('flex flex-wrap items-center gap-1 border-b pb-4', className)}>

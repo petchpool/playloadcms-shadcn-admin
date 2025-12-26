@@ -658,10 +658,12 @@ console.log(greet('โลก'))`,
       {
         blockType: 'dataFetch',
         dataKey: 'usersStats',
-        source: {
-          type: 'collection',
-          collection: 'users',
-        },
+        sources: [
+          {
+            type: 'collection',
+            collection: 'users',
+          },
+        ],
         transform: {
           type: 'count',
         },
@@ -737,10 +739,12 @@ console.log(greet('โลก'))`,
       {
         blockType: 'dataFetch',
         dataKey: 'componentsData',
-        source: {
-          type: 'collection',
-          collection: 'components',
-        },
+        sources: [
+          {
+            type: 'collection',
+            collection: 'components',
+          },
+        ],
         transform: {
           type: 'none',
         },
@@ -760,10 +764,12 @@ console.log(greet('โลก'))`,
       {
         blockType: 'dataFetch',
         dataKey: 'pagesStats',
-        source: {
-          type: 'collection',
-          collection: 'pages',
-        },
+        sources: [
+          {
+            type: 'collection',
+            collection: 'pages',
+          },
+        ],
         query: {
           where: {
             pageStatus: {
@@ -835,10 +841,12 @@ console.log(greet('โลก'))`,
       {
         blockType: 'dataFetch',
         dataKey: 'usersStats',
-        source: {
-          type: 'collection',
-          collection: 'users',
-        },
+        sources: [
+          {
+            type: 'collection',
+            collection: 'users',
+          },
+        ],
         transform: {
           type: 'count',
         },
@@ -914,10 +922,12 @@ console.log(greet('โลก'))`,
       {
         blockType: 'dataFetch',
         dataKey: 'componentsData',
-        source: {
-          type: 'collection',
-          collection: 'components',
-        },
+        sources: [
+          {
+            type: 'collection',
+            collection: 'components',
+          },
+        ],
         transform: {
           type: 'none',
         },
@@ -937,10 +947,12 @@ console.log(greet('โลก'))`,
       {
         blockType: 'dataFetch',
         dataKey: 'pagesStats',
-        source: {
-          type: 'collection',
-          collection: 'pages',
-        },
+        sources: [
+          {
+            type: 'collection',
+            collection: 'pages',
+          },
+        ],
         query: {
           where: {
             pageStatus: {

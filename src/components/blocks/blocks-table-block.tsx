@@ -141,6 +141,12 @@ export function BlocksTableBlock({
 }: BlocksTableBlockProps) {
   const searchParams = useSearchParams()
 
+  // Memoize values array to prevent unnecessary re-fetches
+  const statsValues = React.useMemo(() => {
+    if (!statsConfig?.includeValues) return undefined
+    return statsConfig.includeValues.map((v) => v.value)
+  }, [statsConfig?.includeValues])
+
   // Fetch stats if enabled
   const {
     data: statsData,
@@ -149,7 +155,7 @@ export function BlocksTableBlock({
   } = useCollectionStats({
     collection,
     groupBy: statsConfig?.groupBy || statusTabsField || 'status',
-    values: statsConfig?.includeValues?.map((v) => v.value),
+    values: statsValues,
     enabled: fetchStats && showStatusTabs,
   })
 

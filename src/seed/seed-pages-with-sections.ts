@@ -87,10 +87,12 @@ export async function seedPagesWithBlocks() {
         {
           blockType: 'dataFetch' as const,
           dataKey: 'totalUsers',
-          source: {
-            type: 'collection' as const,
-            collection: 'users' as const,
-          },
+          sources: [
+            {
+              type: 'collection' as const,
+              collection: 'users' as const,
+            },
+          ],
           transform: {
             type: 'count' as const,
           },
@@ -188,10 +190,12 @@ export async function seedPagesWithBlocks() {
         {
           blockType: 'dataFetch' as const,
           dataKey: 'users',
-          source: {
-            type: 'collection' as const,
-            collection: 'users' as const,
-          },
+          sources: [
+            {
+              type: 'collection' as const,
+              collection: 'users' as const,
+            },
+          ],
           query: {
             limit: 10,
           },
@@ -348,10 +352,12 @@ export async function seedPagesWithBlocks() {
         {
           blockType: 'dataFetch' as const,
           dataKey: 'pages',
-          source: {
-            type: 'collection' as const,
-            collection: 'pages' as const,
-          },
+          sources: [
+            {
+              type: 'collection' as const,
+              collection: 'pages' as const,
+            },
+          ],
           query: {
             limit: 20,
           },
@@ -417,10 +423,12 @@ export async function seedPagesWithBlocks() {
         {
           blockType: 'dataFetch' as const,
           dataKey: 'blocks',
-          source: {
-            type: 'collection' as const,
-            collection: 'blocks' as const,
-          },
+          sources: [
+            {
+              type: 'collection' as const,
+              collection: 'blocks' as const,
+            },
+          ],
           query: {
             limit: 50,
           },
@@ -505,10 +513,12 @@ export async function seedPagesWithBlocks() {
         {
           blockType: 'dataFetch' as const,
           dataKey: 'components',
-          source: {
-            type: 'collection' as const,
-            collection: 'components' as const,
-          },
+          sources: [
+            {
+              type: 'collection' as const,
+              collection: 'components' as const,
+            },
+          ],
           query: {
             limit: 50,
           },
@@ -564,10 +574,12 @@ export async function seedPagesWithBlocks() {
         {
           blockType: 'dataFetch' as const,
           dataKey: 'themes',
-          source: {
-            type: 'collection' as const,
-            collection: 'themes' as const,
-          },
+          sources: [
+            {
+              type: 'collection' as const,
+              collection: 'themes' as const,
+            },
+          ],
           query: {
             limit: 20,
           },
@@ -661,10 +673,12 @@ export async function seedPagesWithBlocks() {
         {
           blockType: 'dataFetch' as const,
           dataKey: 'sites',
-          source: {
-            type: 'collection' as const,
-            collection: 'sites' as const,
-          },
+          sources: [
+            {
+              type: 'collection' as const,
+              collection: 'sites' as const,
+            },
+          ],
           query: {
             limit: 20,
           },
@@ -717,10 +731,12 @@ export async function seedPagesWithBlocks() {
         {
           blockType: 'dataFetch' as const,
           dataKey: 'languages',
-          source: {
-            type: 'collection' as const,
-            collection: 'languages' as const,
-          },
+          sources: [
+            {
+              type: 'collection' as const,
+              collection: 'languages' as const,
+            },
+          ],
           query: {
             limit: 20,
           },
@@ -796,10 +812,12 @@ export async function seedPagesWithBlocks() {
         {
           blockType: 'dataFetch' as const,
           dataKey: 'layouts',
-          source: {
-            type: 'collection' as const,
-            collection: 'layouts' as const,
-          },
+          sources: [
+            {
+              type: 'collection' as const,
+              collection: 'layouts' as const,
+            },
+          ],
           query: {
             limit: 20,
           },
@@ -838,10 +856,12 @@ export async function seedPagesWithBlocks() {
         {
           blockType: 'dataFetch' as const,
           dataKey: 'users',
-          source: {
-            type: 'collection' as const,
-            collection: 'users' as const,
-          },
+          sources: [
+            {
+              type: 'collection' as const,
+              collection: 'users' as const,
+            },
+          ],
           query: {
             limit: 20,
           },
@@ -941,10 +961,12 @@ export async function seedPagesWithBlocks() {
         {
           blockType: 'dataFetch' as const,
           dataKey: 'roles',
-          source: {
-            type: 'collection' as const,
-            collection: 'roles' as const,
-          },
+          sources: [
+            {
+              type: 'collection' as const,
+              collection: 'roles' as const,
+            },
+          ],
           query: {
             limit: 20,
           },
@@ -979,10 +1001,12 @@ export async function seedPagesWithBlocks() {
         {
           blockType: 'dataFetch' as const,
           dataKey: 'permissions',
-          source: {
-            type: 'collection' as const,
-            collection: 'permissions' as const,
-          },
+          sources: [
+            {
+              type: 'collection' as const,
+              collection: 'permissions' as const,
+            },
+          ],
           query: {
             limit: 50,
           },
@@ -1026,10 +1050,12 @@ export async function seedPagesWithBlocks() {
         {
           blockType: 'dataFetch' as const,
           dataKey: 'media',
-          source: {
-            type: 'collection' as const,
-            collection: 'media' as const,
-          },
+          sources: [
+            {
+              type: 'collection' as const,
+              collection: 'media' as const,
+            },
+          ],
           query: {
             limit: 30,
           },

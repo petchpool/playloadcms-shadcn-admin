@@ -829,7 +829,10 @@ export interface Block {
          * Unique key to store fetched data in context
          */
         dataKey: string;
-        source: {
+        /**
+         * Multiple data sources to fetch from
+         */
+        sources: {
           type: 'collection' | 'global' | 'endpoint';
           collection?:
             | (
@@ -845,8 +848,43 @@ export interface Block {
                 | 'languages'
               )
             | null;
+          global?: 'settings' | null;
+          /**
+           * API endpoint URL
+           */
           endpoint?: string | null;
-        };
+          /**
+           * Optional key to store this source data separately. If not provided, data will be merged with other sources.
+           */
+          dataKey?: string | null;
+          query?: {
+            /**
+             * Limit for this source (overrides global limit if set)
+             */
+            limit?: number | null;
+            /**
+             * Sort field for this source (e.g., "-createdAt")
+             */
+            sort?: string | null;
+            /**
+             * Query conditions for this source (JSON format)
+             */
+            where?:
+              | {
+                  [k: string]: unknown;
+                }
+              | unknown[]
+              | string
+              | number
+              | boolean
+              | null;
+          };
+          id?: string | null;
+        }[];
+        /**
+         * How to merge data from multiple sources. "union" combines all results, "separate" stores each source under its dataKey
+         */
+        mergeStrategy?: ('union' | 'separate') | null;
         query?: {
           limit?: number | null;
           /**
@@ -2679,13 +2717,24 @@ export interface BlocksSelect<T extends boolean = true> {
           | T
           | {
               dataKey?: T;
-              source?:
+              sources?:
                 | T
                 | {
                     type?: T;
                     collection?: T;
+                    global?: T;
                     endpoint?: T;
+                    dataKey?: T;
+                    query?:
+                      | T
+                      | {
+                          limit?: T;
+                          sort?: T;
+                          where?: T;
+                        };
+                    id?: T;
                   };
+              mergeStrategy?: T;
               query?:
                 | T
                 | {

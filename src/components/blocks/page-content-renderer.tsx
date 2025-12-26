@@ -26,14 +26,17 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
   return (
     <div className="page-content space-y-8">
       {items.map((block, index) => {
+        // Generate unique key: prefer block.id, fallback to blockType-index-hash
+        const blockKey = block.id || `${block.blockType}-${index}-${JSON.stringify(block).slice(0, 50).replace(/[^a-zA-Z0-9]/g, '')}`
+        
         switch (block.blockType) {
           case 'richText':
-            return <RichTextRenderer key={index} content={block.content} />
+            return <RichTextRenderer key={blockKey} content={block.content} />
 
           case 'image':
             if (typeof block.image === 'object' && block.image?.url) {
               return (
-                <figure key={index} className="image-block">
+                <figure key={blockKey} className="image-block">
                   <Image
                     src={block.image.url}
                     alt={block.alt || block.caption || ''}
@@ -54,7 +57,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
           case 'gallery':
             if (block.images && Array.isArray(block.images)) {
               return (
-                <div key={index} className="gallery grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div key={blockKey} className="gallery grid grid-cols-1 gap-4 md:grid-cols-3">
                   {block.images.map((item: any, itemIndex: number) => {
                     if (typeof item.image === 'object' && item.image?.url) {
                       return (
@@ -83,7 +86,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
 
           case 'video':
             return (
-              <div key={index} className="video-block">
+              <div key={blockKey} className="video-block">
                 {block.videoUrl ? (
                   <div className="aspect-video w-full overflow-hidden rounded-lg">
                     <iframe
@@ -108,7 +111,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
             if (typeof block.component === 'object' && block.component) {
               return (
                 <ComponentRenderer
-                  key={index}
+                  key={blockKey}
                   component={block.component}
                   props={block.props || {}}
                 />
@@ -118,7 +121,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
 
           case 'code':
             return (
-              <div key={index} className="code-block">
+              <div key={blockKey} className="code-block">
                 <pre className="rounded-lg bg-muted p-4 overflow-x-auto">
                   <code className={`language-${block.language || 'typescript'}`}>
                     {typeof block.code === 'string'
@@ -134,7 +137,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
 
           case 'card':
             return (
-              <div key={index} className="card-block rounded-lg border bg-card p-6">
+              <div key={blockKey} className="card-block rounded-lg border bg-card p-6">
                 {block.image && typeof block.image === 'object' && block.image?.url && (
                   <div className="mb-4">
                     <Image
@@ -186,7 +189,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
               gridColsMap[columns] || 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
 
             return (
-              <div key={index} className={`grid-block grid ${gridColsClass} ${gapClass}`}>
+              <div key={blockKey} className={`grid-block grid ${gridColsClass} ${gapClass}`}>
                 {block.items.map((item: any, itemIndex: number) => (
                   <div key={itemIndex} className="grid-item">
                     {item.content && Array.isArray(item.content) && (
@@ -201,7 +204,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
           case 'blocksTable': // Backward compatibility
             return (
               <BlocksTableBlock
-                key={index}
+                key={blockKey}
                 title={block.title}
                 description={block.description}
                 limit={block.limit || 10}
@@ -238,16 +241,42 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
             )
 
           case 'dataFetch':
+            // Support both old single source and new multiple sources
+            const hasSources = block.sources && Array.isArray(block.sources) && block.sources.length > 0
+            const sources = hasSources
+              ? block.sources.map((s: any) => ({
+                  type: s.type || 'collection',
+                  collection: s.collection,
+                  global: s.global,
+                  endpoint: s.endpoint,
+                  dataKey: s.dataKey,
+                  query: s.query
+                    ? {
+                        where: s.query.where,
+                        sort: s.query.sort,
+                        limit: s.query.limit,
+                        depth: s.query.depth,
+                        select: s.query.select,
+                      }
+                    : undefined,
+                }))
+              : block.source
+                ? [
+                    {
+                      type: block.source.type || 'collection',
+                      collection: block.source.collection,
+                      global: block.source.global,
+                      endpoint: block.source.endpoint,
+                    },
+                  ]
+                : []
+
             return (
               <DataFetchBlock
-                key={index}
+                key={blockKey}
                 dataKey={block.dataKey}
-                source={{
-                  type: block.source?.type || 'collection',
-                  collection: block.source?.collection,
-                  global: block.source?.global,
-                  endpoint: block.source?.endpoint,
-                }}
+                sources={sources}
+                mergeStrategy={block.mergeStrategy || 'union'}
                 query={{
                   where: block.query?.where,
                   sort: block.query?.sort,
@@ -259,6 +288,8 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
                   field: block.transform?.field,
                 }}
                 refreshInterval={block.refreshInterval}
+                fetchStats={block.fetchStats}
+                statsConfig={block.statsConfig}
                 children={block.children}
               />
             )
@@ -266,7 +297,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
           case 'statCard':
             return (
               <StatCardBlock
-                key={index}
+                key={blockKey}
                 title={block.title}
                 description={block.description}
                 icon={block.icon}
@@ -282,7 +313,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
             if (typeof block.block === 'object' && block.block?.id) {
               return (
                 <BlockRefRenderer
-                  key={index}
+                  key={blockKey}
                   blockId={block.block.id}
                   props={block.props}
                   overrides={block.overrides}
@@ -291,7 +322,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
             } else if (typeof block.block === 'string') {
               return (
                 <BlockRefRenderer
-                  key={index}
+                  key={blockKey}
                   blockId={block.block}
                   props={block.props}
                   overrides={block.overrides}
@@ -300,7 +331,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
             }
             return (
               <div
-                key={index}
+                key={blockKey}
                 className="rounded-md border border-yellow-500/50 bg-yellow-500/10 p-4 text-sm text-yellow-700 dark:text-yellow-400"
               >
                 Block reference missing or invalid
@@ -315,7 +346,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
               xl: 'h-24',
             }
             const spacerHeight = spacerHeightMap[block.height || 'md'] || 'h-8'
-            return <div key={index} className={`spacer-block ${spacerHeight}`} />
+            return <div key={blockKey} className={`spacer-block ${spacerHeight}`} />
 
           case 'divider':
             const dividerSpacingMap: Record<string, string> = {
@@ -332,7 +363,7 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
             const dividerStyle = dividerStyleMap[block.style || 'solid'] || 'border-solid'
             return (
               <hr
-                key={index}
+                key={blockKey}
                 className={`divider-block border-t ${dividerStyle} ${dividerSpacing}`}
               />
             )
@@ -349,37 +380,37 @@ export function PageContentRenderer({ content, blocks }: PageContentRendererProp
             // Render heading based on level
             if (level === 'h1') {
               return (
-                <h1 key={index} className={`heading-block ${alignClass}`}>
+                <h1 key={blockKey} className={`heading-block ${alignClass}`}>
                   {block.text}
                 </h1>
               )
             } else if (level === 'h3') {
               return (
-                <h3 key={index} className={`heading-block ${alignClass}`}>
+                <h3 key={blockKey} className={`heading-block ${alignClass}`}>
                   {block.text}
                 </h3>
               )
             } else if (level === 'h4') {
               return (
-                <h4 key={index} className={`heading-block ${alignClass}`}>
+                <h4 key={blockKey} className={`heading-block ${alignClass}`}>
                   {block.text}
                 </h4>
               )
             } else {
               return (
-                <h2 key={index} className={`heading-block ${alignClass}`}>
+                <h2 key={blockKey} className={`heading-block ${alignClass}`}>
                   {block.text}
                 </h2>
               )
             }
 
           case 'form':
-            return <FormBlockRenderer key={index} {...block} />
+            return <FormBlockRenderer key={blockKey} {...block} />
 
           default:
             return (
               <div
-                key={index}
+                key={blockKey}
                 className="rounded-md border border-muted bg-muted/50 p-4 text-sm text-muted-foreground"
               >
                 Unknown block type: {block.blockType}

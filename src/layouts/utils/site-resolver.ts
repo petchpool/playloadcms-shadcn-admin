@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 
@@ -9,11 +10,12 @@ export type SiteResolverResult = {
 
 /**
  * Resolve site and layout from domain/subdomain
+ * 
+ * Uses React.cache() to prevent re-fetching on navigation
+ * This ensures layout data is cached per request, preventing flicker
  */
-export async function resolveSiteFromDomain(
-  domain: string,
-  subdomain?: string,
-): Promise<SiteResolverResult | null> {
+export const resolveSiteFromDomain = cache(
+  async (domain: string, subdomain?: string): Promise<SiteResolverResult | null> => {
   try {
     const payload = await getPayload({ config })
 
@@ -93,7 +95,8 @@ export async function resolveSiteFromDomain(
     console.error('Error resolving site:', error)
     return null
   }
-}
+  },
+)
 
 /**
  * Get layout type from layout object

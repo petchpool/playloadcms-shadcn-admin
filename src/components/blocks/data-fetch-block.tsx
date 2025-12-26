@@ -10,13 +10,17 @@ import { AlertCircle } from 'lucide-react'
  */
 type DataSource = {
   /** Source type */
-  type: 'collection' | 'global' | 'api'
+  type: 'collection' | 'global' | 'endpoint'
   /** Collection slug (for collection type) */
   collection?: string
   /** Global slug (for global type) */
   global?: string
-  /** API endpoint URL (for api type) */
+  /** API endpoint URL (for endpoint type) */
   endpoint?: string
+  /** Optional key to store this source data separately */
+  dataKey?: string
+  /** Query configuration for this specific source */
+  query?: QueryConfig
 }
 
 /**
@@ -51,9 +55,13 @@ type TransformConfig = {
 export type DataFetchBlockProps = {
   /** Unique key to identify this data in context */
   dataKey: string
-  /** Data source configuration */
-  source: DataSource
-  /** Query configuration */
+  /** Data source configuration (single source - deprecated, use sources instead) */
+  source?: DataSource
+  /** Multiple data sources configuration */
+  sources?: DataSource[]
+  /** Merge strategy for multiple sources */
+  mergeStrategy?: 'union' | 'separate'
+  /** Query configuration (applied to all sources if not specified per source) */
   query?: QueryConfig
   /** Transform configuration */
   transform?: TransformConfig
@@ -97,6 +105,8 @@ export type DataFetchBlockProps = {
 export function DataFetchBlock({
   dataKey,
   source,
+  sources,
+  mergeStrategy = 'union',
   query,
   transform = { type: 'none' },
   children,
@@ -113,24 +123,33 @@ export function DataFetchBlock({
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
-  const fetchData = React.useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
+  // Normalize sources: use sources array or convert single source to array
+  const normalizedSources = React.useMemo(() => {
+    if (sources && sources.length > 0) {
+      return sources
+    }
+    if (source) {
+      return [source]
+    }
+    return []
+  }, [source, sources])
 
+  const fetchSingleSource = React.useCallback(
+    async (sourceConfig: DataSource): Promise<any> => {
+      const sourceQuery = sourceConfig.query || query
       let result: any
 
-      if (source.type === 'collection' && source.collection) {
+      if (sourceConfig.type === 'collection' && sourceConfig.collection) {
         const params = new URLSearchParams({
           sourceType: 'collection',
-          source: source.collection,
+          source: sourceConfig.collection,
         })
 
-        if (query?.limit) params.append('limit', query.limit.toString())
-        if (query?.depth) params.append('depth', query.depth.toString())
-        if (query?.sort) params.append('sort', query.sort)
-        if (query?.where) params.append('where', JSON.stringify(query.where))
-        if (query?.select) params.append('select', query.select.join(','))
+        if (sourceQuery?.limit) params.append('limit', sourceQuery.limit.toString())
+        if (sourceQuery?.depth) params.append('depth', sourceQuery.depth.toString())
+        if (sourceQuery?.sort) params.append('sort', sourceQuery.sort)
+        if (sourceQuery?.where) params.append('where', JSON.stringify(sourceQuery.where))
+        if (sourceQuery?.select) params.append('select', sourceQuery.select.join(','))
 
         const res = await fetch(`/api/data-fetch?${params}`)
         result = await res.json()
@@ -138,13 +157,13 @@ export function DataFetchBlock({
         if (!result.success) {
           throw new Error(result.error || 'Failed to fetch data')
         }
-      } else if (source.type === 'global' && source.global) {
+      } else if (sourceConfig.type === 'global' && sourceConfig.global) {
         const params = new URLSearchParams({
           sourceType: 'global',
-          source: source.global,
+          source: sourceConfig.global,
         })
 
-        if (query?.depth) params.append('depth', query.depth.toString())
+        if (sourceQuery?.depth) params.append('depth', sourceQuery.depth.toString())
 
         const res = await fetch(`/api/data-fetch?${params}`)
         result = await res.json()
@@ -152,23 +171,99 @@ export function DataFetchBlock({
         if (!result.success) {
           throw new Error(result.error || 'Failed to fetch global')
         }
-      } else if (source.type === 'api' && source.endpoint) {
-        const res = await fetch(source.endpoint)
+      } else if (sourceConfig.type === 'endpoint' && sourceConfig.endpoint) {
+        const res = await fetch(sourceConfig.endpoint)
         result = await res.json()
       } else {
         throw new Error('Invalid source configuration')
       }
 
-      // Apply transform
-      const transformedData = applyTransform(result, transform)
-      setFetchedData(transformedData)
+      return result
+    },
+    [query],
+  )
+
+  const fetchData = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      if (normalizedSources.length === 0) {
+        throw new Error('No sources configured')
+      }
+
+      // Fetch all sources in parallel
+      const fetchPromises = normalizedSources.map((sourceConfig) =>
+        fetchSingleSource(sourceConfig).catch((err) => {
+          console.error(`Error fetching source ${sourceConfig.dataKey || sourceConfig.type}:`, err)
+          return { error: err.message, source: sourceConfig }
+        }),
+      )
+
+      const results = await Promise.all(fetchPromises)
+
+      // Check for errors
+      const errors = results.filter((r) => r.error)
+      if (errors.length > 0 && errors.length === results.length) {
+        throw new Error(errors.map((e) => e.error).join('; '))
+      }
+
+      // Merge results based on strategy
+      let mergedResult: any
+
+      if (mergeStrategy === 'separate') {
+        // Store each source separately under its dataKey
+        mergedResult = {}
+        results.forEach((result, index) => {
+          const sourceConfig = normalizedSources[index]
+          const key = sourceConfig.dataKey || `${dataKey}_${index}`
+          if (result.error) {
+            mergedResult[key] = { error: result.error }
+          } else {
+            const transformedData = applyTransform(result, transform)
+            mergedResult[key] = transformedData
+          }
+        })
+      } else {
+        // Union: combine all results into a single array
+        const allDocs: any[] = []
+        let totalDocs = 0
+
+        results.forEach((result) => {
+          if (!result.error) {
+            const docs = result.docs || result.data || []
+            if (Array.isArray(docs)) {
+              allDocs.push(...docs)
+              totalDocs += result.totalDocs || docs.length
+            } else {
+              allDocs.push(result.data || result)
+            }
+          }
+        })
+
+        mergedResult = {
+          docs: allDocs,
+          data: allDocs,
+          totalDocs,
+          totalPages: 1,
+          page: 1,
+          limit: allDocs.length,
+          hasNextPage: false,
+          hasPrevPage: false,
+        }
+
+        // Apply transform to merged result
+        mergedResult = applyTransform(mergedResult, transform)
+      }
+
+      setFetchedData(mergedResult)
     } catch (err: any) {
       console.error('DataFetchBlock error:', err)
       setError(err.message || 'Failed to fetch data')
     } finally {
       setLoading(false)
     }
-  }, [source, query, transform])
+  }, [normalizedSources, fetchSingleSource, mergeStrategy, transform, dataKey])
 
   // Initial fetch
   React.useEffect(() => {
@@ -184,10 +279,30 @@ export function DataFetchBlock({
   }, [refreshInterval, fetchData])
 
   // Merge with parent data context
-  const contextValue = React.useMemo(
-    () => ({
-      ...parentData,
-      [dataKey]: {
+  const contextValue = React.useMemo(() => {
+    const baseContext = { ...parentData }
+
+    if (mergeStrategy === 'separate' && fetchedData) {
+      // In separate mode, each source is stored under its own key
+      Object.keys(fetchedData).forEach((key) => {
+        const sourceData = fetchedData[key]
+        baseContext[key] = {
+          data: sourceData?.data ?? sourceData,
+          loading,
+          error: sourceData?.error ?? error ?? undefined,
+          docs: sourceData?.docs,
+          count: sourceData?.count ?? sourceData?.totalDocs,
+          value: sourceData?.value,
+          sum: sourceData?.sum,
+          average: sourceData?.average,
+          raw: sourceData,
+        }
+      })
+      // Also store the main dataKey with all sources
+      baseContext[dataKey] = fetchedData
+    } else {
+      // Union mode or single source: store under main dataKey
+      baseContext[dataKey] = {
         data: fetchedData?.data ?? fetchedData,
         loading,
         error: error ?? undefined,
@@ -197,10 +312,11 @@ export function DataFetchBlock({
         sum: fetchedData?.sum,
         average: fetchedData?.average,
         raw: fetchedData,
-      },
-    }),
-    [parentData, dataKey, fetchedData, loading, error],
-  )
+      }
+    }
+
+    return baseContext
+  }, [parentData, dataKey, fetchedData, loading, error, mergeStrategy])
 
   // Loading state
   if (loading && showLoading && !fetchedData) {
