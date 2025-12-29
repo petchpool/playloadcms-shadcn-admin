@@ -78,6 +78,8 @@ export interface Config {
     themes: Theme;
     permissions: Permission;
     roles: Role;
+    workflows: Workflow;
+    'workflow-rules': WorkflowRule;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -97,6 +99,8 @@ export interface Config {
     themes: ThemesSelect<false> | ThemesSelect<true>;
     permissions: PermissionsSelect<false> | PermissionsSelect<true>;
     roles: RolesSelect<false> | RolesSelect<true>;
+    workflows: WorkflowsSelect<false> | WorkflowsSelect<true>;
+    'workflow-rules': WorkflowRulesSelect<false> | WorkflowRulesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -119,6 +123,12 @@ export interface Config {
   };
   jobs: {
     tasks: {
+      apiCallTask: TaskApiCallTask;
+      notificationTask: TaskNotificationTask;
+      updateRecordTask: TaskUpdateRecordTask;
+      workflowExecutor: TaskWorkflowExecutor;
+      loggerTask: TaskLoggerTask;
+      findRecordTask: TaskFindRecordTask;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -796,26 +806,220 @@ export interface Block {
         items?:
           | {
               content?:
-                | {
-                    content?: {
-                      root: {
-                        type: string;
-                        children: {
-                          type: any;
-                          version: number;
+                | (
+                    | {
+                        content: {
+                          root: {
+                            type: string;
+                            children: {
+                              type: any;
+                              version: number;
+                              [k: string]: unknown;
+                            }[];
+                            direction: ('ltr' | 'rtl') | null;
+                            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                            indent: number;
+                            version: number;
+                          };
                           [k: string]: unknown;
+                        };
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'richText';
+                      }
+                    | {
+                        /**
+                         * Unique form identifier (e.g., "contact-form", "user-registration")
+                         */
+                        formId: string;
+                        /**
+                         * Form title (shown in dialog/page header)
+                         */
+                        title: string;
+                        /**
+                         * Form description (shown below title)
+                         */
+                        description?: string | null;
+                        /**
+                         * How the form should be displayed
+                         */
+                        viewType: 'dialog' | 'page' | 'sidebar-left' | 'sidebar-right';
+                        /**
+                         * Dialog/Page size
+                         */
+                        viewSize?: ('sm' | 'md' | 'lg' | 'xl' | 'full') | null;
+                        /**
+                         * Sidebar display mode
+                         */
+                        viewMode?: ('overlay' | 'push') | null;
+                        /**
+                         * Button text to open the form
+                         */
+                        triggerLabel: string;
+                        /**
+                         * Button style
+                         */
+                        triggerVariant?:
+                          | ('default' | 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'destructive')
+                          | null;
+                        /**
+                         * Button size
+                         */
+                        triggerSize?: ('sm' | 'default' | 'lg') | null;
+                        /**
+                         * Form fields configuration
+                         */
+                        fields: {
+                          /**
+                           * Field name (used as form data key)
+                           */
+                          name: string;
+                          /**
+                           * Field label (shown to user)
+                           */
+                          label: string;
+                          /**
+                           * Field input type
+                           */
+                          type:
+                            | 'text'
+                            | 'email'
+                            | 'password'
+                            | 'number'
+                            | 'textarea'
+                            | 'select'
+                            | 'checkbox'
+                            | 'date'
+                            | 'file';
+                          /**
+                           * Placeholder text
+                           */
+                          placeholder?: string | null;
+                          /**
+                           * Is this field required?
+                           */
+                          required?: boolean | null;
+                          /**
+                           * Minimum length (for text fields)
+                           */
+                          minLength?: number | null;
+                          /**
+                           * Maximum length (for text fields)
+                           */
+                          maxLength?: number | null;
+                          /**
+                           * Minimum value (for number fields)
+                           */
+                          min?: number | null;
+                          /**
+                           * Maximum value (for number fields)
+                           */
+                          max?: number | null;
+                          /**
+                           * Regex pattern for validation
+                           */
+                          pattern?: string | null;
+                          /**
+                           * Options for select field
+                           */
+                          options?:
+                            | {
+                                label: string;
+                                value: string;
+                                id?: string | null;
+                              }[]
+                            | null;
+                          /**
+                           * Default value
+                           */
+                          defaultValue?: string | null;
+                          /**
+                           * Helper text shown below field
+                           */
+                          helperText?: string | null;
+                          id?: string | null;
                         }[];
-                        direction: ('ltr' | 'rtl') | null;
-                        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-                        indent: number;
-                        version: number;
-                      };
-                      [k: string]: unknown;
-                    } | null;
-                    id?: string | null;
-                    blockName?: string | null;
-                    blockType: 'richText';
-                  }[]
+                        submission?: {
+                          /**
+                           * How to handle form submission
+                           */
+                          type?: ('event' | 'api') | null;
+                          /**
+                           * Event to emit (e.g., "form.contact.submit")
+                           */
+                          eventName?: string | null;
+                          /**
+                           * API endpoint to submit form data
+                           */
+                          submitEndpoint?: string | null;
+                          /**
+                           * HTTP method for submission
+                           */
+                          submitMethod?: ('POST' | 'PUT' | 'PATCH') | null;
+                        };
+                        /**
+                         * Submit button label
+                         */
+                        submitLabel?: string | null;
+                        /**
+                         * Cancel button label
+                         */
+                        cancelLabel?: string | null;
+                        /**
+                         * Success toast message
+                         */
+                        successMessage?: string | null;
+                        /**
+                         * Error toast message
+                         */
+                        errorMessage?: string | null;
+                        /**
+                         * Redirect to this URL after successful submission (optional)
+                         */
+                        redirectUrl?: string | null;
+                        /**
+                         * Show step indicator for multi-step forms
+                         */
+                        showProgressIndicator?: boolean | null;
+                        /**
+                         * Auto-save form data to localStorage
+                         */
+                        enableAutosave?: boolean | null;
+                        /**
+                         * Custom CSS classes (space-separated)
+                         */
+                        customCss?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'form';
+                      }
+                    | {
+                        title: string;
+                        /**
+                         * Key for dynamic data from DataFetch
+                         */
+                        dataKey?: string | null;
+                        /**
+                         * Static value to display (if no dynamic data)
+                         */
+                        staticValue?: string | null;
+                        /**
+                         * Lucide icon name (e.g., "TrendingUp")
+                         */
+                        icon?: string | null;
+                        variant?: ('default' | 'gradient' | 'outline') | null;
+                        size?: ('sm' | 'md' | 'lg') | null;
+                        trend?: {
+                          value?: number | null;
+                          label?: string | null;
+                          direction?: ('up' | 'down' | 'neutral') | null;
+                        };
+                        format?: ('number' | 'currency' | 'percentage') | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'statCard';
+                      }
+                  )[]
                 | null;
               id?: string | null;
             }[]
@@ -1552,14 +1756,24 @@ export interface Block {
           helperText?: string | null;
           id?: string | null;
         }[];
-        /**
-         * API endpoint to submit form data (e.g., "/api/contact")
-         */
-        submitEndpoint: string;
-        /**
-         * HTTP method for submission
-         */
-        submitMethod?: ('POST' | 'PUT' | 'PATCH') | null;
+        submission?: {
+          /**
+           * How to handle form submission
+           */
+          type?: ('event' | 'api') | null;
+          /**
+           * Event to emit (e.g., "form.contact.submit")
+           */
+          eventName?: string | null;
+          /**
+           * API endpoint to submit form data
+           */
+          submitEndpoint?: string | null;
+          /**
+           * HTTP method for submission
+           */
+          submitMethod?: ('POST' | 'PUT' | 'PATCH') | null;
+        };
         /**
          * Submit button label
          */
@@ -1883,6 +2097,189 @@ export interface Page {
           }
         | {
             /**
+             * Unique form identifier (e.g., "contact-form", "user-registration")
+             */
+            formId: string;
+            /**
+             * Form title (shown in dialog/page header)
+             */
+            title: string;
+            /**
+             * Form description (shown below title)
+             */
+            description?: string | null;
+            /**
+             * How the form should be displayed
+             */
+            viewType: 'dialog' | 'page' | 'sidebar-left' | 'sidebar-right';
+            /**
+             * Dialog/Page size
+             */
+            viewSize?: ('sm' | 'md' | 'lg' | 'xl' | 'full') | null;
+            /**
+             * Sidebar display mode
+             */
+            viewMode?: ('overlay' | 'push') | null;
+            /**
+             * Button text to open the form
+             */
+            triggerLabel: string;
+            /**
+             * Button style
+             */
+            triggerVariant?:
+              | ('default' | 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'destructive')
+              | null;
+            /**
+             * Button size
+             */
+            triggerSize?: ('sm' | 'default' | 'lg') | null;
+            /**
+             * Form fields configuration
+             */
+            fields: {
+              /**
+               * Field name (used as form data key)
+               */
+              name: string;
+              /**
+               * Field label (shown to user)
+               */
+              label: string;
+              /**
+               * Field input type
+               */
+              type: 'text' | 'email' | 'password' | 'number' | 'textarea' | 'select' | 'checkbox' | 'date' | 'file';
+              /**
+               * Placeholder text
+               */
+              placeholder?: string | null;
+              /**
+               * Is this field required?
+               */
+              required?: boolean | null;
+              /**
+               * Minimum length (for text fields)
+               */
+              minLength?: number | null;
+              /**
+               * Maximum length (for text fields)
+               */
+              maxLength?: number | null;
+              /**
+               * Minimum value (for number fields)
+               */
+              min?: number | null;
+              /**
+               * Maximum value (for number fields)
+               */
+              max?: number | null;
+              /**
+               * Regex pattern for validation
+               */
+              pattern?: string | null;
+              /**
+               * Options for select field
+               */
+              options?:
+                | {
+                    label: string;
+                    value: string;
+                    id?: string | null;
+                  }[]
+                | null;
+              /**
+               * Default value
+               */
+              defaultValue?: string | null;
+              /**
+               * Helper text shown below field
+               */
+              helperText?: string | null;
+              id?: string | null;
+            }[];
+            submission?: {
+              /**
+               * How to handle form submission
+               */
+              type?: ('event' | 'api') | null;
+              /**
+               * Event to emit (e.g., "form.contact.submit")
+               */
+              eventName?: string | null;
+              /**
+               * API endpoint to submit form data
+               */
+              submitEndpoint?: string | null;
+              /**
+               * HTTP method for submission
+               */
+              submitMethod?: ('POST' | 'PUT' | 'PATCH') | null;
+            };
+            /**
+             * Submit button label
+             */
+            submitLabel?: string | null;
+            /**
+             * Cancel button label
+             */
+            cancelLabel?: string | null;
+            /**
+             * Success toast message
+             */
+            successMessage?: string | null;
+            /**
+             * Error toast message
+             */
+            errorMessage?: string | null;
+            /**
+             * Redirect to this URL after successful submission (optional)
+             */
+            redirectUrl?: string | null;
+            /**
+             * Show step indicator for multi-step forms
+             */
+            showProgressIndicator?: boolean | null;
+            /**
+             * Auto-save form data to localStorage
+             */
+            enableAutosave?: boolean | null;
+            /**
+             * Custom CSS classes (space-separated)
+             */
+            customCss?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'form';
+          }
+        | {
+            title: string;
+            /**
+             * Key for dynamic data from DataFetch
+             */
+            dataKey?: string | null;
+            /**
+             * Static value to display (if no dynamic data)
+             */
+            staticValue?: string | null;
+            /**
+             * Lucide icon name (e.g., "TrendingUp")
+             */
+            icon?: string | null;
+            variant?: ('default' | 'gradient' | 'outline') | null;
+            size?: ('sm' | 'md' | 'lg') | null;
+            trend?: {
+              value?: number | null;
+              label?: string | null;
+              direction?: ('up' | 'down' | 'neutral') | null;
+            };
+            format?: ('number' | 'currency' | 'percentage') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'statCard';
+          }
+        | {
+            /**
              * Rich text content
              */
             content: {
@@ -1919,6 +2316,198 @@ export interface Page {
             items: {
               content?:
                 | (
+                    | {
+                        /**
+                         * Unique form identifier (e.g., "contact-form", "user-registration")
+                         */
+                        formId: string;
+                        /**
+                         * Form title (shown in dialog/page header)
+                         */
+                        title: string;
+                        /**
+                         * Form description (shown below title)
+                         */
+                        description?: string | null;
+                        /**
+                         * How the form should be displayed
+                         */
+                        viewType: 'dialog' | 'page' | 'sidebar-left' | 'sidebar-right';
+                        /**
+                         * Dialog/Page size
+                         */
+                        viewSize?: ('sm' | 'md' | 'lg' | 'xl' | 'full') | null;
+                        /**
+                         * Sidebar display mode
+                         */
+                        viewMode?: ('overlay' | 'push') | null;
+                        /**
+                         * Button text to open the form
+                         */
+                        triggerLabel: string;
+                        /**
+                         * Button style
+                         */
+                        triggerVariant?:
+                          | ('default' | 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'destructive')
+                          | null;
+                        /**
+                         * Button size
+                         */
+                        triggerSize?: ('sm' | 'default' | 'lg') | null;
+                        /**
+                         * Form fields configuration
+                         */
+                        fields: {
+                          /**
+                           * Field name (used as form data key)
+                           */
+                          name: string;
+                          /**
+                           * Field label (shown to user)
+                           */
+                          label: string;
+                          /**
+                           * Field input type
+                           */
+                          type:
+                            | 'text'
+                            | 'email'
+                            | 'password'
+                            | 'number'
+                            | 'textarea'
+                            | 'select'
+                            | 'checkbox'
+                            | 'date'
+                            | 'file';
+                          /**
+                           * Placeholder text
+                           */
+                          placeholder?: string | null;
+                          /**
+                           * Is this field required?
+                           */
+                          required?: boolean | null;
+                          /**
+                           * Minimum length (for text fields)
+                           */
+                          minLength?: number | null;
+                          /**
+                           * Maximum length (for text fields)
+                           */
+                          maxLength?: number | null;
+                          /**
+                           * Minimum value (for number fields)
+                           */
+                          min?: number | null;
+                          /**
+                           * Maximum value (for number fields)
+                           */
+                          max?: number | null;
+                          /**
+                           * Regex pattern for validation
+                           */
+                          pattern?: string | null;
+                          /**
+                           * Options for select field
+                           */
+                          options?:
+                            | {
+                                label: string;
+                                value: string;
+                                id?: string | null;
+                              }[]
+                            | null;
+                          /**
+                           * Default value
+                           */
+                          defaultValue?: string | null;
+                          /**
+                           * Helper text shown below field
+                           */
+                          helperText?: string | null;
+                          id?: string | null;
+                        }[];
+                        submission?: {
+                          /**
+                           * How to handle form submission
+                           */
+                          type?: ('event' | 'api') | null;
+                          /**
+                           * Event to emit (e.g., "form.contact.submit")
+                           */
+                          eventName?: string | null;
+                          /**
+                           * API endpoint to submit form data
+                           */
+                          submitEndpoint?: string | null;
+                          /**
+                           * HTTP method for submission
+                           */
+                          submitMethod?: ('POST' | 'PUT' | 'PATCH') | null;
+                        };
+                        /**
+                         * Submit button label
+                         */
+                        submitLabel?: string | null;
+                        /**
+                         * Cancel button label
+                         */
+                        cancelLabel?: string | null;
+                        /**
+                         * Success toast message
+                         */
+                        successMessage?: string | null;
+                        /**
+                         * Error toast message
+                         */
+                        errorMessage?: string | null;
+                        /**
+                         * Redirect to this URL after successful submission (optional)
+                         */
+                        redirectUrl?: string | null;
+                        /**
+                         * Show step indicator for multi-step forms
+                         */
+                        showProgressIndicator?: boolean | null;
+                        /**
+                         * Auto-save form data to localStorage
+                         */
+                        enableAutosave?: boolean | null;
+                        /**
+                         * Custom CSS classes (space-separated)
+                         */
+                        customCss?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'form';
+                      }
+                    | {
+                        title: string;
+                        /**
+                         * Key for dynamic data from DataFetch
+                         */
+                        dataKey?: string | null;
+                        /**
+                         * Static value to display (if no dynamic data)
+                         */
+                        staticValue?: string | null;
+                        /**
+                         * Lucide icon name (e.g., "TrendingUp")
+                         */
+                        icon?: string | null;
+                        variant?: ('default' | 'gradient' | 'outline') | null;
+                        size?: ('sm' | 'md' | 'lg') | null;
+                        trend?: {
+                          value?: number | null;
+                          label?: string | null;
+                          direction?: ('up' | 'down' | 'neutral') | null;
+                        };
+                        format?: ('number' | 'currency' | 'percentage') | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'statCard';
+                      }
                     | {
                         content: {
                           root: {
@@ -2102,6 +2691,261 @@ export interface Navigation {
   createdAt: string;
 }
 /**
+ * Define automation workflows composed of sequential steps
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "workflows".
+ */
+export interface Workflow {
+  id: string;
+  name: string;
+  status?: ('active' | 'inactive' | 'draft') | null;
+  /**
+   * Tenant this workflow belongs to
+   */
+  tenant?: (string | null) | Site;
+  steps: (
+    | {
+        url: string;
+        method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+        headers?:
+          | {
+              key: string;
+              value: string;
+              id?: string | null;
+            }[]
+          | null;
+        /**
+         * JSON body. Supports templating (e.g. {{trigger.data.email}})
+         */
+        body?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        /**
+         * Timeout in ms
+         */
+        timeout?: number | null;
+        /**
+         * Number of retries on failure
+         */
+        retries?: number | null;
+        /**
+         * Save response to context under this key (e.g., "apiResponse")
+         */
+        outputKey?: string | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'apiCall';
+      }
+    | {
+        logicType?: ('simple' | 'jsonLogic') | null;
+        simpleCondition?: {
+          field: string;
+          operator: 'equals' | 'notEquals' | 'gt' | 'lt' | 'contains' | 'exists';
+          value?: string | null;
+        };
+        /**
+         * Standard JSON Logic rule
+         */
+        jsonLogic?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        /**
+         * What to do if the condition is NOT met?
+         */
+        actionIfFalse?: ('continue' | 'stop' | 'error') | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'condition';
+      }
+    | {
+        duration: number;
+        unit?: ('seconds' | 'minutes' | 'hours' | 'days') | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'delay';
+      }
+    | {
+        /**
+         * Collection slug (e.g. "users", "leads")
+         */
+        collection: string;
+        /**
+         * Data to insert. Supports templating.
+         */
+        data:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        /**
+         * Save created record to context key
+         */
+        outputKey?: string | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'createRecord';
+      }
+    | {
+        collection: string;
+        /**
+         * ID of record to update (supports templating)
+         */
+        recordId: string;
+        data:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'updateRecord';
+      }
+    | {
+        collection: string;
+        /**
+         * Payload "where" query (JSON)
+         */
+        query:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        /**
+         * Key to save the found document(s)
+         */
+        outputKey: string;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'findRecord';
+      }
+    | {
+        collection: string;
+        /**
+         * ID of record to delete (supports templating)
+         */
+        recordId: string;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'deleteRecord';
+      }
+    | {
+        operation?: ('map' | 'jsonata') | null;
+        /**
+         * Validation/Transformation Map
+         */
+        mapping?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        /**
+         * JSONata expression
+         */
+        expression?: string | null;
+        outputKey: string;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'transform';
+      }
+    | {
+        workflow: string | Workflow;
+        passContext?: boolean | null;
+        waitForCompletion?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'subWorkflow';
+      }
+    | {
+        channel?: ('email' | 'internal' | 'chat') | null;
+        /**
+         * Email address, User ID, or Channel ID
+         */
+        recipient: string;
+        subject?: string | null;
+        /**
+         * Message content (supports templating)
+         */
+        content: string;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'notification';
+      }
+  )[];
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Rules that trigger workflows based on events
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "workflow-rules".
+ */
+export interface WorkflowRule {
+  id: string;
+  name: string;
+  /**
+   * Event to listen for (e.g., "form.submit", "user.register", "custom.event")
+   */
+  event: string;
+  tenant?: (string | null) | Site;
+  /**
+   * JSON Logic to determine if this rule applies to the event payload
+   */
+  conditions?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Workflows to execute when this rule is matched
+   */
+  workflows: (string | Workflow)[];
+  /**
+   * Higher priority rules run first
+   */
+  priority?: number | null;
+  active?: boolean | null;
+  /**
+   * Stop processing subsequent rules if this rule matches
+   */
+  stopOnMatch?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -2170,7 +3014,15 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'schedulePublish';
+        taskSlug:
+          | 'inline'
+          | 'apiCallTask'
+          | 'notificationTask'
+          | 'updateRecordTask'
+          | 'workflowExecutor'
+          | 'loggerTask'
+          | 'findRecordTask'
+          | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -2203,7 +3055,18 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'schedulePublish') | null;
+  taskSlug?:
+    | (
+        | 'inline'
+        | 'apiCallTask'
+        | 'notificationTask'
+        | 'updateRecordTask'
+        | 'workflowExecutor'
+        | 'loggerTask'
+        | 'findRecordTask'
+        | 'schedulePublish'
+      )
+    | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -2260,6 +3123,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'roles';
         value: string | Role;
+      } | null)
+    | ({
+        relationTo: 'workflows';
+        value: string | Workflow;
+      } | null)
+    | ({
+        relationTo: 'workflow-rules';
+        value: string | WorkflowRule;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -2577,6 +3448,81 @@ export interface PagesSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
+        form?:
+          | T
+          | {
+              formId?: T;
+              title?: T;
+              description?: T;
+              viewType?: T;
+              viewSize?: T;
+              viewMode?: T;
+              triggerLabel?: T;
+              triggerVariant?: T;
+              triggerSize?: T;
+              fields?:
+                | T
+                | {
+                    name?: T;
+                    label?: T;
+                    type?: T;
+                    placeholder?: T;
+                    required?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    min?: T;
+                    max?: T;
+                    pattern?: T;
+                    options?:
+                      | T
+                      | {
+                          label?: T;
+                          value?: T;
+                          id?: T;
+                        };
+                    defaultValue?: T;
+                    helperText?: T;
+                    id?: T;
+                  };
+              submission?:
+                | T
+                | {
+                    type?: T;
+                    eventName?: T;
+                    submitEndpoint?: T;
+                    submitMethod?: T;
+                  };
+              submitLabel?: T;
+              cancelLabel?: T;
+              successMessage?: T;
+              errorMessage?: T;
+              redirectUrl?: T;
+              showProgressIndicator?: T;
+              enableAutosave?: T;
+              customCss?: T;
+              id?: T;
+              blockName?: T;
+            };
+        statCard?:
+          | T
+          | {
+              title?: T;
+              dataKey?: T;
+              staticValue?: T;
+              icon?: T;
+              variant?: T;
+              size?: T;
+              trend?:
+                | T
+                | {
+                    value?: T;
+                    label?: T;
+                    direction?: T;
+                  };
+              format?: T;
+              id?: T;
+              blockName?: T;
+            };
         richText?:
           | T
           | {
@@ -2605,6 +3551,81 @@ export interface PagesSelect<T extends boolean = true> {
                     content?:
                       | T
                       | {
+                          form?:
+                            | T
+                            | {
+                                formId?: T;
+                                title?: T;
+                                description?: T;
+                                viewType?: T;
+                                viewSize?: T;
+                                viewMode?: T;
+                                triggerLabel?: T;
+                                triggerVariant?: T;
+                                triggerSize?: T;
+                                fields?:
+                                  | T
+                                  | {
+                                      name?: T;
+                                      label?: T;
+                                      type?: T;
+                                      placeholder?: T;
+                                      required?: T;
+                                      minLength?: T;
+                                      maxLength?: T;
+                                      min?: T;
+                                      max?: T;
+                                      pattern?: T;
+                                      options?:
+                                        | T
+                                        | {
+                                            label?: T;
+                                            value?: T;
+                                            id?: T;
+                                          };
+                                      defaultValue?: T;
+                                      helperText?: T;
+                                      id?: T;
+                                    };
+                                submission?:
+                                  | T
+                                  | {
+                                      type?: T;
+                                      eventName?: T;
+                                      submitEndpoint?: T;
+                                      submitMethod?: T;
+                                    };
+                                submitLabel?: T;
+                                cancelLabel?: T;
+                                successMessage?: T;
+                                errorMessage?: T;
+                                redirectUrl?: T;
+                                showProgressIndicator?: T;
+                                enableAutosave?: T;
+                                customCss?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          statCard?:
+                            | T
+                            | {
+                                title?: T;
+                                dataKey?: T;
+                                staticValue?: T;
+                                icon?: T;
+                                variant?: T;
+                                size?: T;
+                                trend?:
+                                  | T
+                                  | {
+                                      value?: T;
+                                      label?: T;
+                                      direction?: T;
+                                    };
+                                format?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
                           richText?:
                             | T
                             | {
@@ -2734,6 +3755,81 @@ export interface BlocksSelect<T extends boolean = true> {
                             | T
                             | {
                                 content?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          form?:
+                            | T
+                            | {
+                                formId?: T;
+                                title?: T;
+                                description?: T;
+                                viewType?: T;
+                                viewSize?: T;
+                                viewMode?: T;
+                                triggerLabel?: T;
+                                triggerVariant?: T;
+                                triggerSize?: T;
+                                fields?:
+                                  | T
+                                  | {
+                                      name?: T;
+                                      label?: T;
+                                      type?: T;
+                                      placeholder?: T;
+                                      required?: T;
+                                      minLength?: T;
+                                      maxLength?: T;
+                                      min?: T;
+                                      max?: T;
+                                      pattern?: T;
+                                      options?:
+                                        | T
+                                        | {
+                                            label?: T;
+                                            value?: T;
+                                            id?: T;
+                                          };
+                                      defaultValue?: T;
+                                      helperText?: T;
+                                      id?: T;
+                                    };
+                                submission?:
+                                  | T
+                                  | {
+                                      type?: T;
+                                      eventName?: T;
+                                      submitEndpoint?: T;
+                                      submitMethod?: T;
+                                    };
+                                submitLabel?: T;
+                                cancelLabel?: T;
+                                successMessage?: T;
+                                errorMessage?: T;
+                                redirectUrl?: T;
+                                showProgressIndicator?: T;
+                                enableAutosave?: T;
+                                customCss?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          statCard?:
+                            | T
+                            | {
+                                title?: T;
+                                dataKey?: T;
+                                staticValue?: T;
+                                icon?: T;
+                                variant?: T;
+                                size?: T;
+                                trend?:
+                                  | T
+                                  | {
+                                      value?: T;
+                                      label?: T;
+                                      direction?: T;
+                                    };
+                                format?: T;
                                 id?: T;
                                 blockName?: T;
                               };
@@ -3050,8 +4146,14 @@ export interface BlocksSelect<T extends boolean = true> {
                     helperText?: T;
                     id?: T;
                   };
-              submitEndpoint?: T;
-              submitMethod?: T;
+              submission?:
+                | T
+                | {
+                    type?: T;
+                    eventName?: T;
+                    submitEndpoint?: T;
+                    submitMethod?: T;
+                  };
               submitLabel?: T;
               cancelLabel?: T;
               successMessage?: T;
@@ -3227,6 +4329,144 @@ export interface RolesSelect<T extends boolean = true> {
   inheritedPermissions?: T;
   status?: T;
   isSystemRole?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "workflows_select".
+ */
+export interface WorkflowsSelect<T extends boolean = true> {
+  name?: T;
+  status?: T;
+  tenant?: T;
+  steps?:
+    | T
+    | {
+        apiCall?:
+          | T
+          | {
+              url?: T;
+              method?: T;
+              headers?:
+                | T
+                | {
+                    key?: T;
+                    value?: T;
+                    id?: T;
+                  };
+              body?: T;
+              timeout?: T;
+              retries?: T;
+              outputKey?: T;
+              id?: T;
+              blockName?: T;
+            };
+        condition?:
+          | T
+          | {
+              logicType?: T;
+              simpleCondition?:
+                | T
+                | {
+                    field?: T;
+                    operator?: T;
+                    value?: T;
+                  };
+              jsonLogic?: T;
+              actionIfFalse?: T;
+              id?: T;
+              blockName?: T;
+            };
+        delay?:
+          | T
+          | {
+              duration?: T;
+              unit?: T;
+              id?: T;
+              blockName?: T;
+            };
+        createRecord?:
+          | T
+          | {
+              collection?: T;
+              data?: T;
+              outputKey?: T;
+              id?: T;
+              blockName?: T;
+            };
+        updateRecord?:
+          | T
+          | {
+              collection?: T;
+              recordId?: T;
+              data?: T;
+              id?: T;
+              blockName?: T;
+            };
+        findRecord?:
+          | T
+          | {
+              collection?: T;
+              query?: T;
+              outputKey?: T;
+              id?: T;
+              blockName?: T;
+            };
+        deleteRecord?:
+          | T
+          | {
+              collection?: T;
+              recordId?: T;
+              id?: T;
+              blockName?: T;
+            };
+        transform?:
+          | T
+          | {
+              operation?: T;
+              mapping?: T;
+              expression?: T;
+              outputKey?: T;
+              id?: T;
+              blockName?: T;
+            };
+        subWorkflow?:
+          | T
+          | {
+              workflow?: T;
+              passContext?: T;
+              waitForCompletion?: T;
+              id?: T;
+              blockName?: T;
+            };
+        notification?:
+          | T
+          | {
+              channel?: T;
+              recipient?: T;
+              subject?: T;
+              content?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "workflow-rules_select".
+ */
+export interface WorkflowRulesSelect<T extends boolean = true> {
+  name?: T;
+  event?: T;
+  tenant?: T;
+  conditions?: T;
+  workflows?: T;
+  priority?: T;
+  active?: T;
+  stopOnMatch?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3460,6 +4700,116 @@ export interface SettingsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskApiCallTask".
+ */
+export interface TaskApiCallTask {
+  input: {
+    url: string;
+    method: string;
+    headers?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    body?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    outputKey?: string | null;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskNotificationTask".
+ */
+export interface TaskNotificationTask {
+  input: {
+    channel: string;
+    recipient: string;
+    content: string;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskUpdateRecordTask".
+ */
+export interface TaskUpdateRecordTask {
+  input: {
+    collection: string;
+    id: string;
+    data:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskWorkflowExecutor".
+ */
+export interface TaskWorkflowExecutor {
+  input: {
+    workflowId: string;
+    data?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskLoggerTask".
+ */
+export interface TaskLoggerTask {
+  input: {
+    message: string;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFindRecordTask".
+ */
+export interface TaskFindRecordTask {
+  input: {
+    collection: string;
+    query:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

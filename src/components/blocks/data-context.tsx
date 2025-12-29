@@ -24,6 +24,11 @@ export type FetchedData = {
   value?: number
   /** Raw response */
   raw?: any
+  /** Stats data from useCollectionStats */
+  stats?: any
+  total?: number
+  collection?: string
+  groupBy?: string
 }
 
 /**

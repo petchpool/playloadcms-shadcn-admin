@@ -28,11 +28,24 @@ interface FormBlockConfig {
   viewSize?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
   viewMode?: 'overlay' | 'push'
   triggerLabel: string
-  triggerVariant?: 'default' | 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'destructive'
+  triggerVariant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'outline'
+    | 'ghost'
+    | 'link'
+    | 'destructive'
   triggerSize?: 'sm' | 'default' | 'lg'
   fields: FormField[]
-  submitEndpoint: string
-  submitMethod: 'POST' | 'PUT' | 'PATCH'
+  submission?: {
+    type: 'event' | 'api'
+    eventName?: string
+    submitEndpoint?: string
+    submitMethod?: 'POST' | 'PUT' | 'PATCH'
+  }
+  submitEndpoint?: string
+  submitMethod?: 'POST' | 'PUT' | 'PATCH'
   submitLabel?: string
   cancelLabel?: string
   successMessage?: string
@@ -86,4 +99,3 @@ export function FormBlockRenderer(config: FormBlockConfig) {
     </div>
   )
 }
-

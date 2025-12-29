@@ -84,6 +84,7 @@ export type DataFetchBlockProps = {
   statsConfig?: {
     groupBy?: string
     statsDataKey?: string
+    statsCollection?: string // Collection to fetch stats from
     includeValues?: Array<{ value: string }>
   }
 }
@@ -349,11 +350,17 @@ export function DataFetchBlock({
       const statsKey = statsConfig?.statsDataKey || 'stats'
       baseContext[statsKey] = {
         stats: statsData.stats,
+        data: statsData.stats,
         total: statsData.total,
         collection: statsData.collection,
         groupBy: statsData.groupBy,
         loading: statsLoading,
-        error: statsError ?? undefined,
+        error:
+          statsError instanceof Error
+            ? statsError.message
+            : typeof statsError === 'string'
+              ? statsError
+              : undefined,
       }
     }
 
@@ -507,11 +514,7 @@ function DataFetchChildBlock({
     case 'blocksTable':
       // Render blocks table with external data
       return (
-        <BlocksTableBlockRenderer
-          {...block}
-          fetchStats={fetchStats}
-          statsConfig={statsConfig}
-        />
+        <BlocksTableBlockRenderer {...block} fetchStats={fetchStats} statsConfig={statsConfig} />
       )
 
     default:

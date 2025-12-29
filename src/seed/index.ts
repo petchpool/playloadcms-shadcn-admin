@@ -8,6 +8,7 @@ import { seedUsers } from './users'
 import { seedPagesWithBlocks } from './seed-pages-with-blocks'
 import { seedNavigation } from './navigation'
 import { seedNavigationCollection } from './navigation-collection'
+import { seedWorkflows } from './workflows'
 
 export async function seed() {
   console.log('🚀 Starting database seeding...\n')
@@ -30,6 +31,9 @@ export async function seed() {
 
   // Seed Navigation Collection
   await seedNavigationCollection()
+
+  // Seed Workflows & Rules
+  await seedWorkflows()
 
   console.log('\n🎉 Database seeding completed!')
 }

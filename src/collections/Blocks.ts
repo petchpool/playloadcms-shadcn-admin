@@ -1,5 +1,459 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, Block } from 'payload'
 import { checkRole } from '@/utils/check-role'
+
+export const RichTextBlock: Block = {
+  slug: 'richText',
+  labels: {
+    singular: 'Rich Text',
+    plural: 'Rich Texts',
+  },
+  fields: [
+    {
+      name: 'content',
+      type: 'richText',
+      required: true,
+    },
+  ],
+}
+
+export const StatCardBlock: Block = {
+  slug: 'statCard',
+  labels: {
+    singular: 'Stat Card',
+    plural: 'Stat Cards',
+  },
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    {
+      name: 'dataKey',
+      type: 'text',
+      admin: { description: 'Key for dynamic data from DataFetch' },
+    },
+    {
+      name: 'staticValue',
+      type: 'text',
+      admin: { description: 'Static value to display (if no dynamic data)' },
+    },
+    { name: 'icon', type: 'text', admin: { description: 'Lucide icon name (e.g., "TrendingUp")' } },
+    {
+      name: 'variant',
+      type: 'select',
+      defaultValue: 'default',
+      options: [
+        { label: 'Default', value: 'default' },
+        { label: 'Gradient', value: 'gradient' },
+        { label: 'Outline', value: 'outline' },
+      ],
+    },
+    {
+      name: 'size',
+      type: 'select',
+      defaultValue: 'md',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+      ],
+    },
+    {
+      name: 'trend',
+      type: 'group',
+      fields: [
+        { name: 'value', type: 'number' },
+        { name: 'label', type: 'text' },
+        {
+          name: 'direction',
+          type: 'select',
+          options: ['up', 'down', 'neutral'],
+          defaultValue: 'up',
+        },
+      ],
+    },
+    {
+      name: 'format',
+      type: 'select',
+      options: [
+        { label: 'Number', value: 'number' },
+        { label: 'Currency', value: 'currency' },
+        { label: 'Percentage', value: 'percentage' },
+      ],
+    },
+  ],
+}
+
+export const FormBlock: Block = {
+  slug: 'form',
+  labels: {
+    singular: 'Form',
+    plural: 'Forms',
+  },
+  fields: [
+    // Form Identity
+    {
+      name: 'formId',
+      type: 'text',
+      required: true,
+      admin: {
+        description: 'Unique form identifier (e.g., "contact-form", "user-registration")',
+      },
+    },
+    {
+      name: 'title',
+      type: 'text',
+      required: true,
+      admin: {
+        description: 'Form title (shown in dialog/page header)',
+      },
+    },
+    {
+      name: 'description',
+      type: 'textarea',
+      admin: {
+        description: 'Form description (shown below title)',
+      },
+    },
+
+    // View Configuration
+    {
+      name: 'viewType',
+      type: 'select',
+      required: true,
+      defaultValue: 'dialog',
+      options: [
+        { label: 'Dialog', value: 'dialog' },
+        { label: 'Full Page', value: 'page' },
+        { label: 'Sidebar Left', value: 'sidebar-left' },
+        { label: 'Sidebar Right', value: 'sidebar-right' },
+      ],
+      admin: {
+        description: 'How the form should be displayed',
+      },
+    },
+    {
+      name: 'viewSize',
+      type: 'select',
+      defaultValue: 'md',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+        { label: 'Extra Large', value: 'xl' },
+        { label: 'Full Width', value: 'full' },
+      ],
+      admin: {
+        description: 'Dialog/Page size',
+        condition: (data, siblingData) => siblingData?.viewType === 'dialog',
+      },
+    },
+    {
+      name: 'viewMode',
+      type: 'select',
+      defaultValue: 'overlay',
+      options: [
+        { label: 'Overlay (with backdrop)', value: 'overlay' },
+        { label: 'Push (slide content)', value: 'push' },
+      ],
+      admin: {
+        description: 'Sidebar display mode',
+        condition: (data, siblingData) =>
+          siblingData?.viewType === 'sidebar-left' || siblingData?.viewType === 'sidebar-right',
+      },
+    },
+
+    // Trigger Button Configuration
+    {
+      name: 'triggerLabel',
+      type: 'text',
+      required: true,
+      defaultValue: 'Open Form',
+      admin: {
+        description: 'Button text to open the form',
+      },
+    },
+    {
+      name: 'triggerVariant',
+      type: 'select',
+      defaultValue: 'default',
+      options: [
+        { label: 'Default', value: 'default' },
+        { label: 'Primary', value: 'primary' },
+        { label: 'Secondary', value: 'secondary' },
+        { label: 'Outline', value: 'outline' },
+        { label: 'Ghost', value: 'ghost' },
+        { label: 'Link', value: 'link' },
+        { label: 'Destructive', value: 'destructive' },
+      ],
+      admin: {
+        description: 'Button style',
+      },
+    },
+    {
+      name: 'triggerSize',
+      type: 'select',
+      defaultValue: 'default',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Default', value: 'default' },
+        { label: 'Large', value: 'lg' },
+      ],
+      admin: {
+        description: 'Button size',
+      },
+    },
+
+    // Form Fields
+    {
+      name: 'fields',
+      type: 'array',
+      required: true,
+      minRows: 1,
+      admin: {
+        description: 'Form fields configuration',
+      },
+      fields: [
+        {
+          name: 'name',
+          type: 'text',
+          required: true,
+          admin: {
+            description: 'Field name (used as form data key)',
+          },
+        },
+        {
+          name: 'label',
+          type: 'text',
+          required: true,
+          admin: {
+            description: 'Field label (shown to user)',
+          },
+        },
+        {
+          name: 'type',
+          type: 'select',
+          required: true,
+          defaultValue: 'text',
+          options: [
+            { label: 'Text', value: 'text' },
+            { label: 'Email', value: 'email' },
+            { label: 'Password', value: 'password' },
+            { label: 'Number', value: 'number' },
+            { label: 'Textarea', value: 'textarea' },
+            { label: 'Select', value: 'select' },
+            { label: 'Checkbox', value: 'checkbox' },
+            { label: 'Date', value: 'date' },
+            { label: 'File', value: 'file' },
+          ],
+          admin: {
+            description: 'Field input type',
+          },
+        },
+        {
+          name: 'placeholder',
+          type: 'text',
+          admin: {
+            description: 'Placeholder text',
+          },
+        },
+        {
+          name: 'required',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: {
+            description: 'Is this field required?',
+          },
+        },
+        {
+          name: 'minLength',
+          type: 'number',
+          admin: {
+            description: 'Minimum length (for text fields)',
+          },
+        },
+        {
+          name: 'maxLength',
+          type: 'number',
+          admin: {
+            description: 'Maximum length (for text fields)',
+          },
+        },
+        {
+          name: 'min',
+          type: 'number',
+          admin: {
+            description: 'Minimum value (for number fields)',
+          },
+        },
+        {
+          name: 'max',
+          type: 'number',
+          admin: {
+            description: 'Maximum value (for number fields)',
+          },
+        },
+        {
+          name: 'pattern',
+          type: 'text',
+          admin: {
+            description: 'Regex pattern for validation',
+          },
+        },
+        {
+          name: 'options',
+          type: 'array',
+          admin: {
+            description: 'Options for select field',
+            condition: (data, siblingData) => siblingData?.type === 'select',
+          },
+          fields: [
+            {
+              name: 'label',
+              type: 'text',
+              required: true,
+            },
+            {
+              name: 'value',
+              type: 'text',
+              required: true,
+            },
+          ],
+        },
+        {
+          name: 'defaultValue',
+          type: 'text',
+          admin: {
+            description: 'Default value',
+          },
+        },
+        {
+          name: 'helperText',
+          type: 'text',
+          admin: {
+            description: 'Helper text shown below field',
+          },
+        },
+      ],
+    },
+
+    // Submit Configuration
+    {
+      name: 'submission',
+      type: 'group',
+      fields: [
+        {
+          name: 'type',
+          type: 'select',
+          defaultValue: 'event',
+          options: [
+            { label: 'Emit Event (Workflow)', value: 'event' },
+            { label: 'Direct API Call', value: 'api' },
+          ],
+          admin: {
+            description: 'How to handle form submission',
+          },
+        },
+        {
+          name: 'eventName',
+          type: 'text',
+          admin: {
+            condition: (_, siblingData) => siblingData?.type === 'event',
+            description: 'Event to emit (e.g., "form.contact.submit")',
+            placeholder: 'form.submit',
+          },
+        },
+        {
+          name: 'submitEndpoint',
+          type: 'text',
+          admin: {
+            condition: (_, siblingData) => siblingData?.type === 'api',
+            description: 'API endpoint to submit form data',
+            placeholder: '/api/contact',
+          },
+        },
+        {
+          name: 'submitMethod',
+          type: 'select',
+          defaultValue: 'POST',
+          options: [
+            { label: 'POST', value: 'POST' },
+            { label: 'PUT', value: 'PUT' },
+            { label: 'PATCH', value: 'PATCH' },
+          ],
+          admin: {
+            description: 'HTTP method for submission',
+          },
+        },
+      ],
+    },
+    {
+      name: 'submitLabel',
+      type: 'text',
+      defaultValue: 'Submit',
+      admin: {
+        description: 'Submit button label',
+      },
+    },
+    {
+      name: 'cancelLabel',
+      type: 'text',
+      defaultValue: 'Cancel',
+      admin: {
+        description: 'Cancel button label',
+      },
+    },
+
+    // Success/Error Messages
+    {
+      name: 'successMessage',
+      type: 'text',
+      defaultValue: 'Form submitted successfully!',
+      admin: {
+        description: 'Success toast message',
+      },
+    },
+    {
+      name: 'errorMessage',
+      type: 'text',
+      defaultValue: 'An error occurred. Please try again.',
+      admin: {
+        description: 'Error toast message',
+      },
+    },
+    {
+      name: 'redirectUrl',
+      type: 'text',
+      admin: {
+        description: 'Redirect to this URL after successful submission (optional)',
+        placeholder: '/thank-you',
+      },
+    },
+
+    // Advanced Options
+    {
+      name: 'showProgressIndicator',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description: 'Show step indicator for multi-step forms',
+      },
+    },
+    {
+      name: 'enableAutosave',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description: 'Auto-save form data to localStorage',
+      },
+    },
+    {
+      name: 'customCss',
+      type: 'textarea',
+      admin: {
+        description: 'Custom CSS classes (space-separated)',
+        placeholder: 'max-w-2xl mx-auto',
+      },
+    },
+  ],
+}
 
 /**
  * Blocks Collection
@@ -241,12 +695,7 @@ export const Blocks: CollectionConfig = {
                         {
                           name: 'content',
                           type: 'blocks',
-                          blocks: [
-                            {
-                              slug: 'richText',
-                              fields: [{ name: 'content', type: 'richText' }],
-                            },
-                          ],
+                          blocks: [RichTextBlock, FormBlock, StatCardBlock],
                         },
                       ],
                     },
@@ -1711,26 +2160,54 @@ export const Blocks: CollectionConfig = {
 
                     // Submit Configuration
                     {
-                      name: 'submitEndpoint',
-                      type: 'text',
-                      required: true,
-                      admin: {
-                        description: 'API endpoint to submit form data (e.g., "/api/contact")',
-                        placeholder: '/api/contact',
-                      },
-                    },
-                    {
-                      name: 'submitMethod',
-                      type: 'select',
-                      defaultValue: 'POST',
-                      options: [
-                        { label: 'POST', value: 'POST' },
-                        { label: 'PUT', value: 'PUT' },
-                        { label: 'PATCH', value: 'PATCH' },
+                      name: 'submission',
+                      type: 'group',
+                      fields: [
+                        {
+                          name: 'type',
+                          type: 'select',
+                          defaultValue: 'event',
+                          options: [
+                            { label: 'Emit Event (Workflow)', value: 'event' },
+                            { label: 'Direct API Call', value: 'api' },
+                          ],
+                          admin: {
+                            description: 'How to handle form submission',
+                          },
+                        },
+                        {
+                          name: 'eventName',
+                          type: 'text',
+                          admin: {
+                            condition: (_, siblingData) => siblingData?.type === 'event',
+                            description: 'Event to emit (e.g., "form.contact.submit")',
+                            placeholder: 'form.submit',
+                          },
+                        },
+                        {
+                          name: 'submitEndpoint',
+                          type: 'text',
+                          admin: {
+                            condition: (_, siblingData) => siblingData?.type === 'api',
+                            description: 'API endpoint to submit form data',
+                            placeholder: '/api/contact',
+                          },
+                        },
+                        {
+                          name: 'submitMethod',
+                          type: 'select',
+                          defaultValue: 'POST',
+                          options: [
+                            { label: 'POST', value: 'POST' },
+                            { label: 'PUT', value: 'PUT' },
+                            { label: 'PATCH', value: 'PATCH' },
+                          ],
+                          admin: {
+                            condition: (_, siblingData) => siblingData?.type === 'api',
+                            description: 'HTTP method for submission',
+                          },
+                        },
                       ],
-                      admin: {
-                        description: 'HTTP method for submission',
-                      },
                     },
                     {
                       name: 'submitLabel',

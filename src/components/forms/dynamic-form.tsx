@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { useView } from '@/hooks/use-view'
 import { DynamicFormField } from './dynamic-form-field'
+import { processEvent } from '@/app/actions/workflow-engine'
 
 interface FormField {
   name: string
@@ -33,8 +34,16 @@ interface FormConfig {
   title: string
   description?: string
   fields: FormField[]
-  submitEndpoint: string
-  submitMethod: 'POST' | 'PUT' | 'PATCH'
+  submission?: {
+    type: 'event' | 'api'
+    eventName?: string
+    submitEndpoint?: string
+    submitMethod?: 'POST' | 'PUT' | 'PATCH'
+  }
+  // Legacy support
+  submitEndpoint?: string
+  submitMethod?: 'POST' | 'PUT' | 'PATCH'
+
   submitLabel?: string
   cancelLabel?: string
   successMessage?: string
@@ -138,10 +147,7 @@ export function DynamicForm({ viewId, formConfig }: DynamicFormProps) {
 
   // Build schema and default values
   const schema = useMemo(() => buildZodSchema(formConfig.fields), [formConfig.fields])
-  const defaultValues = useMemo(
-    () => buildDefaultValues(formConfig.fields),
-    [formConfig.fields],
-  )
+  const defaultValues = useMemo(() => buildDefaultValues(formConfig.fields), [formConfig.fields])
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -176,17 +182,36 @@ export function DynamicForm({ viewId, formConfig }: DynamicFormProps) {
 
   const handleSubmit = form.handleSubmit(async (data) => {
     try {
-      const response = await fetch(formConfig.submitEndpoint, {
-        method: formConfig.submitMethod || 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
+      let responseData
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}))
-        throw new Error(error.message || 'Failed to submit form')
+      if (formConfig.submission?.type === 'event') {
+        // Workflow Engine Submission
+        if (!formConfig.submission.eventName) throw new Error('Event name is missing configuration')
+
+        await processEvent(formConfig.submission.eventName, data, {
+          formId: formConfig.formId,
+          // tenantId: ... (Needs to be passed via props or context)
+        })
+      } else {
+        // Legacy/Direct API Submission
+        // Fallback for flat structure or nested 'api' type
+        const endpoint = formConfig.submission?.submitEndpoint || formConfig.submitEndpoint
+        const method = formConfig.submission?.submitMethod || formConfig.submitMethod || 'POST'
+
+        if (!endpoint) throw new Error('Submit endpoint is missing')
+
+        const response = await fetch(endpoint, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        })
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}))
+          throw new Error(error.message || 'Failed to submit form')
+        }
       }
 
       // Success
@@ -245,4 +270,3 @@ export function DynamicForm({ viewId, formConfig }: DynamicFormProps) {
     </FormProvider>
   )
 }
-

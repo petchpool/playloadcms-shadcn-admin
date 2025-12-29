@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Seed script runner
- * Usage: 
+ * Usage:
  *   pnpm run seed              - Seed all collections
  *   pnpm run seed:languages    - Seed only languages
  *   pnpm run seed:layouts      - Seed only layouts
@@ -21,6 +21,8 @@ import { seedSites } from './sites'
 import { seedPermissions } from './permissions'
 import { seedRoles } from './roles'
 import { seedUsers } from './users'
+import { seedWorkflows } from './workflows'
+import { seedPagesLocalized } from './seed-pages-localized'
 
 // Get collection name from command line argument or environment variable
 const collection = process.argv[2] || process.env.SEED_COLLECTION
@@ -51,6 +53,7 @@ async function runSeed() {
     case 'page':
     case 'site':
       await seedSites()
+      await seedPagesLocalized()
       break
 
     case 'permissions':
@@ -78,6 +81,11 @@ async function runSeed() {
       const permsForRbac = await seedPermissions()
       const rolesForRbac = await seedRoles(permsForRbac)
       await seedUsers(rolesForRbac)
+      break
+
+    case 'workflows':
+    case 'automation':
+      await seedWorkflows()
       break
 
     default:

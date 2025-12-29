@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { FormBlock, StatCardBlock, RichTextBlock } from './Blocks'
 import { hasAnyRoleSync, hasAdminRoleSync } from '@/utils/check-role'
 import { filterBlocksRecursively } from '@/utils/filter-blocks-by-permissions'
 
@@ -239,6 +240,9 @@ export const Pages: CollectionConfig = {
           ],
         },
 
+        FormBlock,
+        StatCardBlock,
+
         // ============================================
         // 2. RICH TEXT (Local Content)
         // ============================================
@@ -354,6 +358,8 @@ export const Pages: CollectionConfig = {
                   name: 'content',
                   type: 'blocks',
                   blocks: [
+                    FormBlock,
+                    StatCardBlock,
                     {
                       slug: 'richText',
                       fields: [

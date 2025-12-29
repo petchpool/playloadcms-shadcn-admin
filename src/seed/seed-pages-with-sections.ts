@@ -1176,8 +1176,10 @@ export async function seedPagesWithBlocks() {
               defaultValue: 'false',
             },
           ],
-          submitEndpoint: '/api/contact',
-          submitMethod: 'POST' as const,
+          submission: {
+            type: 'event',
+            eventName: 'form.contact.submit',
+          },
           submitLabel: 'Send Message',
           cancelLabel: 'Cancel',
           successMessage: 'Thank you for contacting us! We will get back to you soon.',

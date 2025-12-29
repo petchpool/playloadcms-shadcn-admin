@@ -16,8 +16,14 @@ import { Themes } from './collections/Themes'
 import { Permissions } from './collections/Permissions'
 import { Roles } from './collections/Roles'
 import { Navigation } from './collections/Navigation'
+import { Workflows } from './collections/Workflows'
+import { WorkflowRules } from './collections/WorkflowRules'
 
 import { Settings } from './globals'
+import { apiCallTask, notificationTask, updateRecordTask } from './tasks/workflowSteps'
+import { workflowExecutor } from './tasks/workflowExecutor'
+import { loggerTask } from './tasks/loggerTask'
+import { findRecordTask } from './tasks/findRecordTask'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -41,6 +47,8 @@ export default buildConfig({
     Themes,
     Permissions,
     Roles,
+    Workflows,
+    WorkflowRules,
   ],
   globals: [Settings],
   editor: lexicalEditor(),
@@ -60,5 +68,16 @@ export default buildConfig({
     locales: ['en', 'th'],
     defaultLocale: 'en',
     fallback: true,
+  },
+  jobs: {
+    autoRun: [],
+    tasks: [
+      apiCallTask as any,
+      notificationTask as any,
+      updateRecordTask as any,
+      workflowExecutor as any,
+      loggerTask as any,
+      findRecordTask as any,
+    ],
   },
 })
